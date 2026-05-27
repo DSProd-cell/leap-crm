@@ -671,21 +671,50 @@ function getMyBadges() {
 
 function renderBoostCards() {
   const students = getViewingStudents();
-  const boosts = [
-    { type:'sti',         label:'Boost STI',         count: students.filter(s => s.stage === 'sti').length,         desc:'No STI yet' },
-    { type:'application', label:'Boost Application',  count: students.filter(s => s.stage === 'application').length, desc:'STI done, no app' },
-    { type:'deposit',     label:'Boost Deposit',      count: students.filter(s => s.stage === 'deposit').length,     desc:'App done, no deposit' },
-    { type:'lockin',      label:'Boost Lock-in',      count: students.filter(s => s.stage === 'lockin').length,      desc:'Offer received, no payment' },
-  ];
+  const stiCount  = students.filter(s => s.stage === 'sti').length;
+  const appCount  = students.filter(s => s.stage === 'application').length;
+  const depCount  = students.filter(s => s.stage === 'deposit').length;
+  const lckCount  = students.filter(s => s.stage === 'lockin').length;
   const grid = document.getElementById('boostCardsGrid');
-  grid.innerHTML = boosts.map(b => `
-    <div class="boost-card ${b.type}" onclick="openBoostDrawer('${b.type}')">
-      <div class="text-xs font-semibold text-text-muted uppercase tracking-wide">${b.label}</div>
-      <div class="boost-count">${b.count}</div>
-      <div class="text-xs text-text-muted mb-3">${b.count === 1 ? '1 student' : b.count + ' students'}</div>
+
+  // Layout: Boost STI as primary (col-span-2 on md), with Application + Lock-in nested inside.
+  // Boost Deposit stays as its own card.
+  grid.innerHTML = `
+    <!-- Boost STI — primary card with Application & Lock-in nested -->
+    <div class="boost-card sti col-span-2 lg:col-span-3 cursor-default relative">
+      <div class="flex flex-wrap items-start gap-4">
+        <!-- STI main -->
+        <div class="flex-1 min-w-[120px] cursor-pointer" onclick="openBoostDrawer('sti')">
+          <div class="text-xs font-semibold text-text-muted uppercase tracking-wide">Boost STI</div>
+          <div class="boost-count">${stiCount}</div>
+          <div class="text-xs text-text-muted mb-2">${stiCount === 1 ? '1 student' : stiCount + ' students'}</div>
+          <a class="text-xs font-semibold text-accent hover:underline">View All →</a>
+        </div>
+        <!-- Nested: Application & Lock-in -->
+        <div class="flex gap-3 self-end pb-1">
+          <div class="bg-white/60 border border-white/80 rounded-xl px-4 py-2 cursor-pointer hover:bg-white/80 transition-colors" onclick="openBoostDrawer('application')">
+            <div class="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-0.5">Application</div>
+            <div class="text-2xl font-bold text-primary font-mono">${appCount}</div>
+            <div class="text-[10px] text-text-muted">${appCount === 1 ? '1 student' : appCount + ' students'}</div>
+            <a class="text-[10px] font-semibold text-accent">View →</a>
+          </div>
+          <div class="bg-white/60 border border-white/80 rounded-xl px-4 py-2 cursor-pointer hover:bg-white/80 transition-colors" onclick="openBoostDrawer('lockin')">
+            <div class="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-0.5">Lock-in</div>
+            <div class="text-2xl font-bold text-primary font-mono">${lckCount}</div>
+            <div class="text-[10px] text-text-muted">${lckCount === 1 ? '1 student' : lckCount + ' students'}</div>
+            <a class="text-[10px] font-semibold text-accent">View →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Boost Deposit — separate card -->
+    <div class="boost-card deposit" onclick="openBoostDrawer('deposit')">
+      <div class="text-xs font-semibold text-text-muted uppercase tracking-wide">Boost Deposit</div>
+      <div class="boost-count">${depCount}</div>
+      <div class="text-xs text-text-muted mb-3">${depCount === 1 ? '1 student' : depCount + ' students'}</div>
       <a class="text-xs font-semibold text-accent hover:underline">View All →</a>
     </div>
-  `).join('');
+  `;
 }
 
 function getViewingStudents() {
@@ -707,13 +736,13 @@ function renderWhatsappCoverage() {
   });
   const el = document.getElementById('whatsappCoverage');
   el.innerHTML = `
-    <div class="wa-chip ok">
+    <div class="wa-chip ok cursor-pointer hover:opacity-80 transition-opacity" onclick="openGroupsDetail('counselor')" title="Click to see group membership details">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-      Groups counselor joined: ${counselorJoined}/${totalGroups}
+      Groups counselor joined: ${counselorJoined}/${totalGroups} ↗
     </div>
-    <div class="wa-chip ${studentMissing > 0 ? 'warn' : 'ok'}">
+    <div class="wa-chip ${studentMissing > 0 ? 'warn' : 'ok'} cursor-pointer hover:opacity-80 transition-opacity" onclick="openGroupsDetail('students')" title="Click to see which students are missing from groups">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-      Students NOT in group: ${studentMissing}
+      Students NOT in group: ${studentMissing} ↗
     </div>
   `;
 }
@@ -1323,7 +1352,8 @@ function openDrawer(title, content, showBack) {
   document.getElementById('drawerBackdrop').classList.remove('hidden');
   const drawer = document.getElementById('rightDrawer');
   drawer.classList.remove('hidden');
-  requestAnimationFrame(() => { drawer.classList.add('open'); });
+  void drawer.offsetWidth; // force reflow so CSS transition fires (fixes Vercel)
+  drawer.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
@@ -1713,7 +1743,8 @@ function toggleBot() {
   const panel = document.getElementById('botPanel');
   if (state.botOpen) {
     panel.classList.remove('hidden');
-    requestAnimationFrame(() => panel.classList.add('open'));
+    void panel.offsetWidth; // force reflow so CSS transition fires correctly (fixes Vercel)
+    panel.classList.add('open');
     // Reset unread badge
     state.chatPanel.unreadCount = 0;
     state.chatPanel.lastOpenedAt = Date.now();
@@ -3005,19 +3036,22 @@ function renderStandupTable(filterData) {
   }
   if (empty) empty.classList.add('hidden');
 
+  const sdCell = (val, metricName, metricKey, extraCls='text-text-muted') =>
+    `<span class="standup-link cursor-pointer hover:text-accent hover:underline ${extraCls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${val}</span>`;
+
   tbody.innerHTML = data.map((row, i) => `
     <tr class="hover:bg-surface/50 transition-colors">
-      <td class="px-3 py-2 font-medium text-text-main sticky left-0 bg-white whitespace-nowrap">${i+1}. ${row.name}</td>
+      <td class="px-3 py-2 font-medium text-text-main sticky left-0 bg-white whitespace-nowrap cursor-pointer hover:text-accent" onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">${i+1}. ${row.name}</td>
       <td class="px-2 py-2 text-right font-mono text-text-muted">${row.tYTD}</td>
       <td class="px-2 py-2 text-right font-mono text-text-muted">${row.tMTD}</td>
-      <td class="px-2 py-2 text-right font-mono font-semibold"><span class="${row.ytdCls} standup-link" onclick="showToast('Drill-down coming soon','info')">${row.aYTD}</span></td>
-      <td class="px-2 py-2 text-right font-mono font-semibold"><span class="${row.mtdCls} standup-link" onclick="showToast('Drill-down coming soon','info')">${row.aMTD}</span></td>
-      <td class="px-2 py-2 text-right font-mono text-text-main">${row.Y}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${row.Y1}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${row.Y2}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${row.W0}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${row.W01}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${row.M01}</td>
+      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aYTD, row.name, row.key, row.ytdCls)}</td>
+      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aMTD, row.name, row.key, row.mtdCls)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y, row.name, row.key)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y1, row.name, row.key)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y2, row.name, row.key)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W0, row.name, row.key)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W01, row.name, row.key)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.M01, row.name, row.key)}</td>
     </tr>
   `).join('');
 }
@@ -3199,18 +3233,6 @@ function openStudentDetail(studentId) {
   }
 
   const content = `
-    <!-- Call Button Header -->
-    <div class="flex items-center justify-between mb-4 p-3 bg-surface rounded-xl border border-border">
-      <div>
-        <p class="text-xs text-text-muted">Quick Actions</p>
-        <p class="text-xs font-medium text-text-main mt-0.5">Call or message ${s.name.split(' ')[0]}</p>
-      </div>
-      <button id="callBtn-${s.id}" class="call-btn" onclick="callStudent('${s.id}')">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-        📞 Call
-      </button>
-    </div>
-
     <!-- Stage Bar -->
     <div class="mb-4">
       <p class="text-xs text-text-muted mb-2 font-semibold uppercase tracking-wide">Current Stage</p>
@@ -3258,7 +3280,155 @@ function openStudentDetail(studentId) {
     </div>
   `;
 
-  openDrawer(s.name, content, true);
+  // Open as full-page overlay instead of drawer
+  const page = document.getElementById('studentDetailPage');
+  if (!page) { openDrawer(s.name, content, true); return; }
+
+  document.getElementById('sdpName').textContent = s.name;
+  document.getElementById('sdpCallWrap').innerHTML = `
+    <button id="callBtn-${s.id}" class="call-btn flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold" onclick="callStudent('${s.id}')">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      Call
+    </button>`;
+  document.getElementById('sdpBody').innerHTML = content;
+  page.classList.remove('hidden');
+  page.scrollTop = 0;
+}
+
+function closeStudentDetailPage() {
+  const page = document.getElementById('studentDetailPage');
+  if (page) page.classList.add('hidden');
+}
+
+/* ═══════════════════════════════════════════════════════
+   WHATSAPP GROUPS DETAIL DRAWER
+═══════════════════════════════════════════════════════ */
+
+function openGroupsDetail(mode) {
+  // mode: 'counselor' → show all groups, counselor join status
+  //       'students'  → show groups where student is missing
+  const students = getViewingStudents();
+
+  // Collect all unique group entries across students
+  const groupMap = {}; // groupName → { counselorJoined, students: [{name, joined}] }
+  students.forEach(s => {
+    s.whatsappGroups.forEach(g => {
+      if (!groupMap[g.groupName]) {
+        groupMap[g.groupName] = { groupName: g.groupName, counselorJoined: g.counselorJoined, students: [] };
+      }
+      groupMap[g.groupName].students.push({ name: s.name, id: s.id, joined: g.studentJoined });
+      // Counselor join status — use latest value
+      if (g.counselorJoined) groupMap[g.groupName].counselorJoined = true;
+    });
+  });
+
+  const groups = Object.values(groupMap);
+
+  if (mode === 'counselor') {
+    const joined    = groups.filter(g => g.counselorJoined);
+    const notJoined = groups.filter(g => !g.counselorJoined);
+
+    const renderGroup = (g, cls) => `
+      <div class="border border-border rounded-xl p-3 mb-2">
+        <div class="flex items-center justify-between mb-1">
+          <p class="font-semibold text-sm text-text-main">${escHtml(g.groupName)}</p>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${cls}">${g.counselorJoined ? '✅ You joined' : '❌ You not joined'}</span>
+        </div>
+        <p class="text-xs text-text-muted">${g.students.length} student${g.students.length !== 1 ? 's' : ''} in this group</p>
+      </div>`;
+
+    const content = `
+      ${notJoined.length ? `<div class="mb-4">
+        <p class="text-xs font-semibold text-danger uppercase tracking-wide mb-2">❌ Groups you haven't joined (${notJoined.length})</p>
+        ${notJoined.map(g => renderGroup(g, 'bg-red-100 text-danger')).join('')}
+      </div>` : ''}
+      <div>
+        <p class="text-xs font-semibold text-success uppercase tracking-wide mb-2">✅ Groups you've joined (${joined.length})</p>
+        ${joined.map(g => renderGroup(g, 'bg-green-100 text-success')).join('')}
+      </div>`;
+
+    openDrawer('Your WhatsApp Groups', content, false);
+
+  } else {
+    // Students missing from groups
+    const missingRows = [];
+    groups.forEach(g => {
+      const missing = g.students.filter(s => !s.joined);
+      if (missing.length) {
+        missingRows.push({ group: g.groupName, counselorJoined: g.counselorJoined, missing });
+      }
+    });
+
+    const content = missingRows.length ? missingRows.map(r => `
+      <div class="border border-border rounded-xl p-3 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <p class="font-semibold text-sm text-text-main">${escHtml(r.group)}</p>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${r.counselorJoined ? 'bg-green-100 text-success' : 'bg-red-100 text-danger'}">${r.counselorJoined ? '✅ You joined' : '❌ You not joined'}</span>
+        </div>
+        <p class="text-xs font-semibold text-danger mb-1">${r.missing.length} student${r.missing.length !== 1 ? 's' : ''} not in group:</p>
+        ${r.missing.map(s => `
+          <div class="flex items-center justify-between py-1 border-t border-border text-xs">
+            <span class="font-medium text-text-main">${escHtml(s.name)}</span>
+            <button onclick="openStudentDetail('${s.id}')" class="text-accent font-semibold hover:underline cursor-pointer">View Lead →</button>
+          </div>`).join('')}
+      </div>`) .join('')
+    : '<p class="text-sm text-success text-center py-8">All students are in their groups! 🎉</p>';
+
+    openDrawer('Students Not in Groups', content, false);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   STANDUP TABLE DRILL-DOWN
+═══════════════════════════════════════════════════════ */
+
+// Map standup metric keys to relevant student stages / fields
+const STANDUP_STAGE_MAP = {
+  leads:       null,          // all students
+  isl_count:   null,
+  isl_pending: 'sti',
+  lockins:     'lockin',
+  f2f:         null,
+  walkin:      null,
+  qa_shared:   null,
+  college_fin: 'application',
+  stis:        'sti',
+  deposits:    'deposit',
+  visas:       'lockin',
+};
+
+function openStandupDrillDown(metricName, metricKey) {
+  const students = getViewingStudents();
+  const stageFilter = STANDUP_STAGE_MAP[metricKey];
+  const filtered = stageFilter ? students.filter(s => s.stage === stageFilter) : students;
+
+  const stageLabel = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+
+  const content = `
+    <p class="text-xs text-text-muted mb-3">Students associated with <strong>${escHtml(metricName)}</strong>${stageFilter ? ` — stage: ${stageLabel[stageFilter] || stageFilter}` : ' (all pipeline)'}.</p>
+    ${filtered.length === 0
+      ? '<p class="text-sm text-text-muted text-center py-10">No students for this metric.</p>'
+      : `<div class="space-y-3">${filtered.map(s => {
+          const waIssue = s.whatsappGroups.some(g => !g.studentJoined);
+          return `<div class="student-card cursor-pointer" onclick="openStudentDetail('${s.id}')">
+            <div class="flex items-start justify-between mb-1">
+              <div>
+                <p class="font-semibold text-sm text-text-main">${escHtml(s.name)}</p>
+                <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
+              </div>
+              <span class="app-badge ${s.appDownloaded ? 'downloaded' : 'not-downloaded'}">${s.appDownloaded ? '📱 App' : '📵 No App'}</span>
+            </div>
+            <div class="flex flex-wrap gap-3 text-xs text-text-muted">
+              ${s.followup ? `<span>📅 ${s.followup}</span>` : ''}
+              <span class="font-medium capitalize">${stageLabel[s.stage] || s.stage} stage</span>
+              ${waIssue ? `<span class="text-accent">⚠ WA gap</span>` : ''}
+            </div>
+            <button class="mt-2 text-xs font-semibold text-accent hover:underline">Open Detail →</button>
+          </div>`;
+        }).join('')}</div>`
+    }`;
+
+  openDrawer(`${metricName} — Student List`, content, false);
 }
 
 function toggleWaHistory(studentId) {

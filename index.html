@@ -191,31 +191,11 @@
       <!-- Boost Task Cards -->
       <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Action Required — Boost Tasks</h2>
-        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 items-start"></div>
       </section>
 
       <!-- WhatsApp Coverage -->
       <div id="whatsappCoverage" class="flex gap-4 text-sm"></div>
-
-      <!-- Summary Filters -->
-      <div class="flex flex-wrap items-center gap-2 justify-end">
-        <span class="text-xs text-text-muted font-medium mr-1">Filter:</span>
-        <select id="summaryIntake" onchange="applySummaryFilters()" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
-          <option value="">All Intakes</option>
-          <option value="sep26">Sep 2026</option>
-          <option value="jan27">Jan 2027</option>
-        </select>
-        <select id="summaryCountry" onchange="applySummaryFilters()" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
-          <option value="">All Countries</option>
-          <option value="india">India</option>
-          <option value="canada">Canada</option>
-          <option value="uk">UK</option>
-          <option value="australia">Australia</option>
-          <option value="usa">USA</option>
-        </select>
-        <button onclick="resetSummaryFilters()" class="text-xs px-3 py-1.5 border border-border text-text-muted rounded-lg hover:bg-surface transition-colors cursor-pointer">Reset Filters</button>
-        <button onclick="applySummaryFilters()" class="text-xs px-3 py-1.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors cursor-pointer font-semibold">Apply</button>
-      </div>
 
       <!-- Volume Metrics -->
       <section>
@@ -766,6 +746,24 @@
     </div>
 
   </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     STUDENT DETAIL PAGE OVERLAY (full-screen)
+═══════════════════════════════════════════════════ -->
+<div id="studentDetailPage" class="hidden fixed inset-0 z-[60] bg-surface overflow-y-auto">
+  <div class="max-w-2xl mx-auto p-4 pb-10">
+    <!-- Top nav -->
+    <div class="flex items-center justify-between mb-4 pt-2">
+      <button onclick="closeStudentDetailPage()" class="flex items-center gap-2 text-sm text-text-muted hover:text-text-main cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
+      </button>
+      <h1 id="sdpName" class="font-bold text-text-main text-base"></h1>
+      <div id="sdpCallWrap"></div>
+    </div>
+    <!-- Body -->
+    <div id="sdpBody" class="space-y-4"></div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════
