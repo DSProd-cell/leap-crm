@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leap CRM — Sales Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary:         '#1D4ED8',
+            'primary-light': '#3B82F6',
+            accent:          '#EA580C',
+            'accent-dark':   '#C2410C',
+            warn:            '#EA580C',
+            danger:          '#DC2626',
+            success:         '#16A34A',
+            sidebar:         '#0C1A2E',
+            'sidebar-hover': '#162236',
+            surface:         '#F1F5F9',
+            card:            '#FFFFFF',
+            'text-main':     '#0F172A',
+            'text-muted':    '#64748B',
+            border:          '#E2E8F0',
+            gold:            '#F97316',
+            silver:          '#94A3B8',
+            bronze:          '#B45309',
+            navy:            '#0C1A2E',
+          },
+          fontFamily: {
+            heading: ['Righteous', 'sans-serif'],
+            body:    ['Poppins', 'sans-serif'],
+            mono:    ['Fira Code', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="font-body bg-surface text-text-main min-h-screen">
+
+<!-- ═══════════════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════════════ -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center login-bg">
+  <div class="w-full max-w-md mx-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <!-- Logo -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center gap-3 mb-2">
+          <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <span class="font-heading text-2xl text-text-main">Leap CRM</span>
+        </div>
+        <p class="text-text-muted text-sm">Sales Intelligence Platform</p>
+      </div>
+      <!-- Form -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-text-main mb-1">Email</label>
+          <input id="loginEmail" type="email" placeholder="you@company.in"
+            class="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-main mb-1">Password</label>
+          <div class="relative">
+            <input id="loginPwd" type="password" placeholder="••••••••"
+              class="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm pr-10" />
+            <button onclick="togglePwd()" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main" aria-label="Toggle password">
+              <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-text-main mb-1">Role</label>
+          <select id="loginRole" class="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white">
+            <option value="counselor">Counselor</option>
+            <option value="team_lead">Team Lead</option>
+            <option value="ops_admin">Ops Admin</option>
+          </select>
+        </div>
+        <div id="loginError" class="hidden bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-sm text-danger"></div>
+        <button id="loginBtn" onclick="handleLogin()"
+          class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg transition-colors cursor-pointer">
+          Log In
+        </button>
+        <div class="text-center">
+          <button onclick="forgotPwd()" class="text-sm text-primary hover:underline cursor-pointer">Forgot password?</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════════════ -->
+<div id="appShell" class="hidden flex flex-col min-h-screen">
+
+  <!-- FIXED HEADER -->
+  <header class="fixed top-0 left-0 right-0 z-40 h-14 bg-sidebar flex items-center px-5 shadow-lg">
+    <!-- Logo -->
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <span class="font-heading text-white text-lg">Leap CRM</span>
+    </div>
+
+    <!-- Counselor Selector (team lead + ops) -->
+    <div id="counselorSelectorWrapper" class="hidden ml-6">
+      <select id="counselorSelector" onchange="onCounselorChange()"
+        class="text-xs px-3 py-1.5 bg-sidebar-hover border border-white/10 text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-accent">
+      </select>
+    </div>
+
+    <div class="flex-1"></div>
+
+    <!-- Badge strip -->
+    <div id="badgeStrip" class="flex items-center gap-2 mr-4 cursor-pointer" onclick="openProfile()">
+      <span id="badgeStripIcons" class="flex gap-1"></span>
+      <span id="badgeStripCount" class="text-xs text-gold font-semibold"></span>
+    </div>
+
+    <!-- Priority Alert Icon -->
+    <div id="alertIconWrap" class="hidden mr-3 relative cursor-pointer" onclick="toggleAlertDrawer()" title="Unhappy customer alerts">
+      <div class="w-8 h-8 bg-danger/10 hover:bg-danger/20 rounded-full flex items-center justify-center transition-colors" id="alertIconBtn">
+        <svg class="w-4 h-4 text-danger alert-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="alertBellIcon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      </div>
+      <span id="alertBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-danger text-white text-[9px] font-bold rounded-full flex items-center justify-center"></span>
+    </div>
+
+    <!-- Alert Drawer (slide-in from right) -->
+    <div id="alertDrawer" class="hidden fixed inset-y-0 right-0 z-[80] w-80 bg-white shadow-2xl border-l border-border flex flex-col">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border bg-danger/5">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <h3 class="font-bold text-danger text-sm">Unhappy Cases</h3>
+        </div>
+        <button onclick="toggleAlertDrawer()" class="p-1 rounded-lg hover:bg-danger/10 cursor-pointer text-danger">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="alertDrawerList" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+    </div>
+    <div id="alertDrawerOverlay" class="hidden fixed inset-0 z-[79] bg-black/30" onclick="toggleAlertDrawer()"></div>
+
+    <!-- Profile -->
+    <div class="relative">
+      <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 cursor-pointer group" aria-haspopup="true">
+        <div id="headerAvatar" class="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white text-xs font-bold"></div>
+        <span id="headerName" class="text-white text-sm font-medium hidden sm:block"></span>
+        <svg class="w-4 h-4 text-white/60 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="profileDropdown" class="profile-dropdown hidden absolute right-0 top-10 w-44 bg-white rounded-xl shadow-xl border border-border overflow-hidden z-50">
+        <button onclick="openProfile()" class="w-full text-left px-4 py-2.5 text-sm text-text-main hover:bg-surface flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          View Profile
+        </button>
+        <hr class="border-border" />
+        <button onclick="logout()" class="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-red-50 flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Log Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HORIZONTAL TAB BAR (below header, sticky) -->
+  <nav id="mainTabBar" class="fixed top-14 left-0 right-0 z-30 bg-white border-b border-border shadow-sm flex">
+    <button class="htab active" onclick="switchTab('tab1')" data-tab="tab1">Tasks &amp; Performance</button>
+    <button class="htab" onclick="switchTab('tab2')" data-tab="tab2">Incentives &amp; Earnings</button>
+    <button class="htab" onclick="switchTab('tab3')" data-tab="tab3">Learning &amp; Development</button>
+    <button id="adminTabBtn" class="htab hidden" onclick="switchTab('admin')" data-tab="admin">Admin Panel</button>
+  </nav>
+
+  <!-- MAIN CONTENT (padded for fixed header + tab bar) -->
+  <main class="mt-[104px] flex-1">
+
+    <!-- ─────────────────────────────── TAB 1 ─────────────────────────────── -->
+    <div id="tab1" class="tab-panel p-5 space-y-6 max-w-screen-xl mx-auto">
+
+      <!-- Boost Task Cards -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Action Required — Boost Tasks</h2>
+        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </section>
+
+      <!-- WhatsApp Coverage -->
+      <div id="whatsappCoverage" class="flex gap-4 text-sm"></div>
+
+      <!-- Summary Filters -->
+      <div class="flex flex-wrap items-center gap-2 justify-end">
+        <span class="text-xs text-text-muted font-medium mr-1">Filter:</span>
+        <select id="summaryIntake" onchange="applySummaryFilters()" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+          <option value="">All Intakes</option>
+          <option value="sep26">Sep 2026</option>
+          <option value="jan27">Jan 2027</option>
+        </select>
+        <select id="summaryCountry" onchange="applySummaryFilters()" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+          <option value="">All Countries</option>
+          <option value="india">India</option>
+          <option value="canada">Canada</option>
+          <option value="uk">UK</option>
+          <option value="australia">Australia</option>
+          <option value="usa">USA</option>
+        </select>
+        <button onclick="resetSummaryFilters()" class="text-xs px-3 py-1.5 border border-border text-text-muted rounded-lg hover:bg-surface transition-colors cursor-pointer">Reset Filters</button>
+        <button onclick="applySummaryFilters()" class="text-xs px-3 py-1.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors cursor-pointer font-semibold">Apply</button>
+      </div>
+
+      <!-- Volume Metrics -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Volume Metrics</h2>
+        <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-5 gap-4"></div>
+      </section>
+
+      <!-- Quality Metrics -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Quality Metrics</h2>
+        <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-5 gap-4"></div>
+      </section>
+
+      <!-- Log Task -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <h2 class="font-semibold text-text-main mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Log Task
+        </h2>
+        <div class="flex flex-wrap gap-3">
+          <select id="taskType" class="flex-1 min-w-[160px] px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white">
+            <option value="calls">Call Made</option>
+            <option value="leads">Lead Contacted</option>
+            <option value="enrolments">Enrolment Closed</option>
+            <option value="revenue">Revenue Collected</option>
+            <option value="followups">Follow-up Done</option>
+            <option value="stis">STI Submitted</option>
+            <option value="applications">Application Submitted</option>
+            <option value="deposits">Deposit Collected</option>
+            <option value="lockins">Lock-in Achieved</option>
+          </select>
+          <input id="taskNotes" type="text" placeholder="Optional notes…"
+            class="flex-1 min-w-[160px] px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+          <button onclick="logTask()" class="px-5 py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer">Log</button>
+        </div>
+      </section>
+
+      <!-- Stand Up Metrics Table -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="font-semibold text-text-main">Use for Stand Up</h2>
+            <p class="text-xs text-text-muted mt-0.5">Your metrics at a glance for daily stand-up</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="standupIntake" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+              <option value="">All Intakes</option>
+              <option value="sep26">Sep 2026</option>
+              <option value="jan27">Jan 2027</option>
+            </select>
+            <select id="standupLocation" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+              <option value="">All Locations</option>
+              <option value="branch">Branch</option>
+              <option value="online">Online</option>
+            </select>
+            <select id="standupCountry" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+              <option value="">All Countries</option>
+              <option value="india">India</option>
+              <option value="canada">Canada</option>
+              <option value="uk">UK</option>
+              <option value="australia">Australia</option>
+              <option value="usa">USA</option>
+            </select>
+            <button onclick="applyStandupFilters()" class="text-xs px-3 py-1.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors cursor-pointer font-semibold">Apply</button>
+            <button onclick="resetStandupFilters()" class="text-xs px-3 py-1.5 border border-border text-text-muted rounded-lg hover:bg-surface transition-colors cursor-pointer">Reset</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs min-w-[700px]">
+            <thead>
+              <tr class="bg-surface border-b border-border">
+                <th class="text-left px-3 py-2 font-semibold text-text-muted sticky left-0 bg-surface"># Metric</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Target YTD</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Target MTD</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Achv YTD</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Achv MTD</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted">Y</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted">Y-1</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted">Y-2</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted">W0</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted">W0-1</th>
+                <th class="text-right px-2 py-2 font-semibold text-text-muted">M0-1</th>
+              </tr>
+            </thead>
+            <tbody id="standupTableBody" class="divide-y divide-border"></tbody>
+          </table>
+        </div>
+        <p id="standupEmpty" class="hidden text-center text-text-muted text-sm py-6">No data for selected filters. Try adjusting Intake, Country, or Location.</p>
+      </section>
+
+      <!-- Leaderboard -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-text-main">Top Performers</h2>
+          <div class="flex gap-1 bg-surface rounded-lg p-1">
+            <button class="period-btn active text-xs px-3 py-1 rounded-md" onclick="switchLeader('today',this)">Today</button>
+            <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('month',this)">This Month</button>
+            <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('year',this)">This Year</button>
+          </div>
+        </div>
+        <div id="leaderboardGrid" class="space-y-3"></div>
+      </section>
+
+      <!-- Daily Report Card -->
+      <section id="reportCardSection" class="bg-white rounded-xl border border-border p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h2 class="font-bold text-text-main">Your Scorecard — Yesterday, 26 May 2026</h2>
+            <p id="reportCardSummary" class="text-xs text-text-muted mt-1"></p>
+          </div>
+          <span class="text-[10px] px-2 py-1 bg-surface border border-border rounded-lg text-text-muted font-medium">Read-only</span>
+        </div>
+        <!-- Score Summary Row -->
+        <div id="reportScoreSummary" class="grid grid-cols-3 gap-3 mb-4"></div>
+        <!-- Metric Detail Table -->
+        <div class="overflow-x-auto mb-4">
+          <table class="w-full text-xs">
+            <thead><tr class="border-b border-border">
+              <th class="text-left py-2 font-semibold text-text-muted">Metric</th>
+              <th class="text-center py-2 font-semibold text-text-muted">T · A</th>
+              <th class="text-center py-2 font-semibold text-text-muted">Status</th>
+            </tr></thead>
+            <tbody id="reportMetricTable" class="divide-y divide-border"></tbody>
+          </table>
+        </div>
+        <!-- Recommended Next Steps -->
+        <div id="reportNextSteps" class="mb-4"></div>
+        <!-- Top Performers -->
+        <div id="reportTopPerformers" class="mb-3"></div>
+        <!-- Footer -->
+        <p class="text-xs text-text-muted text-center italic border-t border-border pt-3">You've got this — pick one item from the table above to tackle today.</p>
+      </section>
+    </div>
+
+    <!-- ─────────────────────────────── TAB 2 ─────────────────────────────── -->
+    <div id="tab2" class="tab-panel hidden p-5 space-y-6 max-w-screen-xl mx-auto">
+
+      <!-- Earnings Summary -->
+      <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-border p-5">
+          <p class="text-xs text-text-muted font-medium uppercase tracking-wide mb-1">Earned So Far</p>
+          <p class="font-mono text-3xl font-bold text-success">₹38,400</p>
+          <p class="text-xs text-text-muted mt-1">This month</p>
+        </div>
+        <div class="bg-primary rounded-xl p-5 text-white">
+          <p class="text-xs text-white/70 font-medium uppercase tracking-wide mb-1">Projected at 100%</p>
+          <p class="font-mono text-3xl font-bold">₹72,000</p>
+          <p class="text-xs text-white/70 mt-1">At current pace</p>
+        </div>
+        <div id="opportunityCard" onclick="openOpportunityDrawer()" class="bg-accent rounded-xl p-5 text-white cursor-pointer hover:bg-accent-dark transition-colors group">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-xs text-white/80 font-medium uppercase tracking-wide">Opportunity Size</p>
+            <svg class="w-4 h-4 text-white/60 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+          <p class="font-mono text-3xl font-bold">₹85,000</p>
+          <p class="text-xs text-white/80 mt-1">Total pipeline value → click to view</p>
+        </div>
+      </section>
+
+      <!-- Live Offers -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Live Offers</h2>
+        <div id="offersRow" class="offers-scroll flex gap-4 overflow-x-auto pb-2"></div>
+      </section>
+
+      <!-- Incentive Breakdown -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <h2 class="font-semibold text-text-main mb-4">Incentive Breakdown</h2>
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-border text-xs text-text-muted font-semibold uppercase tracking-wide">
+            <th class="text-left py-2">Component</th>
+            <th class="text-left py-2">Rule</th>
+            <th class="text-left py-2">Status</th>
+            <th class="text-right py-2">Earned</th>
+          </tr></thead>
+          <tbody id="slabTableBody" class="divide-y divide-border"></tbody>
+          <tfoot><tr class="border-t-2 border-border">
+            <td colspan="3" class="py-2 font-bold text-sm">Total</td>
+            <td class="py-2 text-right font-mono font-bold text-success">₹33,500</td>
+          </tr></tfoot>
+        </table>
+      </section>
+
+      <!-- Earnings Chart -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <h2 class="font-semibold text-text-main mb-4">Monthly Earnings — 2025</h2>
+        <div class="h-56"><canvas id="earningsChart"></canvas></div>
+      </section>
+
+      <!-- Top Earners Leaderboard -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <h2 class="font-semibold text-text-main mb-4">Top Earners</h2>
+        <div class="grid sm:grid-cols-2 gap-6">
+          <div>
+            <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">This Month</p>
+            <div id="earnerMonthList" class="space-y-2"></div>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">All Time</p>
+            <div id="earnerAllList" class="space-y-2"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ─────────────────────────────── TAB 3 ─────────────────────────────── -->
+    <div id="tab3" class="tab-panel hidden p-5 space-y-6 max-w-screen-xl mx-auto">
+
+      <!-- Quick Links V1 -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Quick Links</h2>
+        <div id="quickLinksV1" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- Info Hub -->
+      <section id="infoHubSection" class="bg-white rounded-xl border border-border overflow-hidden">
+        <button onclick="toggleInfoHub()" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface transition-colors cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
+            </div>
+            <div class="text-left">
+              <span class="font-semibold text-text-main text-sm">Info Hub</span>
+              <span class="ml-2 text-xs text-text-muted">Colleges &amp; Universities</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div id="infoHubSearchWrap" class="hidden" onclick="event.stopPropagation()">
+              <input type="text" id="infoHubSearch" placeholder="Search universities, countries, courses…" oninput="debounceInfoHubSearch(this.value)"
+                class="w-56 text-xs px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" />
+            </div>
+            <svg id="infoHubChevron" class="w-4 h-4 text-text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </button>
+        <div id="infoHubBody" class="hidden border-t border-border">
+          <!-- Filter Bar -->
+          <div class="px-5 py-3 bg-surface border-b border-border">
+            <div class="flex flex-wrap gap-2 items-center" id="infoHubFilters"></div>
+          </div>
+          <!-- Directory -->
+          <div id="infoHubDirectory" class="p-5 space-y-6"></div>
+        </div>
+      </section>
+
+      <!-- Course Updates -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <h2 class="font-semibold text-text-main mb-4">Course Updates</h2>
+        <div class="space-y-3" id="courseUpdates"></div>
+      </section>
+
+      <!-- Training Modules -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <h2 class="font-semibold text-text-main mb-4">Training Modules</h2>
+        <div id="trainingModules" class="space-y-3"></div>
+      </section>
+
+      <!-- Support -->
+      <div class="text-center pb-4">
+        <button onclick="openTicketModal()"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-xl transition-colors cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Raise a Support Request
+        </button>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────── ADMIN ─────────────────────────────── -->
+    <div id="admin" class="tab-panel hidden">
+      <div id="adminLayout" class="flex min-h-[calc(100vh-104px)]">
+        <!-- Admin Sidebar -->
+        <aside class="w-52 bg-white border-r border-border flex-shrink-0 p-3 space-y-1">
+          <button class="adm-nav active w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('users',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>Users
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('corrections',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Corrections
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('slabs',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Incentive Slabs
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('quicklinks',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Quick Links
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('training',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>Training
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('tickets',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>Tickets
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('offers',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>Offers
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('badges',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>Badges
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('botsettings',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>Bot Settings
+          </button>
+          <button class="adm-nav w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 cursor-pointer" onclick="switchAdmin('infohub',this)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>Info Hub
+          </button>
+        </aside>
+
+        <!-- Admin Content -->
+        <div class="flex-1 p-6 overflow-auto">
+
+          <!-- Users Panel -->
+          <div id="adminPanel-users" class="admin-panel">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-lg font-bold text-text-main">User Management</h2>
+              <button onclick="openAddUserModal()" class="px-4 py-2 bg-accent text-white text-sm font-semibold rounded-lg hover:bg-accent-dark transition-colors cursor-pointer flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add User
+              </button>
+            </div>
+            <div class="bg-white rounded-xl border border-border overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-surface border-b border-border"><tr>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Name</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Role</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Team</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Email</th>
+                  <th class="text-right px-4 py-3 font-semibold text-text-muted text-xs uppercase">Actions</th>
+                </tr></thead>
+                <tbody id="usersTableBody" class="divide-y divide-border"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Corrections Panel -->
+          <div id="adminPanel-corrections" class="admin-panel hidden">
+            <h2 class="text-lg font-bold text-text-main mb-5">Performance Corrections</h2>
+            <div class="bg-white rounded-xl border border-border p-6 max-w-lg space-y-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Counselor</label>
+                <select class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white" id="corrCounselor">
+                  <option value="">Select counselor…</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Date</label>
+                <input type="date" id="corrDate" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Metric</label>
+                <select id="corrMetric" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white">
+                  <option value="calls">Calls Made</option>
+                  <option value="leads">Leads Contacted</option>
+                  <option value="enrolments">Enrolments</option>
+                  <option value="revenue">Revenue</option>
+                  <option value="followups">Follow-ups</option>
+                  <option value="stis">STIs Submitted</option>
+                  <option value="applications">Applications</option>
+                  <option value="deposits">Deposits</option>
+                  <option value="lockins">Lock-ins</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">New Value</label>
+                <input type="number" placeholder="Enter corrected value" id="corrValue" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Reason</label>
+                <textarea id="corrReason" rows="3" placeholder="Reason for correction…" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"></textarea>
+              </div>
+              <button onclick="submitCorrection()" class="w-full py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm cursor-pointer transition-colors">Submit Correction</button>
+            </div>
+          </div>
+
+          <!-- Slabs Panel -->
+          <div id="adminPanel-slabs" class="admin-panel hidden">
+            <h2 class="text-lg font-bold text-text-main mb-5">Incentive Slab Upload</h2>
+            <div id="csvDropZone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleCsvDrop(event)"
+              class="bg-white border-2 border-dashed border-border rounded-xl p-12 text-center cursor-pointer hover:border-accent transition-colors"
+              onclick="document.getElementById('csvFile').click()">
+              <svg class="w-12 h-12 text-text-muted mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+              <p class="text-text-muted text-sm mb-1">Drag &amp; drop your CSV file here</p>
+              <p class="text-text-muted text-xs">or click to browse</p>
+              <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="handleCsvFile(event)" />
+            </div>
+            <div id="csvPreview" class="hidden mt-4 bg-white rounded-xl border border-border overflow-hidden">
+              <div class="px-4 py-3 border-b border-border flex items-center justify-between">
+                <h3 class="font-semibold text-sm">CSV Preview</h3>
+                <button onclick="confirmCsvUpload()" class="px-4 py-1.5 bg-accent text-white text-xs font-semibold rounded-lg cursor-pointer hover:bg-accent-dark">Confirm Upload</button>
+              </div>
+              <div class="overflow-x-auto"><table id="csvPreviewTable" class="w-full text-xs"></table></div>
+            </div>
+          </div>
+
+          <!-- Quick Links Panel (Admin) -->
+          <div id="adminPanel-quicklinks" class="admin-panel hidden">
+            <h2 class="text-lg font-bold text-text-main mb-5">Quick Links Manager</h2>
+            <div class="bg-white rounded-xl border border-border p-6 max-w-lg space-y-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Video Session URL</label>
+                <input type="url" id="qlSessionUrl" placeholder="https://meet.google.com/…"
+                  class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                <p class="text-xs text-text-muted mt-1">Platform icon auto-detected from domain (Zoom / Meet / 100ms)</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Templates Sheet URL</label>
+                <input type="url" id="qlSheetUrl" placeholder="https://docs.google.com/spreadsheets/…"
+                  class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              </div>
+              <button onclick="saveQuickLinks()" class="px-5 py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm cursor-pointer transition-colors">Save Links</button>
+            </div>
+          </div>
+
+          <!-- Training Panel (Admin) -->
+          <div id="adminPanel-training" class="admin-panel hidden">
+            <h2 class="text-lg font-bold text-text-main mb-5">Training Content</h2>
+            <div class="bg-white rounded-xl border border-border overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-surface border-b border-border"><tr>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Module</th>
+                  <th class="text-right px-4 py-3 font-semibold text-text-muted text-xs uppercase">Lessons</th>
+                  <th class="text-right px-4 py-3 font-semibold text-text-muted text-xs uppercase">Actions</th>
+                </tr></thead>
+                <tbody id="adminTrainingBody" class="divide-y divide-border"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tickets Panel -->
+          <div id="adminPanel-tickets" class="admin-panel hidden">
+            <h2 class="text-lg font-bold text-text-main mb-5">Support Tickets</h2>
+            <div class="bg-white rounded-xl border border-border overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-surface border-b border-border"><tr>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Ticket</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Counselor</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Category</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Status</th>
+                  <th class="text-right px-4 py-3 font-semibold text-text-muted text-xs uppercase">Action</th>
+                </tr></thead>
+                <tbody id="ticketsTableBody" class="divide-y divide-border"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Offers Panel (Admin) -->
+          <div id="adminPanel-offers" class="admin-panel hidden">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-lg font-bold text-text-main">Offers Manager</h2>
+              <button onclick="openCreateOfferModal()" class="px-4 py-2 bg-accent text-white text-sm font-semibold rounded-lg hover:bg-accent-dark transition-colors cursor-pointer flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Create Offer
+              </button>
+            </div>
+            <div id="adminOffersTable" class="bg-white rounded-xl border border-border overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-surface border-b border-border"><tr>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Title</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Bucket</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Expires</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Status</th>
+                  <th class="text-right px-4 py-3 font-semibold text-text-muted text-xs uppercase">Actions</th>
+                </tr></thead>
+                <tbody id="offersTableBody" class="divide-y divide-border"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bot Settings Panel (Admin) -->
+          <div id="adminPanel-botsettings" class="admin-panel hidden">
+            <h2 class="text-lg font-bold text-text-main mb-5">Bot Settings</h2>
+            <div class="grid lg:grid-cols-2 gap-6">
+              <!-- Toggle + Business Head -->
+              <div class="bg-white rounded-xl border border-border p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="font-semibold text-sm text-text-main">Bot Enabled</p>
+                    <p class="text-xs text-text-muted">Show floating assistant bubble to all users</p>
+                  </div>
+                  <button id="botToggleBtn" onclick="toggleBotEnabled()" class="relative inline-flex h-6 w-11 items-center rounded-full bg-accent transition-colors cursor-pointer">
+                    <span id="botToggleKnob" class="inline-block h-4 w-4 transform translate-x-6 rounded-full bg-white transition-transform"></span>
+                  </button>
+                </div>
+                <hr class="border-border" />
+                <div>
+                  <p class="font-semibold text-sm text-text-main mb-3">Business Head Contact</p>
+                  <div class="space-y-2">
+                    <input type="text" id="bhName" placeholder="Full name" value="Rajesh Sharma" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                    <input type="text" id="bhDesig" placeholder="Designation" value="Business Head — EdTech Division" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                    <input type="text" id="bhContact" placeholder="Contact (email/phone/WhatsApp)" value="+91 98765 43210 · rajesh@edu.in" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                    <button onclick="saveBotSettings()" class="w-full py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm cursor-pointer transition-colors">Save Settings</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Custom FAQs -->
+              <div class="bg-white rounded-xl border border-border p-5">
+                <p class="font-semibold text-sm text-text-main mb-3">Custom FAQ Entries <span class="text-text-muted font-normal">(max 10)</span></p>
+                <div id="faqList" class="space-y-2 mb-3"></div>
+                <button onclick="addFaqEntry()" class="w-full py-2 border border-dashed border-accent text-accent text-sm font-semibold rounded-lg hover:bg-accent/5 cursor-pointer transition-colors">+ Add FAQ Entry</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info Hub Panel (Admin) -->
+          <div id="adminPanel-infohub" class="admin-panel hidden">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-lg font-bold text-text-main">Info Hub Manager</h2>
+              <button onclick="showToast('University form coming in v3','info')" class="px-4 py-2 bg-accent text-white text-sm font-semibold rounded-lg hover:bg-accent-dark transition-colors cursor-pointer flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add University
+              </button>
+            </div>
+            <!-- CSV Upload -->
+            <div class="bg-white rounded-xl border border-border p-5 mb-5">
+              <h3 class="font-semibold text-sm text-text-main mb-3">CSV Bulk Upload</h3>
+              <div class="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-accent transition-colors" onclick="showToast('CSV upload — drag file here','info')">
+                <svg class="w-10 h-10 text-text-muted mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                <p class="text-sm text-text-muted">Drag &amp; drop university CSV here</p>
+                <p class="text-xs text-text-muted mt-1">Accepted columns: university_name, country, city, type, deposit_amount_inr, intake_dates…</p>
+              </div>
+            </div>
+            <!-- University Table -->
+            <div class="bg-white rounded-xl border border-border overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-surface border-b border-border"><tr>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">University</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Country</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Deposit</th>
+                  <th class="text-left px-4 py-3 font-semibold text-text-muted text-xs uppercase">Intake</th>
+                  <th class="text-right px-4 py-3 font-semibold text-text-muted text-xs uppercase">Actions</th>
+                </tr></thead>
+                <tbody id="adminInfoHubBody" class="divide-y divide-border"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Badges Panel (Admin) -->
+          <div id="adminPanel-badges" class="admin-panel hidden">
+            <h2 class="text-lg font-bold text-text-main mb-5">Badge Management</h2>
+            <div class="grid lg:grid-cols-2 gap-6">
+              <!-- Badge Types -->
+              <div class="bg-white rounded-xl border border-border p-5">
+                <h3 class="font-semibold text-text-main mb-4">Badge Types</h3>
+                <div id="adminBadgeList" class="space-y-3"></div>
+              </div>
+              <!-- Award Log -->
+              <div class="bg-white rounded-xl border border-border p-5">
+                <h3 class="font-semibold text-text-main mb-4">Award Log</h3>
+                <div id="awardLogList" class="space-y-2 text-sm"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PROFILE PAGE OVERLAY
+═══════════════════════════════════════════════════ -->
+<div id="profilePage" class="hidden fixed inset-0 z-50 bg-surface overflow-y-auto">
+  <div class="max-w-2xl mx-auto p-6">
+    <button onclick="closeProfile()" class="mb-4 flex items-center gap-2 text-sm text-text-muted hover:text-text-main cursor-pointer">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>Back
+    </button>
+    <div class="bg-white rounded-2xl border border-border p-8">
+      <!-- Profile Header -->
+      <div class="flex items-center gap-5 mb-8">
+        <div id="profileAvatar" class="w-20 h-20 rounded-full bg-accent flex items-center justify-center text-white text-2xl font-bold"></div>
+        <div>
+          <h1 id="profileName" class="text-2xl font-bold text-text-main"></h1>
+          <p id="profileDesig" class="text-text-muted text-sm mt-0.5"></p>
+          <div id="profileRating" class="flex items-center gap-1 mt-2"></div>
+        </div>
+      </div>
+      <!-- Profile Info Grid -->
+      <div class="grid sm:grid-cols-2 gap-4 mb-8">
+        <div class="bg-surface rounded-xl p-4">
+          <p class="text-xs text-text-muted mb-1">Joining Date</p>
+          <p id="profileJoining" class="font-semibold text-sm text-text-main"></p>
+        </div>
+        <div class="bg-surface rounded-xl p-4">
+          <p class="text-xs text-text-muted mb-1">Team</p>
+          <p id="profileTeam" class="font-semibold text-sm text-text-main"></p>
+        </div>
+        <div class="bg-surface rounded-xl p-4">
+          <p class="text-xs text-text-muted mb-1">Manager</p>
+          <p id="profileManager" class="font-semibold text-sm text-text-main"></p>
+        </div>
+        <div class="bg-surface rounded-xl p-4">
+          <p class="text-xs text-text-muted mb-1">Counselor Rating</p>
+          <p id="profileRatingNum" class="font-semibold text-sm text-text-main font-mono"></p>
+        </div>
+      </div>
+      <!-- Badges -->
+      <div>
+        <h2 id="profileBadgesTitle" class="font-semibold text-text-main mb-4"></h2>
+        <div id="profileBadgeGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     RIGHT DRAWER (slide-in from right)
+═══════════════════════════════════════════════════ -->
+<div id="drawerBackdrop" class="hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onclick="closeDrawer()"></div>
+<div id="rightDrawer" class="drawer fixed top-0 right-0 h-full w-full sm:w-[480px] z-50 bg-white shadow-2xl flex flex-col translate-x-full">
+  <div class="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <button id="drawerBack" class="hidden p-1 rounded-lg hover:bg-surface cursor-pointer" onclick="drawerGoBack()">
+        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 id="drawerTitle" class="font-semibold text-text-main text-base"></h2>
+    </div>
+    <button onclick="closeDrawer()" class="p-1 rounded-lg hover:bg-surface cursor-pointer" aria-label="Close">
+      <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="drawerContent" class="flex-1 overflow-y-auto p-5"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════ -->
+
+<!-- Support Ticket Modal -->
+<div id="ticketModal" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+      <h3 class="font-bold text-text-main">Raise a Support Request</h3>
+      <button onclick="closeModal('ticketModal')" class="p-1 rounded-lg hover:bg-surface cursor-pointer">
+        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Category</label>
+        <select id="ticketCategory" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white">
+          <option>Data Correction</option>
+          <option>Incentive Query</option>
+          <option>Training Access</option>
+          <option>Technical Issue</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Subject</label>
+        <input type="text" id="ticketSubject" placeholder="Brief summary…" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Description</label>
+        <textarea id="ticketDesc" rows="4" placeholder="Describe the issue in detail…" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"></textarea>
+      </div>
+      <button onclick="submitTicket()" class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm cursor-pointer transition-colors">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+      <h3 class="font-bold text-text-main">Add New User</h3>
+      <button onclick="closeModal('addUserModal')" class="p-1 rounded-lg hover:bg-surface cursor-pointer">
+        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Full Name</label>
+        <input type="text" id="newUserName" placeholder="Full name" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Email</label>
+        <input type="email" id="newUserEmail" placeholder="user@edu.in" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Role</label>
+        <select id="newUserRole" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white">
+          <option value="counselor">Counselor</option>
+          <option value="team_lead">Team Lead</option>
+          <option value="ops_admin">Ops Admin</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Team</label>
+        <select id="newUserTeam" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white">
+          <option value="Alpha">Team Alpha</option>
+          <option value="Beta">Team Beta</option>
+          <option value="Ops">Ops</option>
+        </select>
+      </div>
+      <button onclick="submitAddUser()" class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm cursor-pointer transition-colors">Add User</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Offer Modal -->
+<div id="createOfferModal" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+      <h3 class="font-bold text-text-main">Create New Offer</h3>
+      <button onclick="closeModal('createOfferModal')" class="p-1 rounded-lg hover:bg-surface cursor-pointer">
+        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Title <span class="text-text-muted">(max 60 chars)</span></label>
+        <input type="text" id="offerTitle" maxlength="60" placeholder="Double Bonus on Lock-ins this week!" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Description <span class="text-text-muted">(max 120 chars)</span></label>
+        <textarea id="offerDesc" maxlength="120" rows="2" placeholder="Short offer description…" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Linked Task Bucket</label>
+        <select id="offerBucket" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white">
+          <option value="sti">Boost STI</option>
+          <option value="application">Boost Application</option>
+          <option value="deposit">Boost Deposit</option>
+          <option value="lockin">Boost Lock-in</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Expiry Date</label>
+        <input type="date" id="offerExpiry" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <button onclick="submitCreateOffer()" class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm cursor-pointer transition-colors">Publish Offer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Award Badge Modal -->
+<div id="awardBadgeModal" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+      <h3 id="awardBadgeTitle" class="font-bold text-text-main">Award Badge</h3>
+      <button onclick="closeModal('awardBadgeModal')" class="p-1 rounded-lg hover:bg-surface cursor-pointer">
+        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Select Counselor</label>
+        <select id="awardBadgeCounselor" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white"></select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Note (optional)</label>
+        <textarea id="awardBadgeNote" rows="2" placeholder="Add a personal note…" class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"></textarea>
+      </div>
+      <button onclick="submitAwardBadge()" class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm cursor-pointer transition-colors">Award Badge</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     CRM ASSISTANT BOT
+═══════════════════════════════════════════════════ -->
+<!-- Floating Bubble -->
+<button id="botBubble" onclick="toggleBot()" aria-label="Open CRM Assistant"
+  class="hidden fixed bottom-6 right-6 z-[90] w-14 h-14 bg-accent hover:bg-accent-dark text-white rounded-full shadow-xl flex items-center justify-center cursor-pointer transition-colors bot-bubble relative">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
+  <span id="botUnreadBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10"></span>
+  <span class="bot-pulse-ring"></span>
+</button>
+
+<!-- Bot Chat Panel -->
+<div id="botPanel" class="bot-panel hidden fixed bottom-20 right-6 z-[90] w-[380px] bg-white rounded-2xl shadow-2xl flex flex-col border border-border overflow-hidden" style="height:min(520px,calc(100vh - 120px))">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-4 py-3 bg-sidebar flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-full bg-accent flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div>
+        <p class="text-white text-sm font-semibold leading-tight">Leap CRM Assistant</p>
+        <p class="text-white/50 text-[10px]">Ask me anything about your CRM</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="botClearBtn" onclick="showClearChatConfirm()" class="bot-clear-chat" aria-label="Clear chat history">Clear chat</button>
+      <button onclick="toggleBot()" class="text-white/60 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-white/10" aria-label="Close bot">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <!-- Bot Panel Tabs -->
+  <div id="botPanelTabs" class="flex border-b border-border bg-white flex-shrink-0">
+    <button id="botTabChat" onclick="switchBotTab('chat')" class="bot-tab active flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 border-accent text-accent cursor-pointer transition-colors">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
+      Chat
+    </button>
+    <button id="botTabActions" onclick="switchBotTab('actions')" class="bot-tab flex-1 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 border-transparent text-text-muted cursor-pointer transition-colors hover:text-text-main">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      Action Items
+      <span id="actionItemsBadge" class="hidden ml-1 px-1.5 py-0.5 bg-accent text-white text-[9px] font-bold rounded-full"></span>
+    </button>
+  </div>
+  <!-- Clear chat inline confirm -->
+  <div id="botClearConfirm" class="hidden px-4 py-2 bg-sidebar border-t border-white/10 flex items-center justify-between flex-shrink-0">
+    <p class="text-white/75 text-xs">Clear your chat history? This can't be undone.</p>
+    <div class="flex gap-2">
+      <button onclick="clearChatHistory()" class="text-xs px-3 py-1 bg-danger text-white rounded-lg cursor-pointer hover:bg-red-700 font-semibold transition-colors">Confirm</button>
+      <button onclick="cancelClearChat()" class="text-xs px-3 py-1 bg-white/15 text-white rounded-lg cursor-pointer hover:bg-white/25 transition-colors">Cancel</button>
+    </div>
+  </div>
+  <!-- Messages -->
+  <div id="botMessages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-surface">
+    <!-- Welcome message -->
+    <div class="flex gap-2">
+      <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+        <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div class="bot-msg-bubble">
+        <p class="text-sm">Hi! I'm your Leap CRM assistant. Ask me about your tasks, metrics, incentives, or any university in the Info Hub. 👋</p>
+      </div>
+    </div>
+  </div>
+  <!-- Action Items Tab Content -->
+  <div id="botActionItems" class="hidden flex-1 overflow-y-auto p-3 space-y-3 bg-surface"></div>
+  <!-- Input -->
+  <div class="flex items-center gap-2 px-3 py-3 border-t border-border bg-white flex-shrink-0">
+    <input id="botInput" type="text" placeholder="Ask me anything…"
+      onkeydown="if(event.key==='Enter')sendBotMessage()"
+      class="flex-1 px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+    <button onclick="sendBotMessage()" class="w-9 h-9 bg-accent hover:bg-accent-dark rounded-xl flex items-center justify-center cursor-pointer transition-colors flex-shrink-0" aria-label="Send">
+      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" aria-live="polite" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
+
+<script src="app.js?v=3"></script>
+</body>
+</html>
