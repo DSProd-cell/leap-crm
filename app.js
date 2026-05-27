@@ -608,6 +608,7 @@ function onCounselorChange() {
 function renderAll() {
   renderBadgeStrip();
   renderBoostCards();
+  renderTeamChat();
   renderWhatsappCoverage();
   renderMetricCards();
   renderHistoryTable();
@@ -671,55 +672,124 @@ function getMyBadges() {
 
 function renderBoostCards() {
   const students = getViewingStudents();
-  const stiCount  = students.filter(s => s.stage === 'sti').length;
-  const appCount  = students.filter(s => s.stage === 'application').length;
-  const depCount  = students.filter(s => s.stage === 'deposit').length;
-  const lckCount  = students.filter(s => s.stage === 'lockin').length;
+  const stiCount = students.filter(s => s.stage === 'sti').length;
+  const depCount = students.filter(s => s.stage === 'deposit').length;
   const grid = document.getElementById('boostCardsGrid');
 
-  // Layout: Boost STI as primary (col-span-2 on md), with Application + Lock-in nested inside.
-  // Boost Deposit stays as its own card.
+  // Two clean equal cards: Boost STI (opens funnel drawer) + Boost Deposit
   grid.innerHTML = `
-    <!-- Boost STI — primary card with Application & Lock-in nested -->
-    <div class="boost-card sti col-span-2 lg:col-span-3 cursor-default relative">
-      <div class="flex flex-wrap items-start gap-4">
-        <!-- STI main -->
-        <div class="flex-1 min-w-[120px] cursor-pointer" onclick="openBoostDrawer('sti')">
-          <div class="text-xs font-semibold text-text-muted uppercase tracking-wide">Boost STI</div>
-          <div class="boost-count">${stiCount}</div>
-          <div class="text-xs text-text-muted mb-2">${stiCount === 1 ? '1 student' : stiCount + ' students'}</div>
-          <a class="text-xs font-semibold text-accent hover:underline">View All →</a>
-        </div>
-        <!-- Nested: Application & Lock-in -->
-        <div class="flex gap-3 self-end pb-1">
-          <div class="bg-white/60 border border-white/80 rounded-xl px-4 py-2 cursor-pointer hover:bg-white/80 transition-colors" onclick="openBoostDrawer('application')">
-            <div class="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-0.5">Application</div>
-            <div class="text-2xl font-bold text-primary font-mono">${appCount}</div>
-            <div class="text-[10px] text-text-muted">${appCount === 1 ? '1 student' : appCount + ' students'}</div>
-            <a class="text-[10px] font-semibold text-accent">View →</a>
-          </div>
-          <div class="bg-white/60 border border-white/80 rounded-xl px-4 py-2 cursor-pointer hover:bg-white/80 transition-colors" onclick="openBoostDrawer('lockin')">
-            <div class="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-0.5">Lock-in</div>
-            <div class="text-2xl font-bold text-primary font-mono">${lckCount}</div>
-            <div class="text-[10px] text-text-muted">${lckCount === 1 ? '1 student' : lckCount + ' students'}</div>
-            <a class="text-[10px] font-semibold text-accent">View →</a>
-          </div>
-        </div>
-      </div>
+    <div class="boost-card sti" onclick="openBoostFunnelDrawer()">
+      <div class="boost-label">Boost STI</div>
+      <div class="boost-count">${stiCount}</div>
+      <div class="boost-sub">${stiCount === 1 ? '1 student needs attention' : stiCount + ' students need attention'}</div>
+      <span class="boost-cta">View Pipeline →</span>
     </div>
-    <!-- Boost Deposit — separate card -->
     <div class="boost-card deposit" onclick="openBoostDrawer('deposit')">
-      <div class="text-xs font-semibold text-text-muted uppercase tracking-wide">Boost Deposit</div>
+      <div class="boost-label">Boost Deposit</div>
       <div class="boost-count">${depCount}</div>
-      <div class="text-xs text-text-muted mb-3">${depCount === 1 ? '1 student' : depCount + ' students'}</div>
-      <a class="text-xs font-semibold text-accent hover:underline">View All →</a>
+      <div class="boost-sub">${depCount === 1 ? '1 student needs attention' : depCount + ' students need attention'}</div>
+      <span class="boost-cta">View Students →</span>
     </div>
   `;
+}
+
+/* Funnel drawer: STI → Application → Lock-in all in one view */
+function openBoostFunnelDrawer() {
+  state.drawerMode = 'boost';
+  const all = getViewingStudents();
+  const sections = [
+    { type:'sti',         label:'Boost STI',         color:'text-accent',   students: all.filter(s => s.stage === 'sti')         },
+    { type:'application', label:'Boost Application',  color:'text-primary',  students: all.filter(s => s.stage === 'application')  },
+    { type:'lockin',      label:'Boost Lock-in',      color:'text-success',  students: all.filter(s => s.stage === 'lockin')       },
+  ];
+
+  const content = sections.map(sec => {
+    if (!sec.students.length) return `
+      <div class="mb-6">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs font-bold uppercase tracking-wide ${sec.color}">${sec.label}</span>
+          <span class="text-xs text-text-muted bg-surface px-2 py-0.5 rounded-full font-medium">0 students</span>
+        </div>
+        <p class="text-xs text-text-muted italic pl-1">No students at this stage.</p>
+      </div>`;
+    return `
+      <div class="mb-6">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xs font-bold uppercase tracking-wide ${sec.color}">${sec.label}</span>
+          <span class="text-xs text-text-muted bg-surface px-2 py-0.5 rounded-full font-medium">${sec.students.length} student${sec.students.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="space-y-2">${renderStudentList(sec.students)}</div>
+      </div>`;
+  }).join('<div class="border-t border-border my-2"></div>');
+
+  openDrawer('Boost Pipeline', content, false);
 }
 
 function getViewingStudents() {
   // v1: all students are Priya's. In real app, filter by viewingCounselorId
   return STUDENTS;
+}
+
+/* ═══════════════ TEAM CHAT ═══════════════ */
+
+const TEAM_CHAT_SEED = [
+  { author: 'Anjali M.', avatar: 'AM', time: '9:02 AM', text: 'Good morning team! Let\'s crush today\'s STI targets 💪', self: false },
+  { author: 'Rahul S.',  avatar: 'RS', time: '9:08 AM', text: 'I have 3 students ready for document review — anyone free at 11?', self: false },
+  { author: 'You',       avatar: 'P',  time: '9:15 AM', text: 'I can join at 11! Also just had a great STI call with Arjun Sharma', self: true },
+  { author: 'Manager',   avatar: 'MG', time: '9:30 AM', text: '📊 Reminder: Stand-up at 10 AM. Bring your MTD numbers!', self: false },
+];
+
+let teamChatMessages = [...TEAM_CHAT_SEED];
+
+function renderTeamChat() {
+  const container = document.getElementById('teamChatMessages');
+  if (!container) return;
+  container.innerHTML = teamChatMessages.map(msg => `
+    <div class="flex items-start gap-2.5 ${msg.self ? 'flex-row-reverse' : ''}">
+      <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white
+        ${msg.self ? 'bg-accent' : msg.author === 'Manager' ? 'bg-slate-600' : 'bg-primary'}">
+        ${msg.avatar}
+      </div>
+      <div class="max-w-[75%] ${msg.self ? 'items-end' : 'items-start'} flex flex-col gap-0.5">
+        <div class="flex items-baseline gap-1.5 ${msg.self ? 'flex-row-reverse' : ''}">
+          <span class="text-[11px] font-semibold text-text-main">${msg.author}</span>
+          <span class="text-[10px] text-text-muted">${msg.time}</span>
+        </div>
+        <div class="px-3 py-2 rounded-2xl text-sm leading-relaxed
+          ${msg.self
+            ? 'bg-accent text-white rounded-tr-sm'
+            : msg.author === 'Manager'
+              ? 'bg-amber-50 border border-amber-200 text-amber-900 rounded-tl-sm'
+              : 'bg-surface border border-border text-text-main rounded-tl-sm'}">
+          ${msg.text}
+        </div>
+      </div>
+    </div>
+  `).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendTeamChat() {
+  const input = document.getElementById('teamChatInput');
+  const text = (input.value || '').trim();
+  if (!text) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  teamChatMessages.push({ author: 'You', avatar: 'P', time, text, self: true });
+  input.value = '';
+  renderTeamChat();
+  // Simulate a reply after a short delay
+  const replies = [
+    { author: 'Anjali M.', avatar: 'AM', text: '👍 Got it!', self: false },
+    { author: 'Rahul S.',  avatar: 'RS', text: 'Thanks for the update!', self: false },
+    { author: 'Manager',   avatar: 'MG', text: 'Noted ✅', self: false },
+  ];
+  const reply = replies[Math.floor(Math.random() * replies.length)];
+  setTimeout(() => {
+    const t = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    teamChatMessages.push({ ...reply, time: t });
+    renderTeamChat();
+  }, 1200 + Math.random() * 800);
 }
 
 /* ═══════════════ WHATSAPP COVERAGE ═══════════════ */
