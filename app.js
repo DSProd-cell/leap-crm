@@ -591,10 +591,7 @@ function bootApp(role, email) {
   // Set corrections date default
   document.getElementById('corrDate').valueAsDate = new Date('2026-05-23');
 
-  // Bot bubble visibility
-  if (BOT_SETTINGS.enabled) {
-    document.getElementById('botBubble').classList.remove('hidden');
-  }
+  // Bot & WA bubbles are always visible (sticky FABs)
 
   renderAll();
   switchTab('tab1');
