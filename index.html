@@ -199,126 +199,17 @@
     <!-- ─────────────────────────────── TAB 1 ─────────────────────────────── -->
     <div id="tab1" class="tab-panel p-5 space-y-6 max-w-screen-xl mx-auto">
 
-      <!-- Boost Task Cards -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Action Required — Boost Tasks</h2>
-        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 items-start"></div>
-      </section>
-
-      <!-- WhatsApp Coverage -->
-      <div id="whatsappCoverage" class="flex gap-4 text-sm"></div>
-
-      <!-- Volume Metrics -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Volume Metrics</h2>
-        <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-      </section>
-
-      <!-- Quality Metrics -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Quality Metrics</h2>
-        <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-      </section>
-
-      <!-- Team Chat -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="font-semibold text-text-main flex items-center gap-2">
-              <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
-              Team Chat
-            </h2>
-            <p class="text-xs text-text-muted mt-0.5">Quick updates with your team</p>
-          </div>
-          <span id="chatOnlineBadge" class="text-[10px] px-2 py-1 bg-green-50 border border-green-200 text-green-700 rounded-full font-semibold">● 3 online</span>
-        </div>
-        <!-- Messages -->
-        <div id="teamChatMessages" class="space-y-3 max-h-64 overflow-y-auto pr-1 mb-4 scroll-smooth"></div>
-        <!-- Input -->
-        <div class="flex gap-2">
-          <input id="teamChatInput" type="text" placeholder="Message your team…"
-            class="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-            onkeydown="if(event.key==='Enter')sendTeamChat()" />
-          <button onclick="sendTeamChat()" class="px-4 py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-            Send
-          </button>
-        </div>
-      </section>
-
-      <!-- Add a Reminder for Yourself -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <h2 class="font-semibold text-text-main mb-4 flex items-center gap-2">
-          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-          Add a Reminder for Yourself
-        </h2>
-
-        <!-- Task Type Selector -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" id="reminderTypeGrid">
-          <button onclick="selectReminderType('call')" id="rtype-call"
-            class="reminder-type-btn active flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-accent bg-accent/5 text-accent text-xs font-semibold cursor-pointer transition-all">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            Call to User
-          </button>
-          <button onclick="selectReminderType('message')" id="rtype-message"
-            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
-            Send Message
-          </button>
-          <button onclick="selectReminderType('payment')" id="rtype-payment"
-            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-            Payment Follow Up
-          </button>
-          <button onclick="selectReminderType('custom')" id="rtype-custom"
-            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            Custom Task
-          </button>
-        </div>
-
-        <!-- Custom task name (only for custom) -->
-        <div id="reminderCustomName" class="hidden mb-3">
-          <label class="block text-xs font-semibold text-text-muted mb-1">Task Name</label>
-          <input id="taskCustomName" type="text" placeholder="Enter task name…"
-            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-        </div>
-
-        <!-- Date & Description row -->
-        <div class="flex flex-wrap gap-3 mb-3">
-          <div class="flex-1 min-w-[160px]">
-            <label class="block text-xs font-semibold text-text-muted mb-1">Date &amp; Time</label>
-            <input id="taskDate" type="datetime-local"
-              class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white" />
-          </div>
-          <!-- Hidden legacy taskType for logTask() compat -->
-          <select id="taskType" class="hidden">
-            <option value="followups">Follow-up Done</option>
-          </select>
-        </div>
-
-        <!-- Description -->
-        <div class="mb-4">
-          <label class="block text-xs font-semibold text-text-muted mb-1">Description <span class="text-text-muted font-normal">(optional)</span></label>
-          <textarea id="taskNotes" rows="2" placeholder="Add details about this reminder…"
-            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"></textarea>
-        </div>
-
-        <button onclick="logTask()" class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer flex items-center justify-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-          Save Reminder
-        </button>
-      </section>
-
-      <!-- Stand Up Metrics Table -->
+      <!-- ① Use for Stand Up -->
       <section class="bg-white rounded-xl border border-border p-5">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h2 class="font-semibold text-text-main">Use for Stand Up</h2>
+            <h2 class="font-semibold text-text-main flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              Use for Stand Up
+            </h2>
             <p class="text-xs text-text-muted mt-0.5">Your metrics at a glance for daily stand-up</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <!-- Manager-only filters (shown for team_lead / ops_admin) -->
             <select id="standupCounsellorFilter" class="hidden text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="">All Counsellors</option>
             </select>
@@ -379,48 +270,153 @@
         <p id="standupEmpty" class="hidden text-center text-text-muted text-sm py-6">No data for selected filters. Try adjusting Intake, Country, or Location.</p>
       </section>
 
-      <!-- Leaderboard -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="font-semibold text-text-main">Top Performers</h2>
-          <div class="flex gap-1 bg-surface rounded-lg p-1">
+      <!-- ② Your Scorecard — Expandable -->
+      <section id="reportCardSection" class="bg-white rounded-xl border border-border overflow-hidden">
+        <button onclick="toggleSection('scorecard')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
+          <div class="text-left">
+            <h2 class="font-bold text-text-main flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+              Your Scorecard — Yesterday, 26 May 2026
+            </h2>
+            <p id="reportCardSummary" class="text-xs text-text-muted mt-0.5 text-left"></p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-[10px] px-2 py-1 bg-surface border border-border rounded-lg text-text-muted font-medium">Read-only</span>
+            <svg id="chevron-scorecard" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </button>
+        <div id="body-scorecard" class="hidden px-5 pb-5">
+          <div id="reportScoreSummary" class="grid grid-cols-3 gap-3 mb-4"></div>
+          <div class="overflow-x-auto mb-4">
+            <table class="w-full text-xs">
+              <thead><tr class="border-b border-border">
+                <th class="text-left py-2 font-semibold text-text-muted">Metric</th>
+                <th class="text-center py-2 font-semibold text-text-muted">T · A</th>
+                <th class="text-center py-2 font-semibold text-text-muted">Status</th>
+              </tr></thead>
+              <tbody id="reportMetricTable" class="divide-y divide-border"></tbody>
+            </table>
+          </div>
+          <div id="reportNextSteps" class="mb-4"></div>
+          <div id="reportTopPerformers" class="mb-3"></div>
+          <p class="text-xs text-text-muted text-center italic border-t border-border pt-3">You've got this — pick one item from the table above to tackle today.</p>
+        </div>
+      </section>
+
+      <!-- ③ Action Required — Boost Tasks -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Action Required — Boost Tasks</h2>
+        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 items-start"></div>
+      </section>
+
+      <!-- ④ Volume Metrics -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Volume Metrics</h2>
+        <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        <div id="whatsappCoverage" class="flex gap-4 text-sm mt-3"></div>
+      </section>
+
+      <!-- ⑤ Quality Metrics -->
+      <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Quality Metrics</h2>
+        <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </section>
+
+      <!-- ⑥ Top Performers — Expandable -->
+      <section class="bg-white rounded-xl border border-border overflow-hidden">
+        <button onclick="toggleSection('topPerformers')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
+          <h2 class="font-semibold text-text-main flex items-center gap-2">
+            <svg class="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Top Performers
+          </h2>
+          <svg id="chevron-topPerformers" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="body-topPerformers" class="hidden px-5 pb-5">
+          <div class="flex gap-1 bg-surface rounded-lg p-1 mb-4 w-fit">
             <button class="period-btn active text-xs px-3 py-1 rounded-md" onclick="switchLeader('today',this)">Today</button>
             <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('month',this)">This Month</button>
             <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('year',this)">This Year</button>
           </div>
+          <div id="leaderboardGrid" class="space-y-3"></div>
         </div>
-        <div id="leaderboardGrid" class="space-y-3"></div>
       </section>
 
-      <!-- Daily Report Card -->
-      <section id="reportCardSection" class="bg-white rounded-xl border border-border p-5">
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <h2 class="font-bold text-text-main">Your Scorecard — Yesterday, 26 May 2026</h2>
-            <p id="reportCardSummary" class="text-xs text-text-muted mt-1"></p>
+      <!-- ⑦ Add a Reminder for Yourself -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <h2 class="font-semibold text-text-main mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          Add a Reminder for Yourself
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" id="reminderTypeGrid">
+          <button onclick="selectReminderType('call')" id="rtype-call"
+            class="reminder-type-btn active flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-accent bg-accent/5 text-accent text-xs font-semibold cursor-pointer transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            Call to User
+          </button>
+          <button onclick="selectReminderType('message')" id="rtype-message"
+            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
+            Send Message
+          </button>
+          <button onclick="selectReminderType('payment')" id="rtype-payment"
+            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Payment Follow Up
+          </button>
+          <button onclick="selectReminderType('custom')" id="rtype-custom"
+            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            Custom Task
+          </button>
+        </div>
+        <div id="reminderCustomName" class="hidden mb-3">
+          <label class="block text-xs font-semibold text-text-muted mb-1">Task Name</label>
+          <input id="taskCustomName" type="text" placeholder="Enter task name…"
+            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+        </div>
+        <div class="flex flex-wrap gap-3 mb-3">
+          <div class="flex-1 min-w-[160px]">
+            <label class="block text-xs font-semibold text-text-muted mb-1">Date &amp; Time</label>
+            <input id="taskDate" type="datetime-local"
+              class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white" />
           </div>
-          <span class="text-[10px] px-2 py-1 bg-surface border border-border rounded-lg text-text-muted font-medium">Read-only</span>
+          <select id="taskType" class="hidden"><option value="followups">Follow-up Done</option></select>
         </div>
-        <!-- Score Summary Row -->
-        <div id="reportScoreSummary" class="grid grid-cols-3 gap-3 mb-4"></div>
-        <!-- Metric Detail Table -->
-        <div class="overflow-x-auto mb-4">
-          <table class="w-full text-xs">
-            <thead><tr class="border-b border-border">
-              <th class="text-left py-2 font-semibold text-text-muted">Metric</th>
-              <th class="text-center py-2 font-semibold text-text-muted">T · A</th>
-              <th class="text-center py-2 font-semibold text-text-muted">Status</th>
-            </tr></thead>
-            <tbody id="reportMetricTable" class="divide-y divide-border"></tbody>
-          </table>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-text-muted mb-1">Description <span class="text-text-muted font-normal">(optional)</span></label>
+          <textarea id="taskNotes" rows="2" placeholder="Add details about this reminder…"
+            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"></textarea>
         </div>
-        <!-- Recommended Next Steps -->
-        <div id="reportNextSteps" class="mb-4"></div>
-        <!-- Top Performers -->
-        <div id="reportTopPerformers" class="mb-3"></div>
-        <!-- Footer -->
-        <p class="text-xs text-text-muted text-center italic border-t border-border pt-3">You've got this — pick one item from the table above to tackle today.</p>
+        <button onclick="logTask()" class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Save Reminder
+        </button>
       </section>
+
+      <!-- ⑧ Team Chat -->
+      <section class="bg-white rounded-xl border border-border p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="font-semibold text-text-main flex items-center gap-2">
+              <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+              Team Chat
+            </h2>
+            <p class="text-xs text-text-muted mt-0.5">Quick updates with your team</p>
+          </div>
+          <span id="chatOnlineBadge" class="text-[10px] px-2 py-1 bg-green-50 border border-green-200 text-green-700 rounded-full font-semibold">● 3 online</span>
+        </div>
+        <div id="teamChatMessages" class="space-y-3 max-h-64 overflow-y-auto pr-1 mb-4 scroll-smooth"></div>
+        <div class="flex gap-2">
+          <input id="teamChatInput" type="text" placeholder="Message your team…"
+            class="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            onkeydown="if(event.key==='Enter')sendTeamChat()" />
+          <button onclick="sendTeamChat()" class="px-4 py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Send
+          </button>
+        </div>
+      </section>
+
     </div>
 
     <!-- ─────────────────────────────── TAB 2 ─────────────────────────────── -->
