@@ -218,6 +218,21 @@ body {
 .boost-card.lockin .boost-cta    { color: #7C3AED; background: rgba(124,58,237,0.1); }
 .boost-card.lockin .boost-cta:hover { background: rgba(124,58,237,0.18); }
 
+/* ── Boost Priority Action Cards (inside funnel drawer) ── */
+.boost-metric-card {
+  background: #F5F3FF;
+  border: 1px solid #DDD6FE;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.boost-metric-card:hover {
+  background: #EDE9FE;
+  box-shadow: 0 4px 16px rgba(109, 40, 217, 0.12);
+  transform: translateY(-1px);
+}
+
 /* ── Leaderboard ── */
 .leader-card {
   background: #FFFFFF;

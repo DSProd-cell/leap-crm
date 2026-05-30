@@ -114,6 +114,32 @@ const STUDENTS = [
     activity:[{ type:'Call logged', time:'22 May 12:00 PM', notes:'Deposit expected by 25 May' }] },
 ];
 
+/* Revenue & services data per student */
+const STUDENT_REVENUE_DATA = {
+  U1001: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: true,  specialServices: [],            hasPaidPremium: false, amountPaid: 0       },
+  U1002: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP'],        hasPaidPremium: false, amountPaid: 0       },
+  U1003: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 85000   },
+  U1004: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['Visa'],       hasPaidPremium: false, amountPaid: 0       },
+  U1005: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 120000  },
+  U1006: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP','Visa'], hasPaidPremium: false, amountPaid: 0       },
+  U1007: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: false, amountPaid: 0       },
+  U1008: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: true,  amountPaid: 60000   },
+};
+STUDENTS.forEach(s => Object.assign(s, STUDENT_REVENUE_DATA[s.id] || { isQlPremium:false, hasFinalisedUniversity:false, hasDocs:false, specialServices:[], hasPaidPremium:false }));
+
+/* ISL rating (out of 10) + escalation flag per student — used for Unhappy Cohort */
+const STUDENT_ISL = {
+  U1001: { islRating: 8.5, hasEscalation: false },
+  U1002: { islRating: 6.2, hasEscalation: false },
+  U1003: { islRating: 7.4, hasEscalation: false },
+  U1004: { islRating: 5.8, hasEscalation: true  },
+  U1005: { islRating: 9.1, hasEscalation: false },
+  U1006: { islRating: 7.0, hasEscalation: false },
+  U1007: { islRating: 4.3, hasEscalation: true  },
+  U1008: { islRating: 8.0, hasEscalation: false },
+};
+STUDENTS.forEach(s => Object.assign(s, STUDENT_ISL[s.id] || { islRating: 8.0, hasEscalation: false }));
+
 const BADGE_TYPES = [
   { id:'b1', icon:'🏆', name:'Top Performer',  desc:'Achieved #1 rank in any metric for a month',  color:'#F97316' },
   { id:'b2', icon:'🔥', name:'On Fire',         desc:'7-day streak above 100% on all metrics',       color:'#EF4444' },
@@ -420,6 +446,10 @@ let state = {
   earningsChart: null,
   drawerMode: null,
   drawerBoostType: null,
+  drawerBoostSubType: null,
+  drawerBoostSubCardId: null,
+  drawerVolumeMetricKey: null,
+  drawerRevenueSubCardId: null,
   drawerSelectedStudent: null,
   drawerPrevMode: null,
   selectedSubtask: null,
@@ -671,9 +701,9 @@ function renderBoostCards() {
   const students = getViewingStudents();
   const stiCount = students.filter(s => s.stage === 'sti').length;
   const depCount = students.filter(s => s.stage === 'deposit').length;
+  const revCount = students.filter(s => s.isQlPremium || (s.specialServices && s.specialServices.length > 0)).length;
   const grid = document.getElementById('boostCardsGrid');
 
-  // Two clean equal cards: Boost STI (opens funnel drawer) + Boost Deposit
   grid.innerHTML = `
     <div class="boost-card sti" onclick="openBoostFunnelDrawer()">
       <div class="boost-label">Boost STI</div>
@@ -687,39 +717,139 @@ function renderBoostCards() {
       <div class="boost-sub">${depCount === 1 ? '1 student needs attention' : depCount + ' students need attention'}</div>
       <span class="boost-cta">View Students →</span>
     </div>
+    <div class="boost-card" style="background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%);border:1px solid #6ee7b7;" onclick="openBoostRevenueDrawer()">
+      <div class="boost-label" style="color:#065f46;">Boost Revenue</div>
+      <div class="boost-count" style="color:#059669;">${revCount}</div>
+      <div class="boost-sub" style="color:#065f46;">Revenue opportunities</div>
+      <span class="boost-cta" style="color:#065f46;border-color:#6ee7b7;">View Pipeline →</span>
+    </div>
   `;
 }
 
 /* Funnel drawer: STI → Application → Lock-in all in one view */
+/* helpers shared by funnel + sub-card */
+function _boostMetricCard(id, label, students, todayStr, onclickFn) {
+  const dueToday    = students.filter(s => s.followup === todayStr).length;
+  const totalPending = students.length;
+  const clickHandler = onclickFn || `openBoostSubCard('${id}')`;
+  return `
+    <div class="boost-metric-card" onclick="${clickHandler}">
+      <div class="flex items-center justify-between mb-3">
+        <span class="font-semibold text-sm text-text-main leading-snug">${label}</span>
+        <svg class="w-4 h-4 flex-shrink-0 text-indigo-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+      <div class="flex justify-between items-end">
+        <div>
+          <p class="text-2xl font-bold text-indigo-500 leading-none">${dueToday}</p>
+          <p class="text-[11px] text-text-muted mt-1">Due Today</p>
+        </div>
+        <div class="text-right">
+          <p class="text-2xl font-bold text-indigo-500 leading-none">${totalPending}</p>
+          <p class="text-[11px] text-text-muted mt-1">Total Pending</p>
+        </div>
+      </div>
+    </div>`;
+}
+
 function openBoostFunnelDrawer() {
   state.drawerMode = 'boost';
   const all = getViewingStudents();
-  const sections = [
-    { type:'sti',         label:'Boost STI',         color:'text-accent',   students: all.filter(s => s.stage === 'sti')         },
-    { type:'application', label:'Boost Application',  color:'text-primary',  students: all.filter(s => s.stage === 'application')  },
-    { type:'lockin',      label:'Boost Lock-in',      color:'text-success',  students: all.filter(s => s.stage === 'lockin')       },
-  ];
+  const todayStr = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
 
-  const content = sections.map(sec => {
-    if (!sec.students.length) return `
-      <div class="mb-6">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-xs font-bold uppercase tracking-wide ${sec.color}">${sec.label}</span>
-          <span class="text-xs text-text-muted bg-surface px-2 py-0.5 rounded-full font-medium">0 students</span>
-        </div>
-        <p class="text-xs text-text-muted italic pl-1">No students at this stage.</p>
-      </div>`;
-    return `
-      <div class="mb-6">
-        <div class="flex items-center gap-2 mb-3">
-          <span class="text-xs font-bold uppercase tracking-wide ${sec.color}">${sec.label}</span>
-          <span class="text-xs text-text-muted bg-surface px-2 py-0.5 rounded-full font-medium">${sec.students.length} student${sec.students.length !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="space-y-2">${renderStudentList(sec.students)}</div>
-      </div>`;
-  }).join('<div class="border-t border-border my-2"></div>');
+  /* ── three priority action cards ── */
+  const lockinStiNotDone = all.filter(s =>
+    s.stage === 'lockin' && s.subtasks.some(t => !t.done)
+  );
+  const onHoldDrafts = all.filter(s =>
+    s.stage === 'application' &&
+    ['Not Reachable', 'Callback Requested'].includes(s.lastCallOutcome)
+  );
+  const f2fNotLocked = all.filter(s =>
+    s.stage !== 'lockin' &&
+    ['Connected', 'Promise to Pay'].includes(s.lastCallOutcome)
+  );
+
+  const content = `
+    <div class="space-y-3">
+      <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
+      ${_boostMetricCard('lockin-sti-not-done', 'Lock-in Done and STI Not Done', lockinStiNotDone, todayStr)}
+      ${_boostMetricCard('on-hold-drafts',      'On Hold Application Drafts',    onHoldDrafts,      todayStr)}
+      ${_boostMetricCard('f2f-not-locked',      'F2F Done but Not Locked In',    f2fNotLocked,      todayStr)}
+    </div>`;
 
   openDrawer('Boost Pipeline', content, false);
+}
+
+/* ── Sub-card opener (handles all three action cards + nested F2F card) ── */
+function openBoostSubCard(type) {
+  const all      = getViewingStudents();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const configs = {
+    'lockin-sti-not-done': {
+      title:   'Lock-in Done and STI Not Done',
+      filter:  s => s.stage === 'lockin' && s.subtasks.some(t => !t.done),
+      nested:  null,
+      prevMode: 'boostFunnel',
+    },
+    'on-hold-drafts': {
+      title:   'On Hold Application Drafts',
+      filter:  s => s.stage === 'application' &&
+                    ['Not Reachable', 'Callback Requested'].includes(s.lastCallOutcome),
+      nested:  null,
+      prevMode: 'boostFunnel',
+    },
+    'f2f-not-locked': {
+      title:   'F2F Done but Not Locked In',
+      filter:  s => s.stage !== 'lockin' &&
+                    ['Connected', 'Promise to Pay'].includes(s.lastCallOutcome),
+      nested: {
+        id:     'walkin-2nd-not-done',
+        label:  'F2F (Walkin / Online 2nd Discussion Done) But Locked in Not Done',
+        filter: s => s.stage === 'sti' &&
+                     s.subtasks.some(t => t.label.includes('Book a session') && !t.done),
+      },
+      prevMode: 'boostFunnel',
+    },
+    'walkin-2nd-not-done': {
+      title:   'F2F (Walkin / Online 2nd Discussion Done) But Locked in Not Done',
+      filter:  s => s.stage === 'sti' &&
+                    s.subtasks.some(t => t.label.includes('Book a session') && !t.done),
+      nested:  null,
+      prevMode: 'boostSubCard',   // back → F2F card
+    },
+  };
+
+  const cfg = configs[type];
+  if (!cfg) return;
+
+  /* set back-nav state BEFORE opening drawer */
+  state.drawerMode         = 'boostSubCardView';
+  state.drawerBoostSubCardId = type;
+  state.drawerPrevMode    = cfg.prevMode;
+  state.drawerBoostSubType = (cfg.prevMode === 'boostSubCard') ? 'f2f-not-locked' : null;
+
+  const students = all.filter(cfg.filter);
+
+  /* nested card shown inside F2F drawer — no student list when a nested card exists */
+  if (cfg.nested) {
+    const nestedStudents = all.filter(cfg.nested.filter);
+    const nestedHTML = `
+      <div class="space-y-3">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
+        ${_boostMetricCard(cfg.nested.id, cfg.nested.label, nestedStudents, todayStr)}
+      </div>`;
+    openDrawer(cfg.title, nestedHTML, true);
+    return;
+  }
+
+  const listHTML = students.length
+    ? `<div class="space-y-2">${renderStudentList(students)}</div>`
+    : `<p class="text-xs text-text-muted italic text-center py-6">No students match this criteria right now.</p>`;
+
+  openDrawer(cfg.title, listHTML, true);
 }
 
 function getViewingStudents() {
@@ -821,16 +951,21 @@ function renderMetricCards() {
   const totalStudents = getViewingStudents().length;
   const convPct = (v) => totalStudents ? Math.round((v / totalStudents) * 100) : 0;
 
+  const allStudents = getViewingStudents();
+  const unhappyCount = allStudents.filter(s => s.islRating < 8 || s.hasEscalation).length;
+  const paidPremiumCount = allStudents.filter(s => s.hasPaidPremium).length;
+
   const volumeMetrics = [
-    { label:'STIs Submitted',        value:c.stis,         target:TARGETS.stis,       extra:`${convPct(c.stis)}% of CA`,  unit:'' },
-    { label:'Applications Submitted', value:c.applications, target:TARGETS.applications,extra:`${convPct(c.applications)}% of CA`, unit:'' },
-    { label:'Deposits Collected',     value:c.deposits,     target:TARGETS.deposits,   extra:`${convPct(c.deposits)}% of CA`,  unit:'' },
-    { label:'Lock-ins Achieved',      value:c.lockins,      target:TARGETS.lockins,    extra:`${convPct(c.lockins)}% of CA`,   unit:'' },
-    { label:'Tasks Completed',        value:c.tasks,        target:TARGETS.tasks,      extra:`${fmtPct(c.tasks, TARGETS.tasks)}% of daily target`, unit:'' },
+    { label:'STIs Submitted',        value:c.stis,             target:TARGETS.stis,         extra:`${convPct(c.stis)}% of CA`,  unit:'', key:'stis' },
+    { label:'Applications Submitted', value:c.applications,    target:TARGETS.applications, extra:`${convPct(c.applications)}% of CA`, unit:'', key:'applications' },
+    { label:'Deposits Collected',     value:c.deposits,        target:TARGETS.deposits,     extra:`${convPct(c.deposits)}% of CA`,  unit:'', key:'deposits' },
+    { label:'Lock-ins Achieved',      value:c.lockins,         target:TARGETS.lockins,      extra:`${convPct(c.lockins)}% of CA`,   unit:'', key:'lockins' },
+    { label:'Tasks Completed',        value:c.tasks,           target:TARGETS.tasks,        extra:`${fmtPct(c.tasks, TARGETS.tasks)}% of daily target`, unit:'', key:'tasks' },
+    { label:'Revenue Collected',      value:c.revenueCollected,target:TARGETS.revenue_target,extra:`${fmtPct(c.revenueCollected, TARGETS.revenue_target)}% of target`, unit:'₹', isCurrency:true, key:'revenue' },
+    { label:'Unhappy Cohort',         value:unhappyCount,      target:allStudents.length,   extra:'ISL < 8 / 10 or Escalation', unit:'', key:'unhappy', isNegative:true },
   ];
 
   const qualityMetrics = [
-    { label:'Revenue Collected',      value:c.revenueCollected, target:TARGETS.revenue_target, extra:'', unit:'₹', isCurrency:true },
     { label:'F2F Discussions',        value:c.f2f,          target:TARGETS.f2f,        extra:`${fmtPct(c.f2f, TARGETS.f2f)}% of target`, unit:'' },
     { label:'ISL Feedback Rating',    value:c.isl,          target:5,                  extra:`${Math.round((c.isl/5)*100)}%`, unit:'', isRating:true },
     { label:'Referral % from CA',     value:c.referralPct,  target:TARGETS.referral,   extra:`${c.referralPct}% of assigned`, unit:'', isPct:true },
@@ -866,9 +1001,11 @@ function renderMetricGrid(elId, metrics) {
       displayVal = m.value;
       subText = m.extra;
     }
-    const cls = colorClass(m.isDual ? pct : pct);
+    const cls = m.isNegative
+      ? (pct === 0 ? 'green' : pct < 30 ? 'amber' : 'red')
+      : colorClass(m.isDual ? pct : pct);
     return `
-      <div class="metric-card ${cls} rounded-xl border p-4 cursor-default">
+      <div class="metric-card ${cls} rounded-xl border p-4 ${m.key ? 'cursor-pointer hover:shadow-md transition-shadow' : 'cursor-default'}" ${m.key ? `onclick="openVolumeMetricDrawer('${m.key}')"` : ''}>
         <div class="metric-deco"></div>
         <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">${m.label}</p>
         ${m.isDual
@@ -885,6 +1022,156 @@ function renderMetricGrid(elId, metrics) {
       </div>
     `;
   }).join('');
+}
+
+function openVolumeMetricDrawer(key) {
+  const all = getViewingStudents();
+  const configs = {
+    stis:         { title: 'STIs Submitted',         filter: s => true },
+    applications: { title: 'Applications Submitted',  filter: s => ['application','deposit','lockin'].includes(s.stage) },
+    deposits:     { title: 'Deposits Collected',      filter: s => ['deposit','lockin'].includes(s.stage) },
+    lockins:      { title: 'Lock-ins Achieved',       filter: s => s.stage === 'lockin' },
+    tasks:        { title: 'Tasks Completed',         filter: s => s.subtasks.some(t => t.done) },
+    revenue:      { title: 'Revenue Collected',       filter: s => s.hasPaidPremium, showAmount: true },
+    unhappy:      { title: 'Unhappy Cohort',          filter: s => s.islRating < 8 || s.hasEscalation },
+  };
+  const cfg = configs[key];
+  if (!cfg) return;
+
+  state.drawerMode = 'volumeMetric';
+  state.drawerVolumeMetricKey = key;
+
+  const students = all.filter(cfg.filter);
+
+  /* For unhappy cohort — show ISL rating + escalation badge on each card */
+  let listHTML;
+  if (key === 'unhappy') {
+    listHTML = students.length
+      ? `<div class="space-y-2">${students.map(s => {
+          const badge = s.hasEscalation
+            ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 ml-1">⚠ Escalation</span>`
+            : '';
+          const islBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">ISL ${s.islRating}/10</span>`;
+          return `<div class="student-card" onclick="openStudentDetail('${s.id}')">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <p class="font-semibold text-sm text-text-main">${s.name}</p>
+                <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
+              </div>
+              <div class="flex gap-1 flex-wrap justify-end">${islBadge}${badge}</div>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-text-muted">
+              <span>📅 Follow-up: ${s.followup}</span>
+              <span class="${s.islRating < 6 ? 'text-danger font-semibold' : 'text-amber-600'}">${s.islRating < 8 ? 'Low ISL rating' : ''}${s.islRating < 8 && s.hasEscalation ? ' · ' : ''}${s.hasEscalation ? 'Escalation raised' : ''}</span>
+            </div>
+            <p class="text-xs text-primary font-semibold mt-2 cursor-pointer">Open →</p>
+          </div>`;
+        }).join('')}</div>`
+      : `<p class="text-xs text-text-muted italic text-center py-6">No unhappy students right now 🎉</p>`;
+  } else if (cfg.showAmount) {
+    const total = students.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
+    const fmtAmt = v => v >= 100000 ? `₹${(v/100000).toFixed(1)}L` : `₹${(v/1000).toFixed(0)}K`;
+    listHTML = students.length
+      ? `<div class="mb-3 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
+           <span class="text-xs font-semibold text-emerald-700">Total Collected</span>
+           <span class="text-base font-bold text-emerald-700">${fmtAmt(total)}</span>
+         </div>
+         <div class="space-y-2">${students.map(s => `
+           <div class="student-card" onclick="openStudentDetail('${s.id}')">
+             <div class="flex items-start justify-between mb-2">
+               <div>
+                 <p class="font-semibold text-sm text-text-main">${s.name}</p>
+                 <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
+               </div>
+               <span class="text-sm font-bold text-emerald-600">${fmtAmt(s.amountPaid)}</span>
+             </div>
+             <div class="text-xs text-text-muted">📅 Follow-up: ${s.followup} · ${s.stage.toUpperCase()} stage</div>
+             <p class="text-xs text-primary font-semibold mt-2 cursor-pointer">Open →</p>
+           </div>`).join('')}</div>`
+      : `<p class="text-xs text-text-muted italic text-center py-6">No revenue collected yet.</p>`;
+  } else {
+    listHTML = students.length
+      ? `<div class="space-y-2">${renderStudentList(students)}</div>`
+      : `<p class="text-xs text-text-muted italic text-center py-6">No students match this criteria right now.</p>`;
+  }
+
+  openDrawer(cfg.title, listHTML, false);
+}
+
+/* ═══════════════ BOOST REVENUE ═══════════════ */
+
+function openBoostRevenueDrawer() {
+  state.drawerMode = 'boostRevenue';
+  const all = getViewingStudents();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const nonPartner   = all.filter(s => s.isQlPremium);
+  const primeEnrol   = all.filter(s => s.islRating >= 8 || s.hasFinalisedUniversity || s.hasDocs);
+  const specServices = all.filter(s => s.specialServices && s.specialServices.length > 0);
+
+  const content = `
+    <div class="space-y-3">
+      <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Revenue Categories</p>
+      ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue', nonPartner, todayStr, "openRevenueSubCard('non-partner-revenue')")}
+      ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',   primeEnrol,  todayStr, "openRevenueSubCard('prime-enrolments')")}
+      ${_boostMetricCard('specialised-services','Specialised Services',specServices,todayStr, "openRevenueSubCard('specialised-services')")}
+    </div>`;
+
+  openDrawer('Boost Revenue', content, false);
+}
+
+function openRevenueSubCard(type) {
+  const all = getViewingStudents();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const configs = {
+    'non-partner-revenue': {
+      title:   'Non Partner Revenue',
+      filter:  s => s.isQlPremium,
+      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">QL Premium</span>`,
+    },
+    'prime-enrolments': {
+      title:   'Prime Enrolments',
+      filter:  s => s.islRating >= 8 || s.hasFinalisedUniversity || s.hasDocs,
+      badge:   s => [
+        s.islRating >= 8        ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">ISL ${s.islRating}/10</span>` : '',
+        s.hasFinalisedUniversity ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Uni Finalised</span>` : '',
+        s.hasDocs                ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Docs Submitted</span>` : '',
+      ].filter(Boolean).join(' '),
+    },
+    'specialised-services': {
+      title:   'Specialised Services',
+      filter:  s => s.specialServices && s.specialServices.length > 0,
+      badge:   s => s.specialServices.map(sv =>
+        `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">${sv}</span>`
+      ).join(' '),
+    },
+  };
+
+  const cfg = configs[type];
+  if (!cfg) return;
+
+  state.drawerMode = 'revenueSubCardView';
+  state.drawerRevenueSubCardId = type;
+  state.drawerPrevMode = 'boostRevenue';
+
+  const students = all.filter(cfg.filter);
+
+  const listHTML = students.length
+    ? `<div class="space-y-2">${students.map(s => `
+        <div class="student-card" onclick="openStudentDetail('${s.id}')">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="font-semibold text-sm text-text-main">${s.name}</p>
+              <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
+            </div>
+            <div class="flex gap-1 flex-wrap justify-end">${cfg.badge(s)}</div>
+          </div>
+          <div class="text-xs text-text-muted">📅 Follow-up: ${s.followup}</div>
+          <p class="text-xs text-primary font-semibold mt-2 cursor-pointer">Open →</p>
+        </div>`).join('')}</div>`
+    : `<p class="text-xs text-text-muted italic text-center py-6">No students match this criteria right now.</p>`;
+
+  openDrawer(cfg.title, listHTML, true);
 }
 
 function getCounselorData() {
@@ -1440,6 +1727,16 @@ function closeDrawer() {
 function drawerGoBack() {
   if (state.drawerPrevMode === 'boost') {
     openBoostDrawer(state.drawerBoostType);
+  } else if (state.drawerPrevMode === 'boostFunnel') {
+    openBoostFunnelDrawer();
+  } else if (state.drawerPrevMode === 'boostSubCard') {
+    openBoostSubCard(state.drawerBoostSubType);
+  } else if (state.drawerPrevMode === 'boostSubCardView') {
+    openBoostSubCard(state.drawerBoostSubCardId);
+  } else if (state.drawerPrevMode === 'boostRevenue') {
+    openBoostRevenueDrawer();
+  } else if (state.drawerPrevMode === 'revenueSubCardView') {
+    openRevenueSubCard(state.drawerRevenueSubCardId);
   } else if (state.drawerPrevMode === 'offer') {
     openOfferDrawer(state.drawerOfferId);
   } else if (state.drawerPrevMode === 'opportunity') {
@@ -2717,7 +3014,7 @@ function renderAdminInfoHub() {
 function logout() {
   if (state.earningsChart) { state.earningsChart.destroy(); state.earningsChart = null; }
   if (state.botOpen) { document.getElementById('botPanel').classList.remove('open'); document.getElementById('botPanel').classList.add('hidden'); }
-  state = { role:'counselor', currentUser:null, viewingCounselorId:1, historyPeriod:'7d', leaderPeriod:'today', currentTab:'tab1', currentAdminPanel:'users', loginAttempts:0, lockedUntil:null, earningsChart:null, drawerMode:null, drawerBoostType:null, drawerSelectedStudent:null, drawerPrevMode:null, selectedSubtask:null, botOpen:false, botActiveTab:'chat', chatPanel:{ unreadCount:0, lastOpenedAt:null }, botConversation:{ flow:null, step:0, collected:{}, history:[], lastIntent:null, shownFollowUps:[] } };
+  state = { role:'counselor', currentUser:null, viewingCounselorId:1, historyPeriod:'7d', leaderPeriod:'today', currentTab:'tab1', currentAdminPanel:'users', loginAttempts:0, lockedUntil:null, earningsChart:null, drawerMode:null, drawerBoostType:null, drawerBoostSubType:null, drawerBoostSubCardId:null, drawerVolumeMetricKey:null, drawerRevenueSubCardId:null, drawerSelectedStudent:null, drawerPrevMode:null, selectedSubtask:null, botOpen:false, botActiveTab:'chat', chatPanel:{ unreadCount:0, lastOpenedAt:null }, botConversation:{ flow:null, step:0, collected:{}, history:[], lastIntent:null, shownFollowUps:[] } };
   document.getElementById('appShell').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginEmail').value = '';
@@ -3365,6 +3662,25 @@ function openStudentDetail(studentId) {
 function closeStudentDetailPage() {
   const page = document.getElementById('studentDetailPage');
   if (page) page.classList.add('hidden');
+  // Restore the drawer the user came from
+  const prev = state.drawerPrevMode;
+  if (prev === 'boostSubCardView') {
+    openBoostSubCard(state.drawerBoostSubCardId);
+  } else if (prev === 'boostFunnel') {
+    openBoostFunnelDrawer();
+  } else if (prev === 'boost') {
+    openBoostDrawer(state.drawerBoostType);
+  } else if (prev === 'volumeMetric') {
+    openVolumeMetricDrawer(state.drawerVolumeMetricKey);
+  } else if (prev === 'revenueSubCardView') {
+    openRevenueSubCard(state.drawerRevenueSubCardId);
+  } else if (prev === 'boostRevenue') {
+    openBoostRevenueDrawer();
+  } else if (prev === 'offer') {
+    openOfferDrawer(state.drawerOfferId);
+  } else if (prev === 'opportunity') {
+    openOpportunityDrawer();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
