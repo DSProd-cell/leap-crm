@@ -80,35 +80,35 @@ const SUPPORT_TICKETS = [
 
 /* ── Mock students for Priya Sharma (counselor id:1) ── */
 const STUDENTS = [
-  { id:'U1001', name:'Aarav Mehta',     course:'MBA Finance',      stage:'sti',         followup:'2026-05-25', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:82, lastConnected:'20 May 2026 11:42 AM',
+  { id:'U1001', name:'Aarav Mehta',     course:'MBA Finance',      stage:'sti',         followup:'2026-05-25', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:82, lastConnected:'20 May 2026 11:42 AM', country:'UK',
     whatsappGroups:[{ groupName:'MBA Batch A – Jun 2026', counselorJoined:true, studentJoined:true },{ groupName:'Finance Study Group', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'20 May 11:42 AM', notes:'Discussed fees', outcome:'Connected' }, { label:'Send a WhatsApp message', done:true, timestamp:'20 May 1:00 PM', notes:'Sent brochure', outcome:'Connected' }, { label:'Follow up on payment', done:false }, { label:'Book a session / demo', done:false }, { label:'Update application status', done:false }],
     activity:[{ type:'Call logged', time:'20 May 11:42 AM', notes:'Student interested, follow up on fee waiver' }, { type:'WhatsApp sent', time:'20 May 1:00 PM', notes:'Sent MBA brochure PDF' }] },
-  { id:'U1002', name:'Sanya Kapoor',    course:'BBA Marketing',    stage:'application', followup:'2026-05-24', appDownloaded:false, lastCallDate:'19 May 2026', lastCallOutcome:'Not Reachable', qualityScore:65, lastConnected:'18 May 2026 4:15 PM',
+  { id:'U1002', name:'Sanya Kapoor',    course:'BBA Marketing',    stage:'application', followup:'2026-05-24', appDownloaded:false, lastCallDate:'19 May 2026', lastCallOutcome:'Not Reachable', qualityScore:65, lastConnected:'18 May 2026 4:15 PM', country:'Canada',
     whatsappGroups:[{ groupName:'BBA General – Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'19 May 4:15 PM', notes:'Not reachable', outcome:'Not Reachable' }, { label:'Send a WhatsApp message', done:false }, { label:'Follow up on payment', done:false }, { label:'Book a session / demo', done:false }, { label:'Update application status', done:true, timestamp:'19 May 5:00 PM', notes:'Stage updated to application', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'19 May 4:15 PM', notes:'Not reachable — tried 3 times' }, { type:'Application updated', time:'19 May 5:00 PM', notes:'Marked as application submitted' }] },
-  { id:'U1003', name:'Rahul Verma',     course:'B.Tech CSE',       stage:'deposit',     followup:'2026-05-23', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Promise to Pay', qualityScore:74, lastConnected:'21 May 2026 10:00 AM',
+  { id:'U1003', name:'Rahul Verma',     course:'B.Tech CSE',       stage:'deposit',     followup:'2026-05-23', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Promise to Pay', qualityScore:74, lastConnected:'21 May 2026 10:00 AM', country:'Australia',
     whatsappGroups:[{ groupName:'CSE Batch Jun 2026', counselorJoined:true, studentJoined:true },{ groupName:'Tech Prep Group', counselorJoined:false, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'21 May 10:00 AM', notes:'Promised to pay by 23rd', outcome:'Promise to Pay' }, { label:'Follow up on payment', done:false }, { label:'Send a WhatsApp message', done:true, timestamp:'21 May 11:00 AM', notes:'Sent payment link', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 10:00 AM', notes:'Promised deposit by 23 May' }, { type:'WhatsApp sent', time:'21 May 11:00 AM', notes:'Payment link shared' }] },
-  { id:'U1004', name:'Prerna Singh',    course:'MBA HR',            stage:'sti',         followup:'2026-05-26', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Callback Requested', qualityScore:55, lastConnected:'22 May 2026 3:00 PM',
+  { id:'U1004', name:'Prerna Singh',    course:'MBA HR',            stage:'sti',         followup:'2026-05-26', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Callback Requested', qualityScore:55, lastConnected:'22 May 2026 3:00 PM', country:'USA',
     whatsappGroups:[{ groupName:'MBA General – Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }, { label:'Share a document / template', done:false }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'22 May 3:00 PM', notes:'Requested callback at 5 PM tomorrow' }] },
-  { id:'U1005', name:'Devansh Joshi',   course:'BCA Data Science',  stage:'lockin',      followup:'2026-05-24', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Connected', qualityScore:90, lastConnected:'21 May 2026 2:30 PM',
+  { id:'U1005', name:'Devansh Joshi',   course:'BCA Data Science',  stage:'lockin',      followup:'2026-05-24', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Connected', qualityScore:90, lastConnected:'21 May 2026 2:30 PM', country:'Germany',
     whatsappGroups:[{ groupName:'BCA Batch A', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:true, timestamp:'21 May 2:30 PM', notes:'Received offer, finalizing', outcome:'Connected' }, { label:'Update application status', done:true, timestamp:'21 May 3:00 PM', notes:'Shortlisted — awaiting lock-in payment', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 2:30 PM', notes:'Shortlisting offer shared, student reviewing' }, { type:'Application updated', time:'21 May 3:00 PM', notes:'Stage: Shortlisted — lock-in pending' }] },
-  { id:'U1006', name:'Ishita Rawat',    course:'MBA Finance',       stage:'application', followup:'2026-05-27', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:68, lastConnected:'20 May 2026 5:00 PM',
+  { id:'U1006', name:'Ishita Rawat',    course:'MBA Finance',       stage:'application', followup:'2026-05-27', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:68, lastConnected:'20 May 2026 5:00 PM', country:'Ireland',
     whatsappGroups:[{ groupName:'MBA Batch A – Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'20 May 5:00 PM', notes:'Submitted application', outcome:'Connected' }, { label:'Send a WhatsApp message', done:true, timestamp:'20 May 5:30 PM', notes:'Sent next steps doc', outcome:'Connected' }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'20 May 5:00 PM', notes:'Application submitted successfully' }, { type:'WhatsApp sent', time:'20 May 5:30 PM', notes:'Next steps document shared' }] },
-  { id:'U1007', name:'Karan Tiwari',    course:'B.Com',             stage:'sti',         followup:'2026-05-28', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Not Reachable', qualityScore:40, lastConnected:'19 May 2026 11:00 AM',
+  { id:'U1007', name:'Karan Tiwari',    course:'B.Com',             stage:'sti',         followup:'2026-05-28', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Not Reachable', qualityScore:40, lastConnected:'19 May 2026 11:00 AM', country:'Singapore',
     whatsappGroups:[{ groupName:'B.Com General', counselorJoined:true, studentJoined:false },{ groupName:'Finance Study Group', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }],
     activity:[{ type:'Call logged', time:'22 May 9:00 AM', notes:'Not reachable for 3 days' }] },
-  { id:'U1008', name:'Meenal Shah',     course:'MBA Marketing',     stage:'deposit',     followup:'2026-05-25', appDownloaded:true,  lastCallDate:'22 May 2026', lastCallOutcome:'Connected', qualityScore:79, lastConnected:'22 May 2026 12:00 PM',
+  { id:'U1008', name:'Meenal Shah',     course:'MBA Marketing',     stage:'deposit',     followup:'2026-05-25', appDownloaded:true,  lastCallDate:'22 May 2026', lastCallOutcome:'Connected', qualityScore:79, lastConnected:'22 May 2026 12:00 PM', country:'New Zealand',
     whatsappGroups:[{ groupName:'MBA Batch B – Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:false }, { label:'Call the student', done:true, timestamp:'22 May 12:00 PM', notes:'Confirming deposit timeline', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'22 May 12:00 PM', notes:'Deposit expected by 25 May' }] },
@@ -453,6 +453,7 @@ let state = {
   drawerSelectedStudent: null,
   drawerPrevMode: null,
   selectedSubtask: null,
+  ownTasks: [],
   botOpen: false,
   botActiveTab: 'chat',
   chatPanel: { unreadCount: 0, lastOpenedAt: null },
@@ -603,6 +604,34 @@ function bootApp(role, email) {
     sel.value = state.viewingCounselorId;
   }
 
+  // Standup manager-only filters (Counsellor Name + TL Name)
+  if (role !== 'counselor') {
+    const cfSel = document.getElementById('standupCounsellorFilter');
+    const tlSel = document.getElementById('standupTLFilter');
+    if (cfSel) {
+      cfSel.classList.remove('hidden');
+      cfSel.innerHTML = '<option value="">All Counsellors</option>';
+      const cList = (role === 'team_lead')
+        ? COUNSELORS.filter(c => c.team === state.currentUser.team)
+        : COUNSELORS;
+      cList.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name;
+        cfSel.appendChild(o);
+      });
+    }
+    if (tlSel && role === 'ops_admin') {
+      tlSel.classList.remove('hidden');
+      tlSel.innerHTML = '<option value="">All TLs</option>';
+      const tlList = COUNSELORS.filter(c => c.designation === 'Team Lead');
+      tlList.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name;
+        tlSel.appendChild(o);
+      });
+    }
+  }
+
   // Correction counselor dropdown
   const corrSel = document.getElementById('corrCounselor');
   COUNSELORS.forEach(c => {
@@ -625,6 +654,8 @@ function bootApp(role, email) {
 
   renderAll();
   switchTab('tab1');
+  // Show Join 10x banner after a short delay
+  setTimeout(show10xBanner, 800);
 }
 
 function onCounselorChange() {
@@ -673,6 +704,9 @@ function switchTab(tab) {
   if (tab === 'tab2' && !state.earningsChart) {
     setTimeout(initEarningsChart, 50);
   }
+  if (tab === 'tab3') {
+    renderQuickLinks();
+  }
 }
 
 /* ═══════════════ BADGE STRIP ═══════════════ */
@@ -702,6 +736,7 @@ function renderBoostCards() {
   const stiCount = students.filter(s => s.stage === 'sti').length;
   const depCount = students.filter(s => s.stage === 'deposit').length;
   const revCount = students.filter(s => s.isQlPremium || (s.specialServices && s.specialServices.length > 0)).length;
+  const ownCount = state.ownTasks.filter(t => !t.done).length;
   const grid = document.getElementById('boostCardsGrid');
 
   grid.innerHTML = `
@@ -723,7 +758,75 @@ function renderBoostCards() {
       <div class="boost-sub" style="color:#065f46;">Revenue opportunities</div>
       <span class="boost-cta" style="color:#065f46;border-color:#6ee7b7;">View Pipeline →</span>
     </div>
+    <div class="boost-card" style="background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);border:1px solid #c4b5fd;" onclick="openOwnTaskDrawer()">
+      <div class="boost-label" style="color:#4c1d95;">Own Tasks</div>
+      <div class="boost-count" style="color:#7c3aed;">${ownCount}</div>
+      <div class="boost-sub" style="color:#4c1d95;">${ownCount === 1 ? '1 pending reminder' : ownCount + ' pending reminders'}</div>
+      <span class="boost-cta" style="color:#4c1d95;border-color:#c4b5fd;">View Tasks →</span>
+    </div>
   `;
+}
+
+function openOwnTaskDrawer() {
+  state.drawerMode = 'ownTasks';
+  const tasks = state.ownTasks;
+  const typeIcons = {
+    call:    `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>`,
+    message: `<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>`,
+    payment: `<svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>`,
+    custom:  `<svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>`,
+  };
+  const typeBadge = { call:'Call to User', message:'Send Message', payment:'Payment Follow Up', custom:'Custom Task' };
+
+  const content = `
+    <div class="space-y-3">
+      <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted mb-3">Your Pending Reminders</p>
+      ${tasks.length === 0 ? `
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+          <svg class="w-14 h-14 text-text-muted/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <p class="font-semibold text-text-main mb-1">All caught up!</p>
+          <p class="text-sm text-text-muted">No pending reminders. Add one from Tasks &amp; Performance.</p>
+        </div>
+      ` : tasks.map((t, idx) => {
+        const dateLabel = t.date ? new Date(t.date).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+        const isPast = t.date && new Date(t.date) < new Date();
+        const isToday = t.date && new Date(t.date).toDateString() === new Date().toDateString();
+        const urgencyColor = t.done ? 'border-l-green-400' : isPast ? 'border-l-red-400' : isToday ? 'border-l-orange-400' : 'border-l-indigo-300';
+        const urgencyBg   = t.done ? 'bg-green-50' : isPast ? 'bg-red-50' : isToday ? 'bg-orange-50' : 'bg-white';
+        return `
+        <div class="border border-border rounded-xl p-3.5 border-l-4 ${urgencyColor} ${urgencyBg} ${t.done ? 'opacity-60' : ''}">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 flex-shrink-0">${typeIcons[t.type] || typeIcons.custom}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <p class="font-semibold text-sm text-text-main ${t.done ? 'line-through' : ''}">${t.title}</p>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-semibold">${typeBadge[t.type] || 'Task'}</span>
+                ${isPast && !t.done ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">Overdue</span>' : ''}
+                ${isToday && !t.done ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 font-semibold">Due Today</span>' : ''}
+              </div>
+              ${t.notes ? `<p class="text-xs text-text-muted mb-1">${t.notes}</p>` : ''}
+              <p class="text-xs text-text-muted flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                ${dateLabel}
+              </p>
+            </div>
+            <button onclick="markOwnTaskDone(${idx})" class="flex-shrink-0 w-7 h-7 rounded-full border-2 ${t.done ? 'bg-green-500 border-green-500 text-white' : 'border-border hover:border-green-400'} flex items-center justify-center cursor-pointer transition-all" title="${t.done ? 'Done' : 'Mark as done'}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  openDrawer('Own Tasks', content, false);
+}
+
+function markOwnTaskDone(idx) {
+  if (state.ownTasks[idx]) {
+    state.ownTasks[idx].done = !state.ownTasks[idx].done;
+    renderBoostCards();
+    openOwnTaskDrawer(); // re-render drawer
+  }
 }
 
 /* Funnel drawer: STI → Application → Lock-in all in one view */
@@ -1056,7 +1159,7 @@ function openVolumeMetricDrawer(key) {
             <div class="flex items-start justify-between mb-2">
               <div>
                 <p class="font-semibold text-sm text-text-main">${s.name}</p>
-                <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
+                <p class="text-xs text-text-muted">${s.id} · ${s.course} · <span class="font-medium text-primary/80">${s.country || '—'}</span></p>
               </div>
               <div class="flex gap-1 flex-wrap justify-end">${islBadge}${badge}</div>
             </div>
@@ -1081,7 +1184,7 @@ function openVolumeMetricDrawer(key) {
              <div class="flex items-start justify-between mb-2">
                <div>
                  <p class="font-semibold text-sm text-text-main">${s.name}</p>
-                 <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
+                 <p class="text-xs text-text-muted">${s.id} · ${s.course} · <span class="font-medium text-primary/80">${s.country || '—'}</span></p>
                </div>
                <span class="text-sm font-bold text-emerald-600">${fmtAmt(s.amountPaid)}</span>
              </div>
@@ -1162,7 +1265,7 @@ function openRevenueSubCard(type) {
           <div class="flex items-start justify-between mb-2">
             <div>
               <p class="font-semibold text-sm text-text-main">${s.name}</p>
-              <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
+              <p class="text-xs text-text-muted">${s.id} · ${s.course} · <span class="font-medium text-primary/80">${s.country || '—'}</span></p>
             </div>
             <div class="flex gap-1 flex-wrap justify-end">${cfg.badge(s)}</div>
           </div>
@@ -1181,15 +1284,57 @@ function getCounselorData() {
 
 /* ═══════════════ LOG TASK ═══════════════ */
 
+let _reminderType = 'call';
+
+function selectReminderType(type) {
+  _reminderType = type;
+  // Update button styles
+  document.querySelectorAll('.reminder-type-btn').forEach(btn => {
+    btn.classList.remove('active', 'border-accent', 'bg-accent/5', 'text-accent');
+    btn.classList.add('border-border', 'text-text-muted');
+  });
+  const active = document.getElementById('rtype-' + type);
+  if (active) {
+    active.classList.add('border-accent', 'bg-accent/5', 'text-accent');
+    active.classList.remove('border-border', 'text-text-muted');
+  }
+  // Show/hide custom name
+  const customName = document.getElementById('reminderCustomName');
+  if (customName) customName.classList.toggle('hidden', type !== 'custom');
+}
+
 function logTask() {
-  const type  = document.getElementById('taskType').value;
+  const typeLabels = { call:'Call to User', message:'Send Message to User', payment:'Payment Follow Up', custom:'Custom Task' };
+  const label = typeLabels[_reminderType] || 'Reminder';
+  const customName = document.getElementById('taskCustomName')?.value.trim();
   const notes = document.getElementById('taskNotes').value.trim();
-  const inc = { calls:1, leads:1, enrolments:1, revenue:10000, followups:1, stis:1, applications:1, deposits:1, lockins:1 };
+  const date  = document.getElementById('taskDate')?.value;
+  const taskTitle = (_reminderType === 'custom' && customName) ? customName : label;
+
+  // Bump counselor metrics (followups as proxy)
   const c = COUNSELORS.find(x => x.id === state.viewingCounselorId) || COUNSELORS[0];
-  if (c.today[type] !== undefined) c.today[type] += inc[type] || 1;
-  if (c.today.tasks !== undefined) c.today.tasks += 1;
-  showToast(`Task logged: ${document.getElementById('taskType').selectedOptions[0].text}${notes ? ' — ' + notes : ''}`, 'success');
+  if (c.today.followups !== undefined) c.today.followups += 1;
+  if (c.today.tasks    !== undefined) c.today.tasks += 1;
+
+  const dateStr = date ? ` · ${new Date(date).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}` : '';
+  showToast(`✅ Reminder saved: ${taskTitle}${dateStr}${notes ? ' — ' + notes : ''}`, 'success');
+
+  // Save to own tasks
+  state.ownTasks.push({
+    id: Date.now(),
+    type: _reminderType,
+    title: taskTitle,
+    notes: notes || '',
+    date: date || '',
+    done: false,
+    createdAt: new Date().toISOString()
+  });
+
+  // Reset form
   document.getElementById('taskNotes').value = '';
+  if (document.getElementById('taskCustomName')) document.getElementById('taskCustomName').value = '';
+  if (document.getElementById('taskDate')) document.getElementById('taskDate').value = '';
+  selectReminderType('call');
   renderMetricCards();
   renderBoostCards();
 }
@@ -1374,30 +1519,34 @@ function renderOffersRow() {
 function renderQuickLinks() {
   const links = [
     {
-      id:'session', icon:'🎥', color:'bg-blue-50',
-      label: detectPlatform(QUICK_LINK_URLS.session) + ' — Join Session',
-      desc:`Click to join the configured ${detectPlatform(QUICK_LINK_URLS.session)} session`,
-      action:`openQuickLink('session')`
+      id:'session', icon:'🚀', color:'bg-indigo-50', iconColor:'text-indigo-600',
+      label: 'Join 10x',
+      desc:'Click to join your 10x session and boost your performance',
+      action:`joinTenX()`
     },
     {
-      id:'sheet', icon:'📊', color:'bg-green-50',
+      id:'sheet', icon:'📊', color:'bg-green-50', iconColor:'text-green-600',
       label:'Templates Sheet — Open Templates',
       desc:'Access the shared Google Sheet with all templates and SOPs',
       action:`openQuickLink('sheet')`
     },
     {
-      id:'support', icon:'🎫', color:'bg-orange-50',
+      id:'support', icon:'🎫', color:'bg-orange-50', iconColor:'text-orange-600',
       label:'Support — Raise a Request',
       desc:'Submit a ticket to the ops team for help with data, incentives, or issues',
       action:`openTicketModal()`
     },
   ];
-  const grid = document.getElementById('quickLinksV1');
+  const grid = document.getElementById('ldTopCards');
+  if (!grid) return;
   grid.innerHTML = links.map(l => `
-    <div class="quick-link-v1" onclick="${l.action}">
-      <div class="ql-icon ${l.color} text-2xl">${l.icon}</div>
-      <p class="font-semibold text-text-main text-sm">${l.label}</p>
-      <p class="text-xs text-text-muted">${l.desc}</p>
+    <div onclick="${l.action}" class="bg-white border border-border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group">
+      <div class="w-12 h-12 rounded-xl ${l.color} flex items-center justify-center text-2xl flex-shrink-0">${l.icon}</div>
+      <div class="min-w-0">
+        <p class="font-bold text-text-main text-sm group-hover:text-primary transition-colors">${l.label}</p>
+        <p class="text-xs text-text-muted mt-0.5 leading-snug">${l.desc}</p>
+      </div>
+      <svg class="w-4 h-4 text-text-muted group-hover:text-primary flex-shrink-0 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </div>
   `).join('');
 }
@@ -1406,6 +1555,147 @@ function openQuickLink(type) {
   const url = QUICK_LINK_URLS[type];
   if (url) showToast(`Opening ${type === 'session' ? 'video session' : 'templates sheet'}…`, 'info');
   else showToast('URL not configured. Ask your ops admin.', 'warning');
+}
+
+/* ═══════════════ JOIN 10X ═══════════════ */
+
+const TEN_X_URL = '#'; // Replace with actual 10x URL
+
+function joinTenX() {
+  if (TEN_X_URL && TEN_X_URL !== '#') {
+    window.open(TEN_X_URL, '_blank');
+  } else {
+    showToast('10x URL not configured yet. Ask your ops admin.', 'warning');
+  }
+  dismiss10xBanner();
+}
+
+function dismiss10xBanner() {
+  const banner = document.getElementById('join10xBanner');
+  const main = document.getElementById('mainContent');
+  if (banner) banner.classList.add('hidden');
+  if (main) main.style.marginTop = '104px';
+}
+
+function show10xBanner() {
+  const banner = document.getElementById('join10xBanner');
+  const main = document.getElementById('mainContent');
+  if (banner) banner.classList.remove('hidden');
+  if (main) main.style.marginTop = '144px'; // extra 40px for banner
+  // Also send bot notification message
+  setTimeout(() => {
+    appendBotMessageLive(`<p>🚀 <strong>Hey! Your 10x session is live.</strong> Don't miss it — click <strong>Join 10x</strong> in the purple banner at the top to jump in now with your team! 💪</p>`);
+    // Increment unread badge
+    state.chatPanel.unreadCount = (state.chatPanel.unreadCount || 0) + 1;
+    const badge = document.getElementById('botUnreadBadge');
+    if (badge) {
+      badge.textContent = state.chatPanel.unreadCount;
+      badge.classList.remove('hidden');
+    }
+  }, 1500);
+}
+
+/* ═══════════════ L&D INFO HUB SECTIONS ═══════════════ */
+
+function switchLDTab(tab) {
+  // Update tab button styles
+  document.querySelectorAll('.ld-subtab').forEach(btn => {
+    btn.classList.remove('border-primary', 'text-primary', 'bg-primary/5');
+    btn.classList.add('border-transparent', 'text-text-muted');
+  });
+  const activeBtn = document.getElementById(tab === 'infohub' ? 'ldTabInfoHub' : 'ldTabNewsletter');
+  if (activeBtn) {
+    activeBtn.classList.add('border-primary', 'text-primary', 'bg-primary/5');
+    activeBtn.classList.remove('border-transparent', 'text-text-muted');
+  }
+  // Show/hide panels
+  document.getElementById('ldPanelInfohub').classList.toggle('hidden', tab !== 'infohub');
+  document.getElementById('ldPanelNewsletter').classList.toggle('hidden', tab !== 'newsletter');
+  // Render newsletter if needed
+  if (tab === 'newsletter') renderNewsletterTable();
+}
+
+function switchInfoHubSection(section, btn) {
+  // Update nav button styles
+  document.querySelectorAll('.ih-nav-btn').forEach(b => {
+    b.classList.remove('active', 'bg-primary/10', 'text-primary', 'border-primary');
+    b.classList.add('hover:bg-surface', 'text-text-main', 'border-transparent');
+  });
+  if (btn) {
+    btn.classList.add('active', 'bg-primary/10', 'text-primary', 'border-primary');
+    btn.classList.remove('hover:bg-surface', 'text-text-main', 'border-transparent');
+  }
+  // Show/hide sections
+  document.querySelectorAll('.ih-section').forEach(s => s.classList.add('hidden'));
+  const el = document.getElementById('ihSection-' + section);
+  if (el) el.classList.remove('hidden');
+}
+
+function switchDeadlineTab(tab, btn) {
+  document.querySelectorAll('.deadline-tab-btn').forEach(b => {
+    b.classList.remove('bg-primary', 'text-white');
+    b.classList.add('border', 'border-border', 'text-text-muted', 'hover:bg-surface');
+  });
+  if (btn) {
+    btn.classList.add('bg-primary', 'text-white');
+    btn.classList.remove('border', 'border-border', 'text-text-muted', 'hover:bg-surface');
+  }
+}
+
+/* ═══════════════ NEWSLETTER TABLE ═══════════════ */
+
+const NEWSLETTER_DATA = [
+  { id:1,  country:'USA', date:'21 Aug 2025', related:'Pending Deferral Applications - Fall 2025', category:'Important Update', summary:'Deferral requests need to be submitted before August 31, 2025. Applications deferred beyond this date will be re-evaluated, and scholarships will not be carried forward as it will go for re-evaluation.', link:'https://docs.google.com/spreadsheets/sample1', remarks:'', admitProb:'', imRelated:'No' },
+  { id:2,  country:'USA', date:'21 Aug 2025', related:'Bangor University', category:'Important Update', summary:'Please find enclosed our January 2026 intake flyer. I would be grateful if you could circulate the flyer to your colleagues. Should you have any questions or require any further information or advice about the January intake please do not hesitate to contact me.', link:'https://docs.google.com/document/sample2', remarks:'Circulate to all counsellors', admitProb:'High', imRelated:'Yes' },
+  { id:3,  country:'UK',  date:'21 Aug 2025', related:'London South Bank University', category:'Important Update', summary:'We are pleased to inform you that applications for the January 2026 intake are now open. Please find attached the list of courses available for this intake for your reference.', link:'https://docs.google.com/document/sample3', remarks:'', admitProb:'Medium', imRelated:'Yes' },
+  { id:4,  country:'UK',  date:'21 Aug 2025', related:'Swansea University', category:'Important Update', summary:'We are aware that there was an issue with deposit payments. This has now been resolved, and you should be able to make your payment as normal. Many of you have already paid your deposit — thank you.', link:'https://docs.google.com/document/sample4', remarks:'Payment issue resolved', admitProb:'', imRelated:'No' },
+  { id:5,  country:'Canada', date:'15 Aug 2025', related:'University of Toronto', category:'Scholarship Alert', summary:'University of Toronto has announced the Global Excellence Scholarship for 2026 intake. Eligibility: 85%+ in last 2 years, IELTS 7.0+. Deadline: October 31, 2025.', link:'https://docs.google.com/document/sample5', remarks:'High priority — share with all UG students', admitProb:'High', imRelated:'Yes' },
+  { id:6,  country:'Australia', date:'10 Aug 2025', related:'University of Melbourne', category:'Deadline Reminder', summary:'Reminder: The application deadline for Semester 1 2026 at University of Melbourne is approaching. All applications must be submitted by September 30, 2025.', link:'https://docs.google.com/document/sample6', remarks:'', admitProb:'Medium', imRelated:'No' },
+  { id:7,  country:'Germany', date:'05 Aug 2025', related:'TU Munich', category:'Important Update', summary:'TU Munich has introduced a new English-medium MBA program starting Winter 2026. No tuition fee for admitted students. IELTS 6.5+ required.', link:'https://docs.google.com/document/sample7', remarks:'Great for budget-conscious students', admitProb:'Medium', imRelated:'Yes' },
+  { id:8,  country:'Ireland', date:'01 Aug 2025', related:'University College Dublin', category:'Event', summary:'UCD will host a virtual counsellor webinar on August 20, 2025 covering 2026 intake updates, scholarship opportunities and application tips.', link:'https://docs.google.com/document/sample8', remarks:'Register counsellors before Aug 18', admitProb:'', imRelated:'Yes' },
+  { id:9,  country:'Singapore', date:'28 Jul 2025', related:'NUS Business School', category:'Important Update', summary:'NUS Business School has revised its English proficiency requirements. IELTS minimum is now 6.5 (from 6.0). Existing applicants with 6.0 must retest.', link:'https://docs.google.com/document/sample9', remarks:'Inform all Singapore-bound students', admitProb:'Low', imRelated:'No' },
+  { id:10, country:'UK',  date:'25 Jul 2025', related:'University of Hertfordshire', category:'Scholarship Alert', summary:'Hertfordshire International Scholarship offering up to £3,000 for September 2026 intake. Merit-based. Applications open from September 1, 2025.', link:'https://docs.google.com/document/sample10', remarks:'', admitProb:'High', imRelated:'Yes' },
+  { id:11, country:'USA', date:'20 Jul 2025', related:'Northeastern University', category:'Deadline Reminder', summary:'Final reminder: Northeastern Early Action deadline is November 1, 2025. Students applying under Early Action receive decisions by December 15, 2025.', link:'https://docs.google.com/document/sample11', remarks:'Prioritise NU applicants', admitProb:'Medium', imRelated:'Yes' },
+  { id:12, country:'Canada', date:'15 Jul 2025', related:'York University', category:'Important Update', summary:'York University has updated its conditional admission policy. Students with IELTS 6.0 overall (no band below 5.5) can now receive conditional offers with English pathway.', link:'https://docs.google.com/document/sample12', remarks:'Good for borderline students', admitProb:'High', imRelated:'No' },
+];
+
+function renderNewsletterTable() {
+  const tbody = document.getElementById('newsletterTableBody');
+  if (!tbody) return;
+  // Apply filters
+  const country = document.getElementById('nlFilterCountry')?.value || '';
+  const related  = document.getElementById('nlFilterRelated')?.value  || '';
+  const category = document.getElementById('nlFilterCategory')?.value || '';
+  const from = document.getElementById('nlFilterDateFrom')?.value || '';
+  const to   = document.getElementById('nlFilterDateTo')?.value   || '';
+
+  let rows = NEWSLETTER_DATA;
+  if (country) rows = rows.filter(r => r.country === country);
+  if (related)  rows = rows.filter(r => r.related.toLowerCase().includes(related.toLowerCase()));
+  if (category) rows = rows.filter(r => r.category === category);
+
+  tbody.innerHTML = rows.map(r => `
+    <tr class="hover:bg-surface/50 transition-colors">
+      <td class="px-3 py-3 text-text-muted font-mono">${r.id}</td>
+      <td class="px-3 py-3 font-medium">${r.country}</td>
+      <td class="px-3 py-3 text-text-muted whitespace-nowrap">${r.date}</td>
+      <td class="px-3 py-3 text-text-main">${r.related}</td>
+      <td class="px-3 py-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${r.category==='Scholarship Alert'?'bg-green-100 text-green-700':r.category==='Deadline Reminder'?'bg-red-100 text-red-700':r.category==='Event'?'bg-blue-100 text-blue-700':'bg-orange-100 text-orange-700'}">${r.category}</span></td>
+      <td class="px-3 py-3 text-text-muted max-w-[300px]"><p class="line-clamp-3">${r.summary}</p></td>
+      <td class="px-3 py-3"><a href="${r.link}" target="_blank" class="text-primary text-[10px] hover:underline break-all">${r.link ? 'View Doc →' : '—'}</a></td>
+      <td class="px-3 py-3 text-text-muted">${r.remarks || '—'}</td>
+      <td class="px-3 py-3"><span class="font-semibold ${r.admitProb==='High'?'text-success':r.admitProb==='Medium'?'text-amber-600':r.admitProb==='Low'?'text-danger':'text-text-muted'}">${r.admitProb || '—'}</span></td>
+      <td class="px-3 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${r.imRelated==='Yes'?'bg-accent/10 text-accent':'bg-surface text-text-muted'}">${r.imRelated}</span></td>
+    </tr>
+  `).join('');
+}
+
+function resetNewsletterFilters() {
+  ['nlFilterCountry','nlFilterRelated','nlFilterCategory','nlFilterDateFrom','nlFilterDateTo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderNewsletterTable();
 }
 
 /* ═══════════════ COURSE UPDATES ═══════════════ */
@@ -1422,20 +1712,21 @@ function renderCourseUpdates() {
 
 /* ═══════════════ TRAINING MODULES ═══════════════ */
 
-function renderTrainingModules() {
-  const el = document.getElementById('trainingModules');
-  el.innerHTML = TRAINING_MODULES.map(m => `
+function _buildModuleHTML(modules, prefix) {
+  return modules.map(m => {
+    const pid = prefix + m.id;
+    return `
     <div class="border border-border rounded-xl overflow-hidden">
-      <button onclick="toggleModule('${m.id}')"
+      <button onclick="toggleModule('${pid}')"
         class="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-border/50 transition-colors cursor-pointer">
         <div class="flex items-center gap-3">
           <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
           <span class="font-semibold text-sm text-text-main">${m.name}</span>
           <span class="text-xs text-text-muted">${m.lessons} lessons</span>
         </div>
-        <svg id="chevron-${m.id}" class="w-4 h-4 text-text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        <svg id="chevron-${pid}" class="w-4 h-4 text-text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
       </button>
-      <div id="module-${m.id}" class="module-body">
+      <div id="module-${pid}" class="module-body">
         <div class="divide-y divide-border">
           ${m.items.map(item => {
             const typeColors = { Video:'bg-red-100 text-red-700', Document:'bg-blue-100 text-primary', Link:'bg-green-100 text-success' };
@@ -1451,13 +1742,21 @@ function renderTrainingModules() {
           }).join('')}
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+function renderTrainingModules() {
+  const el = document.getElementById('trainingModules');
+  if (el) el.innerHTML = _buildModuleHTML(TRAINING_MODULES, '');
+  const elLD = document.getElementById('trainingModulesLD');
+  if (elLD) elLD.innerHTML = _buildModuleHTML(TRAINING_MODULES, 'ld-');
 }
 
 function toggleModule(id) {
   const body = document.getElementById('module-' + id);
   const chev = document.getElementById('chevron-' + id);
+  if (!body || !chev) return;
   body.classList.toggle('open');
   chev.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
 }
@@ -1864,6 +2163,7 @@ function openStudentDetail(studentId) {
     <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">User ID</p><p class="font-semibold">${s.id}</p></div>
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Course</p><p class="font-semibold">${s.course}</p></div>
+      <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Country</p><p class="font-semibold text-primary">${s.country || '—'}</p></div>
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Last Call</p><p class="font-semibold">${s.lastCallDate} — ${s.lastCallOutcome}</p></div>
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Follow-up</p>
         <p class="font-semibold ${s.followup <= '2026-05-23' ? 'text-danger' : 'text-text-main'}">${s.followup}</p></div>
@@ -1929,12 +2229,56 @@ function openOpportunityDrawer() {
   students.forEach(s => { if (byStage[s.stage]) byStage[s.stage].push(s); });
   const stageOrder = ['lockin','deposit','application','sti'];
   const stageLabels = { sti:'Boost STI', application:'Boost Application', deposit:'Boost Deposit', lockin:'Boost Lock-in' };
-  const totalVal = students.reduce((sum, s) => sum + (s.course.includes('MBA') ? 120000 : s.course.includes('B.Tech') ? 100000 : 80000), 0);
+  const courseFee = s => s.course.includes('MBA') ? 120000 : s.course.includes('B.Tech') ? 100000 : 80000;
+  const totalVal = students.reduce((sum, s) => sum + courseFee(s), 0);
+
+  // Tasks cohort — group students by their first pending task
+  const taskCohorts = {};
+  students.forEach(s => {
+    const pending = (s.subtasks || []).find(t => !t.done);
+    const label = pending ? pending.label : 'No Pending Tasks';
+    if (!taskCohorts[label]) taskCohorts[label] = [];
+    taskCohorts[label].push(s);
+  });
+  const taskCohortEntries = Object.entries(taskCohorts).filter(([k]) => k !== 'No Pending Tasks');
 
   let content = `<div class="mb-4 p-3 bg-accent/10 border border-accent/20 rounded-xl">
     <p class="text-xs text-text-muted">Total Opportunity</p>
     <p class="font-mono text-2xl font-bold text-accent">${fmt(totalVal)}</p>
   </div>`;
+
+  // Tasks Cohort section
+  if (taskCohortEntries.length) {
+    content += `<div class="mb-5">
+      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Tasks Cohort
+      </p>
+      <div class="space-y-2">
+        ${taskCohortEntries.map(([task, list]) => {
+          const cohortVal = list.reduce((sum, s) => sum + courseFee(s), 0);
+          return `<div class="p-3 bg-surface rounded-xl border border-border">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-semibold text-text-main">${task}</p>
+              <span class="text-xs font-mono font-bold text-accent">${fmt(cohortVal)}</span>
+            </div>
+            <div class="space-y-1">
+              ${list.map(s => `<div class="flex items-center justify-between text-xs py-1 border-t border-border/50">
+                <span class="text-text-main">${s.name} <span class="text-text-muted">· ${s.stage.toUpperCase()}</span></span>
+                <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-primary font-semibold hover:underline cursor-pointer">Task →</button>
+              </div>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Pipeline by stage
+  content += `<p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-3 flex items-center gap-1">
+    <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/></svg>
+    Pipeline by Stage
+  </p>`;
 
   stageOrder.forEach(stage => {
     const list = byStage[stage];
@@ -1942,7 +2286,7 @@ function openOpportunityDrawer() {
     content += `<div class="mb-4">
       <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">${stageLabels[stage]}</p>
       ${list.map(s => {
-        const fee = s.course.includes('MBA') ? 120000 : s.course.includes('B.Tech') ? 100000 : 80000;
+        const fee = courseFee(s);
         return `<div class="flex items-center gap-3 py-2 border-b border-border last:border-0">
           <div class="flex-1">
             <p class="text-sm font-medium text-text-main">${s.name}</p>
@@ -3014,6 +3358,11 @@ function renderAdminInfoHub() {
 function logout() {
   if (state.earningsChart) { state.earningsChart.destroy(); state.earningsChart = null; }
   if (state.botOpen) { document.getElementById('botPanel').classList.remove('open'); document.getElementById('botPanel').classList.add('hidden'); }
+  // Hide 10x banner
+  const b10x = document.getElementById('join10xBanner');
+  if (b10x) b10x.classList.add('hidden');
+  const mc = document.getElementById('mainContent');
+  if (mc) mc.style.marginTop = '104px';
   state = { role:'counselor', currentUser:null, viewingCounselorId:1, historyPeriod:'7d', leaderPeriod:'today', currentTab:'tab1', currentAdminPanel:'users', loginAttempts:0, lockedUntil:null, earningsChart:null, drawerMode:null, drawerBoostType:null, drawerBoostSubType:null, drawerBoostSubCardId:null, drawerVolumeMetricKey:null, drawerRevenueSubCardId:null, drawerSelectedStudent:null, drawerPrevMode:null, selectedSubtask:null, botOpen:false, botActiveTab:'chat', chatPanel:{ unreadCount:0, lastOpenedAt:null }, botConversation:{ flow:null, step:0, collected:{}, history:[], lastIntent:null, shownFollowUps:[] } };
   document.getElementById('appShell').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
@@ -3336,17 +3685,18 @@ function renderReportCard() {
 ═══════════════════════════════════════════════════════ */
 
 const STANDUP_METRICS = [
-  { name:'Total Leads',               key:'leads'        },
-  { name:'Total ISL',                 key:'isl_count'    },
-  { name:'ISL Pending',               key:'isl_pending'  },
-  { name:'Total Lock In',             key:'lockins'      },
-  { name:'Total F2F',                 key:'f2f'          },
-  { name:'Total Walk In',             key:'walkin'       },
-  { name:'Total Q&A Shared',          key:'qa_shared'    },
-  { name:'Total College Finalisation',key:'college_fin'  },
-  { name:'Total STI',                 key:'stis'         },
-  { name:'Total Deposits',            key:'deposits'     },
-  { name:'Total Visas',               key:'visas'        },
+  { name:'Total Leads',               key:'leads'             },
+  { name:'Total ISL',                 key:'isl_count'         },
+  { name:'ISL Pending',               key:'isl_pending'       },
+  { name:'Total Lock In',             key:'lockins'           },
+  { name:'Total F2F',                 key:'f2f'               },
+  { name:'Total Walk In',             key:'walkin'            },
+  { name:'Total Q&A Shared',          key:'qa_shared'         },
+  { name:'Total College Finalisation',key:'college_fin'       },
+  { name:'Total STI',                 key:'stis'              },
+  { name:'Total Deposits',            key:'deposits'          },
+  { name:'Total Visas',               key:'visas'             },
+  { name:'Revenue Collected',         key:'revenue_collected', isCurrency:true },
 ];
 
 function generateStandupData(filters) {
@@ -3357,13 +3707,16 @@ function generateStandupData(filters) {
     lockins: c.lockins, f2f: c.f2f, walkin: 2,
     qa_shared: 12, college_fin: 3, stis: c.stis,
     deposits: c.deposits, visas: 1,
+    revenue_collected: c.revenueCollected,
   };
   // Apply lightweight filter noise for realism
-  const multiplier = filters.country && filters.country !== '' ? 0.6 : 1;
-  const locMult    = filters.location === 'online' ? 0.7 : filters.location === 'branch' ? 0.85 : 1;
+  const multiplier  = filters.country    && filters.country    !== '' ? 0.6  : 1;
+  const locMult     = filters.location   === 'online'  ? 0.7  : filters.location === 'branch' ? 0.85 : 1;
+  const counselMult = filters.counsellor && filters.counsellor !== '' ? 0.5  : 1;
+  const tlMult      = filters.tl         && filters.tl         !== '' ? 0.75 : 1;
 
   return STANDUP_METRICS.map((m, i) => {
-    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult);
+    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult);
     const tYTD   = daily * 264;   // 264 working days
     const tMTD   = daily * 22;
     const aYTD   = Math.round(tYTD * [0.78,0.82,0.65,0.91,0.74,0.88,0.60,0.85,0.93,0.70,0.77][i % 11]);
@@ -3384,9 +3737,11 @@ function generateStandupData(filters) {
 
 function renderStandupTable(filterData) {
   const filters = filterData || {
-    intake:   document.getElementById('standupIntake')?.value   || '',
-    location: document.getElementById('standupLocation')?.value || '',
-    country:  document.getElementById('standupCountry')?.value  || '',
+    intake:      document.getElementById('standupIntake')?.value            || '',
+    location:    document.getElementById('standupLocation')?.value          || '',
+    country:     document.getElementById('standupCountry')?.value           || '',
+    counsellor:  document.getElementById('standupCounsellorFilter')?.value  || '',
+    tl:          document.getElementById('standupTLFilter')?.value           || '',
   };
   const data = generateStandupData(filters);
   const tbody = document.getElementById('standupTableBody');
@@ -3400,22 +3755,23 @@ function renderStandupTable(filterData) {
   }
   if (empty) empty.classList.add('hidden');
 
-  const sdCell = (val, metricName, metricKey, extraCls='text-text-muted') =>
-    `<span class="standup-link cursor-pointer hover:text-accent hover:underline ${extraCls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${val}</span>`;
+  const fmtCell = (val, row) => row.isCurrency ? fmt(val) : val;
+  const sdCell = (val, metricName, metricKey, extraCls='text-text-muted', isCurrency=false) =>
+    `<span class="standup-link cursor-pointer hover:text-accent hover:underline ${extraCls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${isCurrency ? fmt(val) : val}</span>`;
 
   tbody.innerHTML = data.map((row, i) => `
     <tr class="hover:bg-surface/50 transition-colors">
       <td class="px-3 py-2 font-medium text-text-main sticky left-0 bg-white whitespace-nowrap cursor-pointer hover:text-accent" onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">${i+1}. ${row.name}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${row.tYTD}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${row.tMTD}</td>
-      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aYTD, row.name, row.key, row.ytdCls)}</td>
-      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aMTD, row.name, row.key, row.mtdCls)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y, row.name, row.key)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y1, row.name, row.key)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y2, row.name, row.key)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W0, row.name, row.key)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W01, row.name, row.key)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.M01, row.name, row.key)}</td>
+      <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tYTD, row)}</td>
+      <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tMTD, row)}</td>
+      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aYTD, row.name, row.key, row.ytdCls, row.isCurrency)}</td>
+      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aMTD, row.name, row.key, row.mtdCls, row.isCurrency)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y1, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y2, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W0, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
+      <td class="px-2 py-2 text-right font-mono">${sdCell(row.M01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
     </tr>
   `).join('');
 }
@@ -3425,9 +3781,9 @@ function applyStandupFilters() {
 }
 
 function resetStandupFilters() {
-  const fields = ['standupIntake','standupLocation','standupCountry'];
+  const fields = ['standupIntake','standupLocation','standupCountry','standupCounsellorFilter','standupTLFilter'];
   fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  renderStandupTable({ intake:'', location:'', country:'' });
+  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'' });
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -3607,6 +3963,7 @@ function openStudentDetail(studentId) {
     <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">User ID</p><p class="font-semibold">${s.id}</p></div>
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Course</p><p class="font-semibold">${s.course}</p></div>
+      <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Country</p><p class="font-semibold text-primary">${s.country || '—'}</p></div>
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Last Call</p><p class="font-semibold">${s.lastCallDate} — ${s.lastCallOutcome}</p></div>
       <div class="bg-surface rounded-lg p-2"><p class="text-text-muted">Follow-up</p>
         <p class="font-semibold ${s.followup <= '2026-05-23' ? 'text-danger' : 'text-text-main'}">${s.followup}</p></div>

@@ -603,7 +603,7 @@ body {
 
 /* Floating bubble pulse ring */
 .bot-bubble {
-  position: relative;
+  position: fixed !important;
 }
 .bot-pulse-ring {
   position: absolute;

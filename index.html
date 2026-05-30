@@ -182,8 +182,19 @@
     <button id="adminTabBtn" class="htab hidden" onclick="switchTab('admin')" data-tab="admin">Admin Panel</button>
   </nav>
 
+  <!-- JOIN 10X BANNER — persistent until clicked -->
+  <div id="join10xBanner" class="hidden fixed top-[104px] left-0 right-0 z-30 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 text-white py-2.5 px-5 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-3">
+      <span class="text-base">🚀</span>
+      <p class="text-sm font-semibold">Your 10x session is live! Join now to stay on track with your team.</p>
+    </div>
+    <button onclick="joinTenX()" class="px-4 py-1.5 bg-white text-indigo-700 font-bold text-sm rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors shadow-sm flex-shrink-0">
+      Join 10x →
+    </button>
+  </div>
+
   <!-- MAIN CONTENT (padded for fixed header + tab bar) -->
-  <main class="mt-[104px] flex-1">
+  <main id="mainContent" class="mt-[104px] flex-1">
 
     <!-- ─────────────────────────────── TAB 1 ─────────────────────────────── -->
     <div id="tab1" class="tab-panel p-5 space-y-6 max-w-screen-xl mx-auto">
@@ -235,28 +246,68 @@
         </div>
       </section>
 
-      <!-- Log Task -->
+      <!-- Add a Reminder for Yourself -->
       <section class="bg-white rounded-xl border border-border p-5">
-        <h2 class="font-semibold text-text-main mb-3 flex items-center gap-2">
-          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Log Task
+        <h2 class="font-semibold text-text-main mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          Add a Reminder for Yourself
         </h2>
-        <div class="flex flex-wrap gap-3">
-          <select id="taskType" class="flex-1 min-w-[160px] px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white">
-            <option value="calls">Call Made</option>
-            <option value="leads">Lead Contacted</option>
-            <option value="enrolments">Enrolment Closed</option>
-            <option value="revenue">Revenue Collected</option>
-            <option value="followups">Follow-up Done</option>
-            <option value="stis">STI Submitted</option>
-            <option value="applications">Application Submitted</option>
-            <option value="deposits">Deposit Collected</option>
-            <option value="lockins">Lock-in Achieved</option>
-          </select>
-          <input id="taskNotes" type="text" placeholder="Optional notes…"
-            class="flex-1 min-w-[160px] px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-          <button onclick="logTask()" class="px-5 py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer">Log</button>
+
+        <!-- Task Type Selector -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" id="reminderTypeGrid">
+          <button onclick="selectReminderType('call')" id="rtype-call"
+            class="reminder-type-btn active flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-accent bg-accent/5 text-accent text-xs font-semibold cursor-pointer transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            Call to User
+          </button>
+          <button onclick="selectReminderType('message')" id="rtype-message"
+            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
+            Send Message
+          </button>
+          <button onclick="selectReminderType('payment')" id="rtype-payment"
+            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Payment Follow Up
+          </button>
+          <button onclick="selectReminderType('custom')" id="rtype-custom"
+            class="reminder-type-btn flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-border text-text-muted text-xs font-semibold cursor-pointer transition-all hover:border-accent hover:text-accent hover:bg-accent/5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            Custom Task
+          </button>
         </div>
+
+        <!-- Custom task name (only for custom) -->
+        <div id="reminderCustomName" class="hidden mb-3">
+          <label class="block text-xs font-semibold text-text-muted mb-1">Task Name</label>
+          <input id="taskCustomName" type="text" placeholder="Enter task name…"
+            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+        </div>
+
+        <!-- Date & Description row -->
+        <div class="flex flex-wrap gap-3 mb-3">
+          <div class="flex-1 min-w-[160px]">
+            <label class="block text-xs font-semibold text-text-muted mb-1">Date &amp; Time</label>
+            <input id="taskDate" type="datetime-local"
+              class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white" />
+          </div>
+          <!-- Hidden legacy taskType for logTask() compat -->
+          <select id="taskType" class="hidden">
+            <option value="followups">Follow-up Done</option>
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-text-muted mb-1">Description <span class="text-text-muted font-normal">(optional)</span></label>
+          <textarea id="taskNotes" rows="2" placeholder="Add details about this reminder…"
+            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"></textarea>
+        </div>
+
+        <button onclick="logTask()" class="w-full py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Save Reminder
+        </button>
       </section>
 
       <!-- Stand Up Metrics Table -->
@@ -267,6 +318,13 @@
             <p class="text-xs text-text-muted mt-0.5">Your metrics at a glance for daily stand-up</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <!-- Manager-only filters (shown for team_lead / ops_admin) -->
+            <select id="standupCounsellorFilter" class="hidden text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+              <option value="">All Counsellors</option>
+            </select>
+            <select id="standupTLFilter" class="hidden text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+              <option value="">All TLs</option>
+            </select>
             <select id="standupIntake" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="">All Intakes</option>
               <option value="sep26">Sep 2026</option>
@@ -279,10 +337,19 @@
             </select>
             <select id="standupCountry" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
               <option value="">All Countries</option>
-              <option value="india">India</option>
-              <option value="canada">Canada</option>
-              <option value="uk">UK</option>
               <option value="australia">Australia</option>
+              <option value="canada">Canada</option>
+              <option value="china">China</option>
+              <option value="germany">Germany</option>
+              <option value="ireland">Ireland</option>
+              <option value="middle-east">Middle Eastern Countries</option>
+              <option value="netherlands">Netherlands</option>
+              <option value="new-zealand">New Zealand</option>
+              <option value="open-any">Open To Any Country</option>
+              <option value="other">Other</option>
+              <option value="rest-europe">Rest Of Europe</option>
+              <option value="singapore">Singapore</option>
+              <option value="uk">UK</option>
               <option value="usa">USA</option>
             </select>
             <button onclick="applyStandupFilters()" class="text-xs px-3 py-1.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors cursor-pointer font-semibold">Apply</button>
@@ -428,63 +495,222 @@
     </div>
 
     <!-- ─────────────────────────────── TAB 3 ─────────────────────────────── -->
-    <div id="tab3" class="tab-panel hidden p-5 space-y-6 max-w-screen-xl mx-auto">
+    <div id="tab3" class="tab-panel hidden max-w-screen-xl mx-auto">
 
-      <!-- Quick Links V1 -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Quick Links</h2>
-        <div id="quickLinksV1" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
-      </section>
+      <!-- Quick Link Cards — always visible at top of L&D -->
+      <div id="ldTopCards" class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 pb-0"></div>
 
-      <!-- Info Hub -->
-      <section id="infoHubSection" class="bg-white rounded-xl border border-border overflow-hidden">
-        <button onclick="toggleInfoHub()" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface transition-colors cursor-pointer">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
-            </div>
-            <div class="text-left">
-              <span class="font-semibold text-text-main text-sm">Info Hub</span>
-              <span class="ml-2 text-xs text-text-muted">Colleges &amp; Universities</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <div id="infoHubSearchWrap" class="hidden" onclick="event.stopPropagation()">
-              <input type="text" id="infoHubSearch" placeholder="Search universities, countries, courses…" oninput="debounceInfoHubSearch(this.value)"
-                class="w-56 text-xs px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" />
-            </div>
-            <svg id="infoHubChevron" class="w-4 h-4 text-text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-          </div>
+      <!-- L&D Sub-tab Bar -->
+      <div class="flex items-center gap-1 px-5 pt-4 border-b border-border bg-white">
+        <button id="ldTabInfoHub" onclick="switchLDTab('infohub')"
+          class="ld-subtab px-5 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 border-primary text-primary bg-primary/5 cursor-pointer transition-all">
+          Info Hub
         </button>
-        <div id="infoHubBody" class="hidden border-t border-border">
-          <!-- Filter Bar -->
-          <div class="px-5 py-3 bg-surface border-b border-border">
-            <div class="flex flex-wrap gap-2 items-center" id="infoHubFilters"></div>
+        <button id="ldTabNewsletter" onclick="switchLDTab('newsletter')"
+          class="ld-subtab px-5 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-text-muted hover:text-text-main cursor-pointer transition-all">
+          Newsletter
+        </button>
+      </div>
+
+      <!-- ─── INFO HUB PANEL ─── -->
+      <div id="ldPanelInfohub" class="flex min-h-[calc(100vh-130px)]">
+
+        <!-- Left Sidebar -->
+        <aside class="w-56 bg-white border-r border-border flex-shrink-0 p-3 space-y-1 pt-4">
+          <!-- Breadcrumb -->
+          <div class="flex items-center gap-1 text-xs text-text-muted mb-3 px-2">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span>Info-hub</span>
           </div>
-          <!-- Directory -->
-          <div id="infoHubDirectory" class="p-5 space-y-6"></div>
+          <button onclick="switchInfoHubSection('deadlines',this)" class="ih-nav-btn active w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex flex-col cursor-pointer bg-primary/10 text-primary border-l-2 border-primary">
+            <span>Track Key Deadlines</span>
+            <span class="text-xs font-normal text-primary/70">Stay ahead of university deadlines</span>
+          </button>
+          <button onclick="switchInfoHubSection('scholarships',this)" class="ih-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex flex-col cursor-pointer hover:bg-surface text-text-main border-l-2 border-transparent">
+            <span>Scholarship Finder</span>
+            <span class="text-xs font-normal text-text-muted">Explore financial opportunities for your students</span>
+          </button>
+          <button onclick="switchInfoHubSection('news',this)" class="ih-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex flex-col cursor-pointer hover:bg-surface text-text-main border-l-2 border-transparent">
+            <span>Explore University News</span>
+            <span class="text-xs font-normal text-text-muted">Stay on top of the latest updates from university</span>
+          </button>
+          <button onclick="switchInfoHubSection('training',this)" class="ih-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex flex-col cursor-pointer hover:bg-surface text-text-main border-l-2 border-transparent">
+            <span>Training and Guidelines</span>
+            <span class="text-xs font-normal text-text-muted">Explore university resources and best practices</span>
+          </button>
+          <button onclick="switchInfoHubSection('institutes',this)" class="ih-nav-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium flex flex-col cursor-pointer hover:bg-surface text-text-main border-l-2 border-transparent">
+            <span>Partnered Institutes</span>
+            <span class="text-xs font-normal text-text-muted">Explore exclusive GeeBee partnered institutes</span>
+          </button>
+        </aside>
+
+        <!-- Right Content -->
+        <div class="flex-1 p-6 overflow-y-auto">
+
+          <!-- Section: Track Key Deadlines -->
+          <div id="ihSection-deadlines" class="ih-section">
+            <h2 class="text-xl font-bold text-text-main mb-4">Track Key Deadlines</h2>
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-3 mb-5">
+              <select class="text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary min-w-[200px]">
+                <option value="">Select Destination Country</option>
+                <option>Australia</option><option>Canada</option><option>UK</option><option>USA</option><option>Germany</option><option>Ireland</option><option>Singapore</option><option>New Zealand</option>
+              </select>
+              <select class="text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary min-w-[180px]">
+                <option value="">Search Universities</option>
+                <option>University of Manchester</option><option>University of Edinburgh</option><option>University of Toronto</option><option>Northeastern University</option>
+              </select>
+              <button class="text-sm px-4 py-2 border border-border rounded-lg text-text-muted hover:bg-surface cursor-pointer">More Filters</button>
+              <div class="flex-1"></div>
+              <button class="text-sm px-4 py-2 border border-border rounded-lg text-text-muted hover:bg-surface cursor-pointer">Reset</button>
+              <button class="text-sm px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light cursor-pointer font-semibold">Apply</button>
+            </div>
+            <!-- Upcoming Deadlines Section -->
+            <div class="bg-white rounded-xl border border-border p-5">
+              <h3 class="font-semibold text-text-main mb-4">Upcoming Deadlines</h3>
+              <div class="flex gap-2 mb-4">
+                <button onclick="switchDeadlineTab('today',this)" class="deadline-tab-btn px-4 py-1.5 rounded-lg text-sm font-semibold bg-primary text-white cursor-pointer">Today</button>
+                <button onclick="switchDeadlineTab('tomorrow',this)" class="deadline-tab-btn px-4 py-1.5 rounded-lg text-sm font-semibold border border-border text-text-muted hover:bg-surface cursor-pointer">Tomorrow</button>
+                <button onclick="switchDeadlineTab('upcoming',this)" class="deadline-tab-btn px-4 py-1.5 rounded-lg text-sm font-semibold border border-border text-text-muted hover:bg-surface cursor-pointer">Upcoming Deadlines</button>
+              </div>
+              <!-- Date chip -->
+              <span class="inline-block px-3 py-1 bg-red-100 text-red-600 text-xs font-semibold rounded-lg mb-4">Deadlines for 31st May 2026</span>
+              <!-- Empty state (mock) -->
+              <div class="flex flex-col items-center justify-center py-16 text-center">
+                <svg class="w-20 h-20 text-text-muted/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <p class="font-semibold text-text-main mb-1">No Upcoming Deadlines Found</p>
+                <p class="text-sm text-text-muted">Try modifying your filters to discover relevant options.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Scholarship Finder -->
+          <div id="ihSection-scholarships" class="ih-section hidden">
+            <h2 class="text-xl font-bold text-text-main mb-4">Scholarship Finder</h2>
+            <div id="infoHubSection" class="bg-white rounded-xl border border-border overflow-hidden">
+              <div class="px-5 py-3 bg-surface border-b border-border">
+                <div class="flex flex-wrap gap-2 items-center">
+                  <input type="text" id="infoHubSearch" placeholder="Search universities, countries, courses…" oninput="debounceInfoHubSearch(this.value)"
+                    class="w-64 text-xs px-3 py-1.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" />
+                  <div class="flex flex-wrap gap-2 items-center" id="infoHubFilters"></div>
+                </div>
+              </div>
+              <div id="infoHubDirectory" class="p-5 space-y-6"></div>
+            </div>
+          </div>
+
+          <!-- Section: University News -->
+          <div id="ihSection-news" class="ih-section hidden">
+            <h2 class="text-xl font-bold text-text-main mb-4">Explore University News</h2>
+            <div id="courseUpdates" class="space-y-3"></div>
+          </div>
+
+          <!-- Section: Training & Guidelines -->
+          <div id="ihSection-training" class="ih-section hidden">
+            <h2 class="text-xl font-bold text-text-main mb-4">Training and Guidelines</h2>
+            <div id="trainingModules" class="space-y-3"></div>
+            <div class="mt-6 text-center">
+              <button onclick="openTicketModal()" class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-xl transition-colors cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                Raise a Support Request
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: Partnered Institutes -->
+          <div id="ihSection-institutes" class="ih-section hidden">
+            <h2 class="text-xl font-bold text-text-main mb-4">Partnered Institutes</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-lg">🎓</div>
+                <div><p class="font-semibold text-sm text-text-main">Leap Scholar</p><p class="text-xs text-text-muted">Official Study Abroad Partner</p></div>
+              </div>
+              <div class="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-lg">🌍</div>
+                <div><p class="font-semibold text-sm text-text-main">GyanDhan</p><p class="text-xs text-text-muted">Education Loans Partner</p></div>
+              </div>
+              <div class="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-lg">📚</div>
+                <div><p class="font-semibold text-sm text-text-main">IELTS Academy</p><p class="text-xs text-text-muted">Test Prep Partner</p></div>
+              </div>
+              <div class="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-lg">✈️</div>
+                <div><p class="font-semibold text-sm text-text-main">Fly High Visas</p><p class="text-xs text-text-muted">Visa Services Partner</p></div>
+              </div>
+              <div class="bg-white rounded-xl border border-border p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-lg">🏠</div>
+                <div><p class="font-semibold text-sm text-text-main">AmberStudent</p><p class="text-xs text-text-muted">Student Housing Partner</p></div>
+              </div>
+            </div>
+          </div>
+
         </div>
-      </section>
+      </div>
 
-      <!-- Course Updates -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <h2 class="font-semibold text-text-main mb-4">Course Updates</h2>
-        <div class="space-y-3" id="courseUpdates"></div>
-      </section>
+      <!-- ─── TRAINING MODULES — always visible at bottom ─── -->
+      <div class="p-5 pt-0">
+        <div class="bg-white rounded-xl border border-border p-5">
+          <h3 class="font-bold text-text-main mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            Training Modules
+          </h3>
+          <div id="trainingModulesLD" class="space-y-3"></div>
+        </div>
+      </div>
 
-      <!-- Training Modules -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <h2 class="font-semibold text-text-main mb-4">Training Modules</h2>
-        <div id="trainingModules" class="space-y-3"></div>
-      </section>
-
-      <!-- Support -->
-      <div class="text-center pb-4">
-        <button onclick="openTicketModal()"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-light text-white font-semibold rounded-xl transition-colors cursor-pointer">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-          Raise a Support Request
-        </button>
+      <!-- ─── NEWSLETTER PANEL ─── -->
+      <div id="ldPanelNewsletter" class="hidden p-5">
+        <h2 class="text-xl font-bold text-text-main mb-4">Newsletter</h2>
+        <!-- Filters Row -->
+        <div class="flex flex-wrap items-center gap-2 mb-4 bg-white rounded-xl border border-border p-3">
+          <select id="nlFilterCountry" class="text-xs px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">Select Country</option>
+            <option>USA</option><option>UK</option><option>Canada</option><option>Australia</option><option>Germany</option><option>Ireland</option><option>Singapore</option>
+          </select>
+          <div class="flex items-center gap-1 border border-border rounded-lg px-3 py-2 bg-white text-xs text-text-muted">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <input type="date" id="nlFilterDateFrom" class="text-xs border-none outline-none bg-transparent" placeholder="Date From" />
+          </div>
+          <div class="flex items-center gap-1 border border-border rounded-lg px-3 py-2 bg-white text-xs text-text-muted">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <input type="date" id="nlFilterDateTo" class="text-xs border-none outline-none bg-transparent" placeholder="Date To" />
+          </div>
+          <select id="nlFilterRelated" class="text-xs px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">Select Related to</option>
+            <option>Pending Deferral Applications</option><option>Bangor University</option><option>London South Bank University</option><option>Swansea University</option><option>University of Hertfordshire</option>
+          </select>
+          <select id="nlFilterCategory" class="text-xs px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">Select Category</option>
+            <option>Important Update</option><option>Scholarship Alert</option><option>Deadline Reminder</option><option>Event</option>
+          </select>
+          <button onclick="resetNewsletterFilters()" class="text-xs px-3 py-2 border border-border rounded-lg text-text-muted hover:bg-surface cursor-pointer font-semibold">Reset Filters</button>
+          <div class="flex-1"></div>
+          <span class="text-xs text-text-muted font-semibold">Viewing 1 – 12 of 9915</span>
+          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&laquo;</button>
+          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&lsaquo;</button>
+          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&rsaquo;</button>
+          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&raquo;</button>
+        </div>
+        <!-- Table -->
+        <div class="bg-white rounded-xl border border-border overflow-x-auto">
+          <table class="w-full text-xs min-w-[1200px]">
+            <thead>
+              <tr class="border-b border-border bg-surface text-text-muted font-semibold uppercase tracking-wide">
+                <th class="text-left px-3 py-3 w-12">Id</th>
+                <th class="text-left px-3 py-3 w-20">Country</th>
+                <th class="text-left px-3 py-3 w-28">Date</th>
+                <th class="text-left px-3 py-3 w-44">Related To</th>
+                <th class="text-left px-3 py-3 w-32">Category</th>
+                <th class="text-left px-3 py-3">Summary</th>
+                <th class="text-left px-3 py-3 w-32">Link</th>
+                <th class="text-left px-3 py-3 w-32">Special Remarks</th>
+                <th class="text-left px-3 py-3 w-28">Admit Probability</th>
+                <th class="text-left px-3 py-3 w-20">IM Related</th>
+              </tr>
+            </thead>
+            <tbody id="newsletterTableBody" class="divide-y divide-border"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -995,16 +1221,17 @@
 <!-- ═══════════════════════════════════════════════════
      CRM ASSISTANT BOT
 ═══════════════════════════════════════════════════ -->
-<!-- CRM Assistant Bubble — always sticky bottom-right -->
+<!-- CRM Assistant Bubble — floating right-center -->
 <button id="botBubble" onclick="toggleBot()" aria-label="Open CRM Assistant"
-  class="fixed bottom-6 right-6 z-[90] w-14 h-14 bg-accent hover:bg-accent-dark text-white rounded-full shadow-xl flex items-center justify-center cursor-pointer transition-colors bot-bubble relative">
-  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
-  <span id="botUnreadBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10"></span>
+  class="fixed right-0 top-1/2 -translate-y-1/2 z-[90] w-12 h-14 bg-accent hover:bg-accent-dark text-white rounded-l-2xl shadow-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors bot-bubble relative">
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
+  <span class="text-[9px] font-bold leading-tight text-center">Chat</span>
+  <span id="botUnreadBadge" class="hidden absolute -top-1 -left-1 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10"></span>
   <span class="bot-pulse-ring"></span>
 </button>
 
 <!-- Bot Chat Panel -->
-<div id="botPanel" class="bot-panel hidden fixed bottom-20 right-6 z-[90] w-[380px] bg-white rounded-2xl shadow-2xl flex flex-col border border-border overflow-hidden" style="height:min(520px,calc(100vh - 120px))">
+<div id="botPanel" class="bot-panel hidden fixed right-14 top-1/2 -translate-y-1/2 z-[90] w-[380px] bg-white rounded-2xl shadow-2xl flex flex-col border border-border overflow-hidden" style="height:min(520px,calc(100vh - 120px))">
   <!-- Header -->
   <div class="flex items-center justify-between px-4 py-3 bg-sidebar flex-shrink-0">
     <div class="flex items-center gap-2">
@@ -1058,10 +1285,10 @@
   <!-- Action Items Tab Content -->
   <div id="botActionItems" class="hidden flex-1 overflow-y-auto p-3 space-y-3 bg-surface"></div>
   <!-- Input -->
-  <div class="flex items-center gap-2 px-3 py-3 border-t border-border bg-white flex-shrink-0">
-    <input id="botInput" type="text" placeholder="Ask me anything…"
+  <div class="flex items-center gap-2 px-3 py-3 border-t-2 border-border bg-surface flex-shrink-0">
+    <input id="botInput" type="text" placeholder="Type your message here…"
       onkeydown="if(event.key==='Enter')sendBotMessage()"
-      class="flex-1 px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      class="flex-1 px-3 py-2.5 border-2 border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent placeholder:text-slate-400" />
     <button onclick="sendBotMessage()" class="w-9 h-9 bg-accent hover:bg-accent-dark rounded-xl flex items-center justify-center cursor-pointer transition-colors flex-shrink-0" aria-label="Send">
       <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
     </button>
