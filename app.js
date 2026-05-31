@@ -4395,6 +4395,9 @@ function generateStandupData(filters) {
   const locMult     = filters.location   === 'online'  ? 0.7  : filters.location === 'branch' ? 0.85 : 1;
   const counselMult = filters.counsellor && filters.counsellor !== '' ? 0.5  : 1;
   const tlMult      = filters.tl         && filters.tl         !== '' ? 0.75 : 1;
+  // Servicing type filter — Master ≈ 40% of pipeline, UG ≈ 60%
+  const servMult    = filters.servicingType === 'master' ? 0.40
+                    : filters.servicingType === 'ug'     ? 0.60 : 1;
   // CA date filter — count students within range and scale
   let caDateMult = 1;
   if (filters.caDateFrom || filters.caDateTo) {
@@ -4409,7 +4412,7 @@ function generateStandupData(filters) {
   }
 
   return STANDUP_METRICS.map((m, i) => {
-    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult * caDateMult);
+    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult * caDateMult * servMult);
     const tYTD   = daily * 264;   // 264 working days
     const tMTD   = daily * 22;
     const aYTD   = Math.round(tYTD * [0.78,0.82,0.65,0.91,0.74,0.88,0.60,0.85,0.93,0.70,0.77][i % 11]);
@@ -4430,13 +4433,14 @@ function generateStandupData(filters) {
 
 function renderStandupTable(filterData) {
   const filters = filterData || {
-    intake:      document.getElementById('standupIntake')?.value            || '',
-    location:    document.getElementById('standupLocation')?.value          || '',
-    country:     document.getElementById('standupCountry')?.value           || '',
-    counsellor:  document.getElementById('standupCounsellorFilter')?.value  || '',
-    tl:          document.getElementById('standupTLFilter')?.value           || '',
-    caDateFrom:  document.getElementById('standupCADateFrom')?.value        || '',
-    caDateTo:    document.getElementById('standupCADateTo')?.value          || '',
+    intake:         document.getElementById('standupIntake')?.value            || '',
+    location:       document.getElementById('standupLocation')?.value          || '',
+    country:        document.getElementById('standupCountry')?.value           || '',
+    counsellor:     document.getElementById('standupCounsellorFilter')?.value  || '',
+    tl:             document.getElementById('standupTLFilter')?.value           || '',
+    caDateFrom:     document.getElementById('standupCADateFrom')?.value        || '',
+    caDateTo:       document.getElementById('standupCADateTo')?.value          || '',
+    servicingType:  document.getElementById('standupServicingType')?.value     || '',
   };
   const data = generateStandupData(filters);
   const tbody = document.getElementById('standupTableBody');
@@ -4483,9 +4487,9 @@ function applyStandupFilters() {
 }
 
 function resetStandupFilters() {
-  const fields = ['standupIntake','standupLocation','standupCountry','standupCounsellorFilter','standupTLFilter','standupCADateFrom','standupCADateTo'];
+  const fields = ['standupIntake','standupLocation','standupCountry','standupCounsellorFilter','standupTLFilter','standupCADateFrom','standupCADateTo','standupServicingType'];
   fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', caDateFrom:'', caDateTo:'' });
+  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', caDateFrom:'', caDateTo:'', servicingType:'' });
 }
 
 /* ═══════════════════════════════════════════════════════
