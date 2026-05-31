@@ -461,7 +461,7 @@ const BOT_INTENT_MAP = {
     navAction: null,
   },
   top_performer: {
-    keywords: ['top performer', 'best performer', 'who is top', 'top kaun', 'highest performer', 'cluster top', 'org top', 'who performed best', 'best counsellor', 'top counsellor', 'highest calls', 'highest revenue', 'best this month'],
+    keywords: ['top performing counsellor', 'top performing counselor', 'who is the top performing', 'top performing', 'top performer', 'best performer', 'who is top', 'top kaun', 'highest performer', 'cluster top', 'org top', 'who performed best', 'best counsellor', 'top counsellor', 'highest calls', 'highest revenue', 'best this month', 'performing counsellor', 'performing counselor'],
     answer: null,
     navLabel: null,
     navAction: null,
@@ -3447,6 +3447,9 @@ function handleClarifyStep(userText) {
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
       renderBotResponse('fallback', '');
+    } else if (FLOW_INTENTS.includes(intent) && intent !== 'clarify_before_answering') {
+      // Flow intent matched — start that flow properly instead of calling renderBotResponse
+      startFlow(intent, combined);
     } else {
       renderBotResponse(intent, entity);
       maybeAddFollowUp(intent);
