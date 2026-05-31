@@ -241,7 +241,7 @@ const COUNSELLOR_OFFERS = [
     title:'Top Depositor of the Week!',
     desc:'Collect the highest deposits this week (May 27–31) and win a ₹3,000 Amazon voucher + profile badge.',
     reward:'₹3,000 Gift Voucher', expiry:'2026-05-31', active:true,
-    gradFrom:'#ea580c', gradTo:'#c2410c',
+    gradFrom:'#1d4ed8', gradTo:'#1e3a8a',
     calcRows:[
       { rank:'1st Place',        prize:'₹3,000 Gift Voucher + 🏅 Profile Badge' },
       { rank:'2nd Place',        prize:'₹1,500 Gift Voucher' },
@@ -271,7 +271,7 @@ const COUNSELLOR_OFFERS = [
     title:'Referral King — Earn Extra ₹1,000',
     desc:'Get 3+ confirmed referrals from your existing students this week. Every referral that converts earns ₹1,000 extra on top of your slab.',
     reward:'₹1,000 per referral', expiry:'2026-06-02', active:true,
-    gradFrom:'#ea580c', gradTo:'#7c2d12',
+    gradFrom:'#2563eb', gradTo:'#1e40af',
     calcRows:[
       { rank:'Base Slab',    prize:'Standard referral bonus applies' },
       { rank:'Sprint Bonus', prize:'+₹1,000 per referral that converts' },
@@ -1897,9 +1897,13 @@ function renderCounsellorOffersRow() {
     const expiryClass = d <= 3 ? 'text-yellow-200 font-bold' : 'text-white/70';
     const expiryText = d <= 0 ? 'Expires today!' : d === 1 ? 'Expires tomorrow' : `Expires ${o.expiry.split('-').reverse().join(' ').replace('-',' ')}`;
     return `
-      <div class="flex-shrink-0 w-72 rounded-2xl text-white p-5 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform"
-           style="background:linear-gradient(135deg,${o.gradFrom} 0%,${o.gradTo} 100%);min-height:175px;box-shadow:0 8px 28px rgba(0,0,0,0.22)">
+      <div class="flex-shrink-0 w-72 rounded-2xl text-white p-5 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.99] transition-transform"
+           style="background:linear-gradient(135deg,${o.gradFrom} 0%,${o.gradTo} 100%);min-height:175px;box-shadow:0 8px 28px rgba(0,0,0,0.22)"
+           onclick="openCounsellorOfferDrawer('${o.id}')">
         <div class="absolute inset-0 opacity-10" style="background:radial-gradient(circle at 80% 20%, white 0%, transparent 60%)"></div>
+        <div class="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </div>
         <div>
           <div class="flex items-center gap-2 mb-2.5">
             <span class="text-lg">${o.icon}</span>
@@ -1913,10 +1917,9 @@ function renderCounsellorOffersRow() {
             <span class="text-[10px] ${expiryClass} block">${expiryText}</span>
             <span class="text-xs font-bold text-yellow-200 mt-0.5 block">🎁 ${o.reward}</span>
           </div>
-          <button class="text-xs font-semibold bg-white/25 hover:bg-white/40 text-white px-3 py-1.5 rounded-lg cursor-pointer transition-colors"
-                  onclick="openCounsellorOfferDrawer('${o.id}')">
+          <div class="text-xs font-semibold bg-white/25 hover:bg-white/40 text-white px-3 py-1.5 rounded-lg transition-colors">
             View Details →
-          </button>
+          </div>
         </div>
       </div>
     `;
