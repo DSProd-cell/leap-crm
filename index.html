@@ -243,6 +243,13 @@
               <option value="uk">UK</option>
               <option value="usa">USA</option>
             </select>
+            <div class="flex items-center gap-1.5 border border-border rounded-lg px-2 py-1 bg-white">
+              <svg class="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span class="text-[10px] font-bold text-primary whitespace-nowrap">CA Date</span>
+              <input id="standupCADateFrom" type="date" class="text-xs border-0 outline-none bg-transparent text-text-main w-28 cursor-pointer" title="CA Date From" />
+              <span class="text-text-muted text-xs">→</span>
+              <input id="standupCADateTo" type="date" class="text-xs border-0 outline-none bg-transparent text-text-main w-28 cursor-pointer" title="CA Date To" />
+            </div>
             <button onclick="applyStandupFilters()" class="text-xs px-3 py-1.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors cursor-pointer font-semibold">Apply</button>
             <button onclick="resetStandupFilters()" class="text-xs px-3 py-1.5 border border-border text-text-muted rounded-lg hover:bg-surface transition-colors cursor-pointer">Reset</button>
           </div>
@@ -309,11 +316,13 @@
         <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 items-start"></div>
       </section>
 
+      <!-- WhatsApp Group Coverage -->
+      <div id="whatsappCoverage" class="flex flex-wrap gap-3 text-sm"></div>
+
       <!-- ④ Volume Metrics -->
       <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Volume Metrics</h2>
         <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-        <div id="whatsappCoverage" class="flex gap-4 text-sm mt-3"></div>
       </section>
 
       <!-- ⑤ Quality Metrics -->
@@ -341,12 +350,16 @@
         </div>
       </section>
 
-      <!-- ⑦ Add a Reminder for Yourself -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <h2 class="font-semibold text-text-main mb-4 flex items-center gap-2">
-          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-          Add a Reminder for Yourself
-        </h2>
+      <!-- ⑦ Add a Reminder for Yourself — Expandable -->
+      <section class="bg-white rounded-xl border border-border overflow-hidden">
+        <button onclick="toggleSection('reminder')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
+          <h2 class="font-semibold text-text-main flex items-center gap-2">
+            <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            Add a Reminder for Yourself
+          </h2>
+          <svg id="chevron-reminder" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="body-reminder" class="hidden px-5 pb-5">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" id="reminderTypeGrid">
           <button onclick="selectReminderType('call')" id="rtype-call"
             class="reminder-type-btn active flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-accent bg-accent/5 text-accent text-xs font-semibold cursor-pointer transition-all">
@@ -374,6 +387,19 @@
           <input id="taskCustomName" type="text" placeholder="Enter task name…"
             class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
         </div>
+        <!-- User Details — Required -->
+        <div class="mb-3">
+          <label class="block text-xs font-semibold text-text-muted mb-1">
+            User ID <span class="text-danger">*</span>
+            <span class="text-text-muted font-normal ml-1">(required — enter the student's User ID)</span>
+          </label>
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <input id="taskUserId" type="text" placeholder="e.g. U1001, U1002…" required
+              class="w-full pl-9 pr-3 py-2 border-2 border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white" />
+          </div>
+        </div>
+
         <div class="flex flex-wrap gap-3 mb-3">
           <div class="flex-1 min-w-[160px]">
             <label class="block text-xs font-semibold text-text-muted mb-1">Date &amp; Time</label>
@@ -391,31 +417,10 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           Save Reminder
         </button>
+        </div><!-- end collapsible body -->
       </section>
 
-      <!-- ⑧ Team Chat -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="font-semibold text-text-main flex items-center gap-2">
-              <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
-              Team Chat
-            </h2>
-            <p class="text-xs text-text-muted mt-0.5">Quick updates with your team</p>
-          </div>
-          <span id="chatOnlineBadge" class="text-[10px] px-2 py-1 bg-green-50 border border-green-200 text-green-700 rounded-full font-semibold">● 3 online</span>
-        </div>
-        <div id="teamChatMessages" class="space-y-3 max-h-64 overflow-y-auto pr-1 mb-4 scroll-smooth"></div>
-        <div class="flex gap-2">
-          <input id="teamChatInput" type="text" placeholder="Message your team…"
-            class="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-            onkeydown="if(event.key==='Enter')sendTeamChat()" />
-          <button onclick="sendTeamChat()" class="px-4 py-2 bg-accent hover:bg-accent-dark text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-            Send
-          </button>
-        </div>
-      </section>
+      <!-- Team Chat moved to floating bubble (Chat in Internal Team) -->
 
     </div>
 
@@ -444,18 +449,34 @@
         </div>
       </section>
 
-      <!-- Live Offers -->
+      <!-- Live Offers for Students -->
       <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Live Offers</h2>
+        <div class="flex items-center gap-2 mb-3">
+          <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
+          <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide">Live Offers for Students</h2>
+        </div>
         <div id="offersRow" class="offers-scroll flex gap-4 overflow-x-auto pb-2"></div>
+      </section>
+
+      <!-- Live Offers for Counsellors (role-aware) -->
+      <section id="counsellorOffersSection">
+        <div class="flex items-center gap-2 mb-3">
+          <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+          <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide">Live for Counsellors</h2>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold text-accent bg-orange-100 border border-orange-200">For You</span>
+        </div>
+        <div id="counsellorOffersRow" class="flex gap-4 overflow-x-auto pb-2"></div>
       </section>
 
       <!-- Incentive Breakdown -->
       <section class="bg-white rounded-xl border border-border p-5">
-        <h2 class="font-semibold text-text-main mb-4">Incentive Breakdown</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-text-main">Incentive Breakdown</h2>
+          <span class="text-[10px] text-text-muted italic">Click any row to see earners ▾</span>
+        </div>
         <table class="w-full text-sm">
           <thead><tr class="border-b border-border text-xs text-text-muted font-semibold uppercase tracking-wide">
-            <th class="text-left py-2">Component</th>
+            <th class="text-left py-2">Component &amp; Drive Period</th>
             <th class="text-left py-2">Rule</th>
             <th class="text-left py-2">Status</th>
             <th class="text-right py-2">Earned</th>
@@ -463,15 +484,9 @@
           <tbody id="slabTableBody" class="divide-y divide-border"></tbody>
           <tfoot><tr class="border-t-2 border-border">
             <td colspan="3" class="py-2 font-bold text-sm">Total</td>
-            <td class="py-2 text-right font-mono font-bold text-success">₹33,500</td>
+            <td class="py-2 text-right font-mono font-bold text-success">₹58,100</td>
           </tr></tfoot>
         </table>
-      </section>
-
-      <!-- Earnings Chart -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <h2 class="font-semibold text-text-main mb-4">Monthly Earnings — 2025</h2>
-        <div class="h-56"><canvas id="earningsChart"></canvas></div>
       </section>
 
       <!-- Top Earners Leaderboard -->
@@ -486,6 +501,20 @@
             <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">All Time</p>
             <div id="earnerAllList" class="space-y-2"></div>
           </div>
+        </div>
+      </section>
+
+      <!-- Monthly Earnings Chart — collapsible -->
+      <section class="bg-white rounded-xl border border-border overflow-hidden">
+        <button onclick="toggleSection('earningsChart')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
+          <h2 class="font-semibold text-text-main flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            Monthly Earnings — FY 2026–27
+          </h2>
+          <svg id="chevron-earningsChart" class="w-4 h-4 text-text-muted transition-transform duration-200 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="body-earningsChart" class="px-5 pb-5">
+          <div class="h-56"><canvas id="earningsChart"></canvas></div>
         </div>
       </section>
     </div>
@@ -1217,14 +1246,57 @@
 <!-- ═══════════════════════════════════════════════════
      CRM ASSISTANT BOT
 ═══════════════════════════════════════════════════ -->
-<!-- CRM Assistant Bubble — floating right-center -->
+<!-- CRM Assistant Bubble — floating right-center (Chat with Business Team) -->
 <button id="botBubble" onclick="toggleBot()" aria-label="Open CRM Assistant"
-  class="fixed right-0 top-1/2 -translate-y-1/2 z-[90] w-12 h-14 bg-accent hover:bg-accent-dark text-white rounded-l-2xl shadow-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors bot-bubble relative">
-  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
-  <span class="text-[9px] font-bold leading-tight text-center">Chat</span>
+  class="fixed right-0 top-[42%] -translate-y-1/2 z-[90] w-12 h-[72px] bg-accent hover:bg-accent-dark text-white rounded-l-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors bot-bubble relative">
+  <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
+  <span class="text-[7.5px] font-bold leading-tight text-center px-0.5">Chat with<br>Business<br>Team</span>
   <span id="botUnreadBadge" class="hidden absolute -top-1 -left-1 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10"></span>
   <span class="bot-pulse-ring"></span>
 </button>
+
+<!-- Internal Team Chat Bubble — fixed right side, always visible -->
+<button id="internalChatBubbleBtn" onclick="toggleInternalChat()" aria-label="Open Internal Team Chat"
+  class="internal-chat-bubble right-0 bottom-28 z-[100] w-[68px] h-[96px] rounded-l-2xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-all duration-200 relative overflow-visible"
+  style="background:linear-gradient(160deg,#10b981 0%,#059669 50%,#047857 100%);box-shadow:-6px 4px 28px rgba(16,185,129,0.65),0 8px 32px rgba(5,150,105,0.4);">
+  <svg class="w-7 h-7 flex-shrink-0 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+  </svg>
+  <span class="text-[9.5px] font-extrabold leading-tight text-center text-white drop-shadow" style="text-shadow:0 1px 3px rgba(0,0,0,0.3)">Chat in<br>Internal<br>Team</span>
+  <span id="internalChatBadge" class="hidden absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center z-20 shadow-lg"></span>
+  <span class="internal-pulse-ring"></span>
+</button>
+
+<!-- Internal Team Chat Panel -->
+<div id="internalChatPanel" class="hidden fixed right-[76px] bottom-16 z-[99] w-[360px] bg-white rounded-2xl flex flex-col border border-border overflow-hidden" style="height:min(500px,calc(100vh - 80px));box-shadow:0 24px 60px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06)">
+  <div class="flex items-center justify-between px-4 py-3 bg-emerald-700 flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-white">Chat in Internal Team</p>
+        <p class="text-[10px] text-emerald-200">Quick updates with your team</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="chatOnlineBadge" class="text-[10px] px-2 py-0.5 bg-emerald-500/40 border border-emerald-400/50 text-white rounded-full font-semibold">● 3 online</span>
+      <button onclick="toggleInternalChat()" class="w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors cursor-pointer" aria-label="Close">
+        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="teamChatMessages" class="flex-1 space-y-3 overflow-y-auto p-4 scroll-smooth"></div>
+  <div class="flex gap-2 px-4 py-3 border-t border-border flex-shrink-0">
+    <input id="teamChatInput" type="text" placeholder="Message your team…"
+      class="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+      onkeydown="if(event.key==='Enter')sendTeamChat()" />
+    <button onclick="sendTeamChat()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer flex items-center gap-1">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+      Send
+    </button>
+  </div>
+</div>
 
 <!-- Bot Chat Panel -->
 <div id="botPanel" class="bot-panel hidden fixed right-14 top-1/2 -translate-y-1/2 z-[90] w-[380px] bg-white rounded-2xl shadow-2xl flex flex-col border border-border overflow-hidden" style="height:min(520px,calc(100vh - 120px))">
