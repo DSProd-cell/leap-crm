@@ -496,6 +496,23 @@ const BOT_INTENT_MAP = {
     navLabel: '→ See Live Offers for Me',
     navAction: () => { switchTab('tab2'); setTimeout(() => { const el = document.getElementById('counsellorOffersRow'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); }, 400); },
   },
+  view_leaderboard: {
+    keywords: ['show me the leaderboard', 'show leaderboard', 'view leaderboard', 'open leaderboard', 'leaderboard dekhna', 'top performers table', 'top performers list', 'leaderboard'],
+    answer: `🏆 **Taking you to the Top Performers leaderboard!**\n\nYou can switch between **Today**, **This Month**, and **This Year** to compare across the team.`,
+    navLabel: '→ View Top Performers',
+    navAction: () => {
+      switchTab('tab1');
+      setTimeout(() => {
+        const body = document.getElementById('body-topPerformers');
+        if (body && body.classList.contains('hidden')) {
+          toggleSection('topPerformers');
+        }
+        const el = document.getElementById('leaderboardGrid');
+        const mc = document.getElementById('mainContent');
+        if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+      }, 400);
+    },
+  },
   clarify_before_answering: {
     keywords: ['help me', "i'm stuck", 'im stuck', 'something wrong', "something's wrong"],
     answer: null,
@@ -3089,8 +3106,13 @@ function renderBotResponse(intent, entity) {
     }
   }
 
-  // Navigation confirm button
-  if (data.navLabel && data.navAction) {
+  // Auto-navigate for view_leaderboard — no button needed, just go there
+  if (intent === 'view_leaderboard' && data.navAction) {
+    setTimeout(() => data.navAction(), 800);
+  }
+
+  // Navigation confirm button (for all other intents with navAction)
+  if (data.navLabel && data.navAction && intent !== 'view_leaderboard') {
     extraHtml += `<button class="bot-nav-btn" onclick="confirmBotNav('${intent}')">
       ${data.navLabel}
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
