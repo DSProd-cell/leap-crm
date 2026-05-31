@@ -454,8 +454,50 @@ const BOT_INTENT_MAP = {
     navLabel: null,
     navAction: null,
   },
+  need_help: {
+    keywords: ['i need help', 'need help', 'help chahiye', 'help karo', 'mujhe help', 'help please', 'koi help', 'help karna'],
+    answer: null,
+    navLabel: null,
+    navAction: null,
+  },
+  top_performer: {
+    keywords: ['top performer', 'best performer', 'who is top', 'top kaun', 'highest performer', 'cluster top', 'org top', 'who performed best', 'best counsellor', 'top counsellor', 'highest calls', 'highest revenue', 'best this month'],
+    answer: null,
+    navLabel: null,
+    navAction: null,
+  },
+  incentive_clarify: {
+    keywords: ['understand my incentive', 'incentive calculation', 'incentive samajhna', 'explain my incentive', 'how is incentive calculated', 'incentive kaise', 'incentive clarity', 'incentive explain', 'incentive details', 'how incentive works', 'mera incentive'],
+    answer: null,
+    navLabel: null,
+    navAction: null,
+  },
+  my_targets: {
+    keywords: ['my target', 'what is my target', 'target kya hai', 'today target', 'target batao', 'daily target', 'what are my targets', 'target for today', 'kitna target'],
+    answer: null, // dynamic
+    navLabel: '→ Go to My Dashboard',
+    navAction: () => { switchTab('tab1'); },
+  },
+  who_to_call: {
+    keywords: ['who to call', 'call list', 'priority students', 'should i call', 'call karo', 'whom to call', 'which student to call', 'call priority', 'kaun call', 'call sequence'],
+    answer: null, // dynamic
+    navLabel: '→ View My Pipeline',
+    navAction: () => { switchTab('tab1'); },
+  },
+  my_performance_today: {
+    keywords: ['how am i doing', 'today performance', 'aaj ka status', 'my stats today', 'performance today', 'mera performance', 'kya status', 'how is my performance', 'aaj kitna'],
+    answer: null, // dynamic
+    navLabel: '→ Go to My Dashboard',
+    navAction: () => { switchTab('tab1'); },
+  },
+  live_offers_for_me: {
+    keywords: ['live offers for me', 'what offers', 'current offers', 'counsellor offers', 'live for counsellor', 'koi offer', 'offer hai kya', 'earn more', 'sprint', 'performance sprint', 'referral offer'],
+    answer: `🎁 **Live offers for you are in the Incentives tab!**\n\nThe **Live for Counsellors** section shows all active performance drives — with the full incentive structure and exactly which students to target to earn from each.\n\nClick any offer card to see:\n• The earning milestones & prizes\n• Specific students in your pipeline to focus on`,
+    navLabel: '→ See Live Offers for Me',
+    navAction: () => { switchTab('tab2'); setTimeout(() => { const el = document.getElementById('counsellorOffersRow'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); }, 400); },
+  },
   clarify_before_answering: {
-    keywords: ['help me', "i'm stuck", 'im stuck', 'something wrong', "something's wrong", 'i need help'],
+    keywords: ['help me', "i'm stuck", 'im stuck', 'something wrong', "something's wrong"],
     answer: null,
     navLabel: null,
     navAction: null,
@@ -2950,26 +2992,29 @@ function removeTypingIndicator() {
 
 function classifyIntent(msg) {
   const lower = msg.toLowerCase();
-  // Check each intent's keywords
+  // Find the BEST match = longest keyword that appears in the message
+  // This ensures specific phrases (e.g. "incentive calculation") win over generic ones ("incentive")
+  let bestIntent = 'fallback';
+  let bestKeywordLen = 0;
+
   for (const [intent, data] of Object.entries(BOT_INTENT_MAP)) {
     if (intent === 'fallback') continue;
     for (const kw of data.keywords) {
-      if (lower.includes(kw)) {
-        // Extract entity for college_info
-        let entity = '';
-        if (intent === 'college_info') {
-          entity = INFO_HUB_DATA.find(u => lower.includes(u.name.split(' ')[1]?.toLowerCase() || u.name.toLowerCase()))?.name || '';
-          // Try to find any university name mentioned
-          for (const uni of INFO_HUB_DATA) {
-            const words = uni.name.toLowerCase().split(' ');
-            if (words.some(w => w.length > 4 && lower.includes(w))) { entity = uni.name; break; }
-          }
-        }
-        return { intent, entity };
+      if (lower.includes(kw) && kw.length > bestKeywordLen) {
+        bestIntent = intent;
+        bestKeywordLen = kw.length;
       }
     }
   }
-  return { intent: 'fallback', entity: '' };
+
+  let entity = '';
+  if (bestIntent === 'college_info') {
+    for (const uni of INFO_HUB_DATA) {
+      const words = uni.name.toLowerCase().split(' ');
+      if (words.some(w => w.length > 4 && lower.includes(w))) { entity = uni.name; break; }
+    }
+  }
+  return { intent: bestIntent, entity };
 }
 
 function renderBotResponse(intent, entity) {
@@ -2982,6 +3027,31 @@ function renderBotResponse(intent, entity) {
   if (intent === 'contact_business_head') {
     const bh = BOT_SETTINGS.businessHead;
     answerHtml = `📞 **Contact Business Head:**\n\n**${bh.name}**\n${bh.designation}\n📱 ${bh.contact}`;
+  }
+  // Special: my_targets — show today's targets dynamically
+  else if (intent === 'my_targets') {
+    const c = getCounselorData();
+    answerHtml = `🎯 **Your targets for today:**\n\n• STIs: ${c.stis} / ${TARGETS.stis} (${Math.round(c.stis/TARGETS.stis*100)}%)\n• Applications: ${c.applications} / ${TARGETS.applications} (${Math.round(c.applications/TARGETS.applications*100)}%)\n• Deposits: ${c.deposits} / ${TARGETS.deposits} (${Math.round(c.deposits/TARGETS.deposits*100)}%)\n• Lock-ins: ${c.lockins} / ${TARGETS.lockins} (${Math.round(c.lockins/TARGETS.lockins*100)}%)\n• Calls: ${c.calls} / ${TARGETS.calls} (${Math.round(c.calls/TARGETS.calls*100)}%)\n• Revenue: ₹${(c.revenue/1000).toFixed(0)}K / ₹${(TARGETS.revenue/1000).toFixed(0)}K\n\nHead to the dashboard to see the full picture!`;
+  }
+  // Special: who_to_call — show students by urgency
+  else if (intent === 'who_to_call') {
+    const students = getViewingStudents();
+    const today = new Date('2026-05-31');
+    const overdue = students.filter(s => s.followup && new Date(s.followup) < today).slice(0, 3);
+    const dueToday = students.filter(s => s.followup === '2026-05-31').slice(0, 3);
+    const priority = [...overdue, ...dueToday].slice(0, 4);
+    if (priority.length) {
+      const lines = priority.map(s => `• **${s.name}** (${s.stage}) — Follow-up: ${s.followup}`).join('\n');
+      answerHtml = `📞 **Priority students to call today:**\n\n${lines}\n\nClick any student in the pipeline to open their profile and make notes.`;
+    } else {
+      answerHtml = `📞 No overdue follow-ups right now — you're on top of it! Check the pipeline for students whose follow-up is coming up soon.`;
+    }
+  }
+  // Special: my_performance_today — live snapshot
+  else if (intent === 'my_performance_today') {
+    const c = getCounselorData();
+    const emo = (a, t) => a >= t ? '🟢' : a >= t * 0.6 ? '🟡' : '🔴';
+    answerHtml = `📊 **Your performance today:**\n\n${emo(c.calls,TARGETS.calls)} Calls: ${c.calls}/${TARGETS.calls}\n${emo(c.stis,TARGETS.stis)} STIs: ${c.stis}/${TARGETS.stis}\n${emo(c.applications,TARGETS.applications)} Applications: ${c.applications}/${TARGETS.applications}\n${emo(c.deposits,TARGETS.deposits)} Deposits: ${c.deposits}/${TARGETS.deposits}\n${emo(c.lockins,TARGETS.lockins)} Lock-ins: ${c.lockins}/${TARGETS.lockins}\n${emo(c.revenue,TARGETS.revenue)} Revenue: ₹${(c.revenue/1000).toFixed(0)}K / ₹${(TARGETS.revenue_target/1000).toFixed(0)}K\n\n🟢 = On target  🟡 = Getting there  🔴 = Needs focus`;
   }
   // Special: college_info
   else if (intent === 'college_info') {
@@ -3056,7 +3126,7 @@ function escHtml(str) {
    BOT V3 — CONVERSATION ENGINE
 ═══════════════════════════════════════════════════════ */
 
-const FLOW_INTENTS = ['start_my_day', 'connect_business_team', 'clarify_before_answering'];
+const FLOW_INTENTS = ['start_my_day', 'connect_business_team', 'clarify_before_answering', 'need_help', 'top_performer', 'incentive_clarify'];
 const CANCEL_PHRASES = ['cancel', 'stop', 'nevermind', 'never mind'];
 
 const FOLLOW_UP_CONFIG = {
@@ -3225,6 +3295,9 @@ function startFlow(intent, userText) {
   removeTypingIndicator();
   if (intent === 'start_my_day')            handleStartMyDayStep(null);
   else if (intent === 'connect_business_team') handleConnectBusinessTeamStep(null);
+  else if (intent === 'need_help')          handleNeedHelpStep(null);
+  else if (intent === 'top_performer')      handleTopPerformerStep(null);
+  else if (intent === 'incentive_clarify')  handleIncentiveClarifyStep(null);
   else if (intent === 'clarify_before_answering') {
     bc.collected.originalMessage = userText;
     handleClarifyStep(null);
@@ -3236,6 +3309,9 @@ function handleFlowStep(userText) {
   const flow = state.botConversation.flow;
   if (flow === 'start_my_day')              handleStartMyDayStep(userText);
   else if (flow === 'connect_business_team') handleConnectBusinessTeamStep(userText);
+  else if (flow === 'need_help')            handleNeedHelpStep(userText);
+  else if (flow === 'top_performer')        handleTopPerformerStep(userText);
+  else if (flow === 'incentive_clarify')    handleIncentiveClarifyStep(userText);
   else if (flow === 'clarify_before_answering') handleClarifyStep(userText);
 }
 
@@ -3374,6 +3450,174 @@ function handleClarifyStep(userText) {
     } else {
       renderBotResponse(intent, entity);
       maybeAddFollowUp(intent);
+    }
+  }
+}
+
+/* ── Flow 4: need_help ── */
+
+function handleNeedHelpStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = "Of course! What kind of help do you need?\n\n• **Connect with Business Team** — for escalations, campaigns, or training queries\n• **Connect with your Manager** — to reach your Team Lead directly";
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['Connect with Business Team', 'Connect with my Manager', 'Something else']);
+
+  } else if (bc.step === 1) {
+    const lower = userText.toLowerCase();
+    endFlow();
+
+    if (lower.includes('business team') || lower.includes('business')) {
+      // Hand off to the connect_business_team flow
+      const msg = "Sure, let me connect you with the Business Team!";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => {
+        bc.flow = 'connect_business_team';
+        bc.step = 0;
+        bc.collected = {};
+        handleConnectBusinessTeamStep(null);
+      }, 400);
+
+    } else if (lower.includes('manager') || lower.includes('team lead') || lower.includes('tl')) {
+      const u = state.currentUser;
+      const tl = COUNSELORS.find(c => c.name === u?.manager) || TEAM_LEADS.find(t => t.name === u?.manager);
+      const tlName = u?.manager || 'your Team Lead';
+      const tlEmail = tl?.email || 'Check with Ops for contact details';
+      const msg = `👤 **Your Manager: ${tlName}**\n\n📧 Email: ${tlEmail}\n\nYou can also message them directly in the **Chat in Internal Team** panel (the green bubble on the right).`;
+      appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+      addToHistory('bot', msg.replace(/\*\*/g,''));
+
+    } else {
+      // Reroute to clarify
+      const msg = "Got it! Can you tell me a bit more about what you need? I can help with metrics, students, incentives, training, or connecting with someone.";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      appendQuickReplies(['Metrics help', 'Student pipeline', 'Incentives', 'Training resources']);
+    }
+  }
+}
+
+/* ── Flow 5: top_performer ── */
+
+function handleTopPerformerStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = "Great question! Which metric are you asking about?";
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(['Calls', 'Revenue', 'Enrolments', 'STIs', 'Deposits', 'Lock-ins']);
+
+  } else if (bc.step === 1) {
+    const lower = userText.toLowerCase().trim();
+    endFlow();
+
+    // Map input to metric key
+    const metricMap = {
+      'calls':      { key:'calls',       label:'Calls',       target:TARGETS.calls },
+      'call':       { key:'calls',       label:'Calls',       target:TARGETS.calls },
+      'revenue':    { key:'revenue',     label:'Revenue',     target:TARGETS.revenue_target },
+      'enrolment':  { key:'enrolments',  label:'Enrolments',  target:TARGETS.enrolments },
+      'enrolments': { key:'enrolments',  label:'Enrolments',  target:TARGETS.enrolments },
+      'sti':        { key:'stis',        label:'STIs',        target:TARGETS.stis },
+      'stis':       { key:'stis',        label:'STIs',        target:TARGETS.stis },
+      'deposit':    { key:'deposits',    label:'Deposits',    target:TARGETS.deposits },
+      'deposits':   { key:'deposits',    label:'Deposits',    target:TARGETS.deposits },
+      'lock':       { key:'lockins',     label:'Lock-ins',    target:TARGETS.lockins },
+      'lock-in':    { key:'lockins',     label:'Lock-ins',    target:TARGETS.lockins },
+      'lock-ins':   { key:'lockins',     label:'Lock-ins',    target:TARGETS.lockins },
+      'lockins':    { key:'lockins',     label:'Lock-ins',    target:TARGETS.lockins },
+    };
+
+    let match = null;
+    for (const [keyword, cfg] of Object.entries(metricMap)) {
+      if (lower.includes(keyword)) { match = cfg; break; }
+    }
+
+    if (!match) {
+      const msg = "I'm not sure which metric you meant. Please pick one:";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      appendQuickReplies(['Calls', 'Revenue', 'Enrolments', 'STIs', 'Deposits', 'Lock-ins']);
+      bc.flow = 'top_performer'; bc.step = 1; // stay in flow
+      return;
+    }
+
+    // Rank all counsellors
+    const ranked = [...COUNSELORS].sort((a, b) => (b.today[match.key] || 0) - (a.today[match.key] || 0));
+    const top3 = ranked.slice(0, 3);
+    const medals = ['🥇', '🥈', '🥉'];
+    const fmt = match.key === 'revenue'
+      ? v => `₹${(v/1000).toFixed(0)}K`
+      : v => v.toString();
+
+    const lines = top3.map((c, i) => {
+      const val = c.today[match.key] || 0;
+      const pct = Math.round((val / match.target) * 100);
+      return `${medals[i]} **${c.name}** — ${fmt(val)} (${pct}% of target)`;
+    }).join('\n');
+
+    const winner = top3[0];
+    const winnerVal = winner.today[match.key] || 0;
+    const msg = `📊 **Top performers for ${match.label}:**\n\n${lines}\n\n**${winner.name}** is leading the cluster with ${fmt(winnerVal)} ${match.key === 'revenue' ? 'in revenue' : match.label.toLowerCase() + ' this month'}. 🔥`;
+
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    setTimeout(() => appendQuickReplies(['Who is top for Revenue?', 'Who is top for Calls?', 'Show me the leaderboard']), 600);
+  }
+}
+
+/* ── Flow 6: incentive_clarify ── */
+
+function handleIncentiveClarifyStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = "Let me take you to your **Incentives & Earnings** tab right now — you can see your full breakdown there!\n\nI'll wait here while you review it. Let me know if you still need help after.";
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    setTimeout(() => switchTab('tab2'), 500);
+    setTimeout(() => {
+      const q = "Did that help? Do you still need clarity on your incentive calculation?";
+      appendBotMessageLive(`<p>${escHtml(q)}</p>`);
+      addToHistory('bot', q);
+      appendQuickReplies(['Yes, still need help', 'No, I got it! Thanks']);
+    }, 2000);
+
+  } else if (bc.step === 1) {
+    const lower = userText.toLowerCase();
+    if (lower.includes('yes') || lower.includes('still') || lower.includes('help') || lower.includes('need') || lower.includes('clarity') || lower.includes('nahi samjha')) {
+      bc.step = 2;
+      const msg = "No problem! The best way to get this sorted is to raise a ticket — our Ops team will walk you through your specific calculation.\n\nShall I open the ticket form for you?";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      appendQuickReplies(['Yes, open the ticket form', 'No thanks']);
+
+    } else {
+      endFlow();
+      const msg = "Great! Glad that helped. Let me know if you have any other questions. 💪";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+    }
+
+  } else if (bc.step === 2) {
+    endFlow();
+    const lower = userText.toLowerCase();
+    if (lower.includes('yes') || lower.includes('open') || lower.includes('ticket') || lower.includes('form')) {
+      const msg = "Opening the ticket form now! Describe your specific query and Ops will get back to you within 4 working hours.";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab3'); setTimeout(openTicketModal, 400); }, 300);
+    } else {
+      const msg = "No worries! If you need help later, just come back here and I'll point you in the right direction.";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
     }
   }
 }
