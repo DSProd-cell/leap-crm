@@ -893,9 +893,113 @@ function switchTab(tab) {
   if (tab === 'tab2' && !state.earningsChart) {
     setTimeout(initEarningsChart, 50);
   }
+  if (tab === 'tab2') {
+    setTimeout(() => renderReferralCards('visa'), 80);
+  }
   if (tab === 'tab3') {
     renderQuickLinks();
   }
+}
+
+/* ═══════════════ REFERRAL COHORTS ═══════════════ */
+
+function getReferralCohort(type) {
+  return STUDENTS.filter(s => {
+    if (type === 'visa')    return (s.specialServices || []).includes('Visa') || s.stage === 'lockin';
+    if (type === 'premium') return s.hasPaidPremium === true;
+    if (type === 'sti')     return ['application','deposit','lockin'].includes(s.stage);
+    return false;
+  });
+}
+
+function switchReferralTab(type) {
+  const tabs = ['visa','premium','sti'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`refTab-${t}`);
+    if (!btn) return;
+    const isActive = t === type;
+    btn.classList.toggle('border-purple-600', isActive);
+    btn.classList.toggle('text-purple-700', isActive);
+    btn.classList.toggle('bg-purple-50/40', isActive);
+    btn.classList.toggle('border-transparent', !isActive);
+    btn.classList.toggle('text-text-muted', !isActive);
+    btn.classList.toggle('bg-transparent', !isActive);
+    const badge = document.getElementById(`refCount-${t}`);
+    if (badge) {
+      badge.className = isActive
+        ? 'ml-0.5 bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full'
+        : 'ml-0.5 bg-gray-300 text-gray-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full';
+    }
+  });
+  renderReferralCards(type);
+}
+
+function renderReferralCards(type) {
+  const container = document.getElementById('referralCards');
+  if (!container) return;
+
+  // Update all count badges
+  ['visa','premium','sti'].forEach(t => {
+    const el = document.getElementById(`refCount-${t}`);
+    if (el) el.textContent = getReferralCohort(t).length;
+  });
+
+  const students = getReferralCohort(type);
+  const stageLabel = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+  const stageCls   = {
+    sti:         'bg-orange-100 text-orange-700 border-orange-200',
+    application: 'bg-blue-100 text-blue-700 border-blue-200',
+    deposit:     'bg-green-100 text-green-700 border-green-200',
+    lockin:      'bg-purple-100 text-purple-700 border-purple-200',
+  };
+  const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
+  const cohortTag  = {
+    visa:    { label:'Visa Approved', cls:'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    premium: { label:'Premium Paid',  cls:'bg-amber-50 text-amber-700 border-amber-200' },
+    sti:     { label:'STI Done',      cls:'bg-sky-50 text-sky-700 border-sky-200' },
+  };
+
+  if (!students.length) {
+    container.innerHTML = `<p class="text-center text-text-muted text-sm py-8">No students in this cohort yet</p>`;
+    return;
+  }
+
+  container.innerHTML = students.map(s => {
+    const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+    const flag     = countryFlag[s.country] || '🌍';
+    const sClsKey  = stageCls[s.stage] || 'bg-gray-100 text-gray-600 border-gray-200';
+    const tag      = cohortTag[type];
+    const amtHtml  = s.hasPaidPremium && s.amountPaid
+      ? `<span class="text-xs font-semibold text-success">₹${(s.amountPaid/1000).toFixed(0)}K paid</span>`
+      : '';
+    return `
+    <div class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50/30 transition-colors cursor-pointer group" onclick="openStudentDetail('${s.id}')">
+      <!-- Avatar -->
+      <div class="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center flex-shrink-0">
+        ${initials}
+      </div>
+      <!-- Main info -->
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="font-semibold text-sm text-text-main">${s.name}</p>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sClsKey}">${stageLabel[s.stage] || s.stage}</span>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tag.cls}">${tag.label}</span>
+        </div>
+        <p class="text-xs text-text-muted mt-0.5 truncate">${s.course} &nbsp;·&nbsp; ${flag} ${s.country}</p>
+        <div class="flex items-center gap-3 mt-1 text-[11px] text-text-muted">
+          <span>Follow-up: <strong class="text-text-main">${s.followup}</strong></span>
+          <span>ISL: <strong class="text-text-main">${s.islRating}/10</strong></span>
+          <span>QS: <strong class="text-text-main">${s.qualityScore}</strong></span>
+          ${amtHtml}
+        </div>
+      </div>
+      <!-- Action -->
+      <button onclick="event.stopPropagation(); showToast('Referral noted for ${s.name} 👍', 'success')"
+        class="flex-shrink-0 text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1.5 rounded-lg hover:bg-purple-100 transition-colors whitespace-nowrap">
+        Ask Referral →
+      </button>
+    </div>`;
+  }).join('');
 }
 
 /* ═══════════════ BADGE STRIP ═══════════════ */

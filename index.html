@@ -454,6 +454,46 @@
         </div>
       </section>
 
+      <!-- Generate Referrals -->
+      <section class="bg-white rounded-xl border border-border overflow-hidden" id="generateReferralsSection">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-purple-50 to-white">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div>
+              <h2 class="font-semibold text-text-main">Generate Referrals</h2>
+              <p class="text-xs text-text-muted">Warm pipeline — students most likely to refer someone they know</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-bold text-purple-700 bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-full uppercase tracking-wide">Drive Referral</span>
+        </div>
+        <!-- Cohort Tabs -->
+        <div class="flex border-b border-border">
+          <button onclick="switchReferralTab('visa')" id="refTab-visa"
+            class="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 border-purple-600 text-purple-700 bg-purple-50/40 transition-colors">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Visa Approved
+            <span id="refCount-visa" class="ml-0.5 bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+          </button>
+          <button onclick="switchReferralTab('premium')" id="refTab-premium"
+            class="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 border-transparent text-text-muted hover:text-text-main hover:bg-surface/50 transition-colors">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Premium Paid
+            <span id="refCount-premium" class="ml-0.5 bg-gray-300 text-gray-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+          </button>
+          <button onclick="switchReferralTab('sti')" id="refTab-sti"
+            class="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-xs font-semibold border-b-2 border-transparent text-text-muted hover:text-text-main hover:bg-surface/50 transition-colors">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            STI Done
+            <span id="refCount-sti" class="ml-0.5 bg-gray-300 text-gray-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+          </button>
+        </div>
+        <!-- Student Cards -->
+        <div id="referralCards" class="divide-y divide-border max-h-80 overflow-y-auto"></div>
+      </section>
+
       <!-- Live Offers for Students -->
       <section>
         <div class="flex items-center gap-2 mb-3">
