@@ -909,7 +909,7 @@ function initBotWithGreeting() {
 
   // Update input placeholder
   const inp = document.getElementById('botInput');
-  if (inp) inp.placeholder = 'Type your reply…';
+  if (inp) inp.placeholder = 'Type "Hi" or "Hello" to Start the Chat';
 }
 
 function onCounselorChange() {
