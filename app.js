@@ -83,6 +83,16 @@ const INCENTIVE_SLABS = [
       { name:'Priya Sharma',count:'2 lock-ins', earned:16000 },
     ],
   },
+  {
+    component:'Referrals', rule:'₹3,000 per successful referral enrolment', status:'1 referral (50%)', earned:3000,
+    drivePeriod:'01 May – 31 May 2026',
+    earners:[
+      { name:'Sahil Joshi',  count:'5 referrals', earned:15000 },
+      { name:'Karan Nair',   count:'3 referrals', earned:9000  },
+      { name:'Rohan Mehta',  count:'2 referrals', earned:6000  },
+      { name:'Priya Sharma', count:'1 referral',  earned:3000  },
+    ],
+  },
 ];
 
 const TRAINING_MODULES = [
@@ -859,6 +869,47 @@ function bootApp(role, email) {
   switchTab('tab1');
   // Show Join 10x banner after a short delay
   setTimeout(show10xBanner, 800);
+  // Clear chat and show IST time-based greeting on every fresh login
+  setTimeout(initBotWithGreeting, 300);
+}
+
+function initBotWithGreeting() {
+  // Reset bot state completely
+  state.botConversation = { flow: 'greeting', step: 1, collected: {}, history: [], lastIntent: null, shownFollowUps: [] };
+  if (state.currentUser) localStorage.removeItem(`bot_history_${state.currentUser.id}`);
+
+  // Determine IST greeting by offset (UTC+5:30)
+  const now = new Date();
+  const istHour = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (5.5 * 3600000)).getHours();
+  const greet = istHour >= 5 && istHour < 12 ? 'Good Morning'
+              : istHour >= 12 && istHour < 17 ? 'Good Afternoon'
+              : istHour >= 17 && istHour < 21 ? 'Good Evening'
+              : 'Good Night';
+
+  const firstName = (state.currentUser?.name || 'there').split(' ')[0];
+  const msg = `${greet}, ${firstName}! 👋 How are you doing today?`;
+
+  const container = document.getElementById('botMessages');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const div = document.createElement('div');
+  div.className = 'flex gap-2';
+  div.innerHTML = `
+    <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+      <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <div class="bot-msg-bubble">
+      <p class="text-sm font-semibold text-text-main mb-0.5">Leap CRM Assistant</p>
+      <p class="text-sm">${escHtml(msg)}</p>
+    </div>
+  `;
+  container.appendChild(div);
+  addToHistory('bot', msg);
+
+  // Update input placeholder
+  const inp = document.getElementById('botInput');
+  if (inp) inp.placeholder = 'Type your reply…';
 }
 
 function onCounselorChange() {
@@ -1056,6 +1107,11 @@ function renderBoostCards() {
   const ownCount = state.ownTasks.filter(t => !t.done).length;
   const grid = document.getElementById('boostCardsGrid');
 
+  const refCount = [...new Map(
+    [...getReferralCohort('visa'), ...getReferralCohort('premium'), ...getReferralCohort('sti')]
+    .map(s => [s.id, s])
+  ).values()].length;
+
   grid.innerHTML = `
     <div class="boost-card sti" onclick="openBoostFunnelDrawer()">
       <div class="boost-label">Boost STI</div>
@@ -1081,7 +1137,106 @@ function renderBoostCards() {
       <div class="boost-sub">${ownCount === 1 ? '1 pending reminder' : ownCount + ' pending reminders'}</div>
       <span class="boost-cta">View Tasks →</span>
     </div>
+    <div class="boost-card" style="background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%);color:#fff;" onclick="openBoostReferralsDrawer()">
+      <div class="boost-label" style="color:rgba(255,255,255,0.85)">Boost Referrals</div>
+      <div class="boost-count" style="color:#fff">${refCount}</div>
+      <div class="boost-sub" style="color:rgba(255,255,255,0.75)">${refCount === 1 ? '1 student can refer' : refCount + ' students can refer'}</div>
+      <span class="boost-cta" style="color:rgba(255,255,255,0.9)">Ask for Referral →</span>
+    </div>
   `;
+}
+
+/* ── Boost Referrals Drawer ── */
+function openBoostReferralsDrawer() {
+  state.drawerMode = 'boostReferrals';
+  state.drawerPrevMode = null;
+
+  const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
+  const stageLabelMap = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+  const stageClsMap   = { sti:'bg-orange-100 text-orange-700', application:'bg-blue-100 text-blue-700', deposit:'bg-green-100 text-green-700', lockin:'bg-purple-100 text-purple-700' };
+
+  const cohorts = [
+    { key:'visa',    label:'Visa Approved',  icon:'✅', tagCls:'bg-emerald-100 text-emerald-700 border-emerald-200', students: getReferralCohort('visa')    },
+    { key:'premium', label:'Premium Paid',   icon:'⭐', tagCls:'bg-amber-100 text-amber-700 border-amber-200',     students: getReferralCohort('premium') },
+    { key:'sti',     label:'STI Done',       icon:'🎯', tagCls:'bg-sky-100 text-sky-700 border-sky-200',           students: getReferralCohort('sti')     },
+  ];
+
+  // Deduplicate for total count
+  const allUnique = [...new Map(
+    cohorts.flatMap(c => c.students).map(s => [s.id, s])
+  ).values()];
+
+  let content = `
+    <div class="mb-4 p-3.5 bg-purple-50 border border-purple-200 rounded-xl">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-lg">🤝</span>
+        <p class="font-bold text-sm text-purple-800">Referral Boost Pipeline</p>
+      </div>
+      <p class="text-xs text-purple-600">${allUnique.length} students identified as high-potential referrers</p>
+    </div>
+    <div class="space-y-2.5">
+  `;
+
+  cohorts.forEach(({ key, label, icon, tagCls, students }) => {
+    content += `
+      <div class="border border-border rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleBoostRefCard('${key}')" class="w-full flex items-center justify-between p-3.5 bg-white hover:bg-surface transition-colors text-left">
+          <div class="flex items-center gap-3">
+            <span class="text-xl leading-none">${icon}</span>
+            <div>
+              <p class="font-semibold text-sm text-text-main">${label}</p>
+              <p class="text-xs text-text-muted">${students.length} student${students.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${tagCls}">${label}</span>
+            <svg id="bref-chev-${key}" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </button>
+        <div id="bref-body-${key}" class="hidden border-t border-border">
+          ${students.length === 0
+            ? `<p class="text-xs text-text-muted text-center py-5">No students in this cohort</p>`
+            : `<div class="divide-y divide-border/40">${students.map(s => {
+                const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+                const flag = countryFlag[s.country] || '🌍';
+                return `
+                  <div class="px-3.5 py-3 hover:bg-surface/60 transition-colors">
+                    <div class="flex items-center gap-3 mb-2.5">
+                      <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-bold text-[11px] flex items-center justify-center flex-shrink-0">${initials}</div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-text-main">${s.name} <span class="text-sm">${flag}</span></p>
+                        <p class="text-[11px] text-text-muted">${s.course}</p>
+                      </div>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageClsMap[s.stage] || 'bg-gray-100 text-gray-600'}">${stageLabelMap[s.stage] || s.stage}</span>
+                    </div>
+                    <div class="flex gap-2">
+                      <button onclick="openReferralWAMessage('${s.id}')" class="flex-1 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                        <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.118.555 4.107 1.523 5.832L0 24l6.335-1.524A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 11.999 0zM12 22c-1.943 0-3.779-.517-5.376-1.428l-.387-.226-3.993.96.994-3.866-.253-.4A9.975 9.975 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                        Ask for Referral
+                      </button>
+                      <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='boostReferrals';" class="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">Take to Task →</button>
+                    </div>
+                  </div>`;
+              }).join('')}</div>`
+          }
+        </div>
+      </div>
+    `;
+  });
+
+  content += `</div>`;
+  openDrawer('Boost Referrals', content, false);
+}
+
+function toggleBoostRefCard(key) {
+  const body    = document.getElementById(`bref-body-${key}`);
+  const chevron = document.getElementById(`bref-chev-${key}`);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function openOwnTaskDrawer() {
@@ -2639,6 +2794,8 @@ function drawerGoBack() {
     openOfferDrawer(state.drawerOfferId);
   } else if (state.drawerPrevMode === 'opportunity') {
     openOpportunityDrawer();
+  } else if (state.drawerPrevMode === 'boostReferrals') {
+    openBoostReferralsDrawer();
   }
 }
 
@@ -2824,81 +2981,192 @@ function openOpportunityDrawer() {
   state.drawerMode     = 'opportunity';
   state.drawerPrevMode = null;
   const students = getViewingStudents();
-  const byStage = { sti:[], application:[], deposit:[], lockin:[] };
+  const courseFeeLocal = s => s.course.includes('MBA') ? 120000 : s.course.includes('B.Tech') ? 100000 : 80000;
+  const totalVal = students.reduce((sum, s) => sum + courseFeeLocal(s), 0);
+  const byStage = { lockin:[], deposit:[], application:[], sti:[] };
   students.forEach(s => { if (byStage[s.stage]) byStage[s.stage].push(s); });
-  const stageOrder = ['lockin','deposit','application','sti'];
-  const stageLabels = { sti:'Boost STI', application:'Boost Application', deposit:'Boost Deposit', lockin:'Boost Lock-in' };
-  const courseFee = s => s.course.includes('MBA') ? 120000 : s.course.includes('B.Tech') ? 100000 : 80000;
-  const totalVal = students.reduce((sum, s) => sum + courseFee(s), 0);
+  const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
 
-  // Tasks cohort — group students by their first pending task
-  const taskCohorts = {};
-  students.forEach(s => {
-    const pending = (s.subtasks || []).find(t => !t.done);
-    const label = pending ? pending.label : 'No Pending Tasks';
-    if (!taskCohorts[label]) taskCohorts[label] = [];
-    taskCohorts[label].push(s);
-  });
-  const taskCohortEntries = Object.entries(taskCohorts).filter(([k]) => k !== 'No Pending Tasks');
+  const stageConfig = [
+    { key:'lockin',      label:'Boost Lock-in',    icon:'🔒', accentCls:'bg-purple-600' },
+    { key:'deposit',     label:'Boost Deposit',     icon:'💰', accentCls:'bg-green-600'  },
+    { key:'application', label:'Boost Application', icon:'📋', accentCls:'bg-blue-600'   },
+    { key:'sti',         label:'Boost STI',         icon:'⚡', accentCls:'bg-orange-500' },
+  ];
 
-  let content = `<div class="mb-4 p-3 bg-accent/10 border border-accent/20 rounded-xl">
-    <p class="text-xs text-text-muted">Total Opportunity</p>
-    <p class="font-mono text-2xl font-bold text-accent">${fmt(totalVal)}</p>
-  </div>`;
+  let content = `
+    <div class="mb-4 p-3.5 bg-accent/10 border border-accent/20 rounded-xl">
+      <p class="text-xs text-text-muted mb-0.5">Total Pipeline Opportunity</p>
+      <p class="font-mono text-2xl font-bold text-accent">${fmt(totalVal)}</p>
+      <p class="text-xs text-text-muted mt-1">${students.length} students across all stages</p>
+    </div>
+    <div class="space-y-2.5">
+  `;
 
-  // Tasks Cohort section
-  if (taskCohortEntries.length) {
-    content += `<div class="mb-5">
-      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
-        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-        Tasks Cohort
-      </p>
-      <div class="space-y-2">
-        ${taskCohortEntries.map(([task, list]) => {
-          const cohortVal = list.reduce((sum, s) => sum + courseFee(s), 0);
-          return `<div class="p-3 bg-surface rounded-xl border border-border">
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-xs font-semibold text-text-main">${task}</p>
-              <span class="text-xs font-mono font-bold text-accent">${fmt(cohortVal)}</span>
+  stageConfig.forEach(({ key, label, icon }) => {
+    const list = byStage[key];
+    const stageVal = list.reduce((sum, s) => sum + courseFeeLocal(s), 0);
+    content += `
+      <div class="border border-border rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleOppCard('${key}')" class="w-full flex items-center justify-between p-3.5 bg-white hover:bg-surface transition-colors text-left">
+          <div class="flex items-center gap-3">
+            <span class="text-xl leading-none">${icon}</span>
+            <div>
+              <p class="font-semibold text-sm text-text-main">${label}</p>
+              <p class="text-xs text-text-muted">${list.length} student${list.length !== 1 ? 's' : ''} · <span class="font-mono font-semibold text-success">${fmt(stageVal)}</span></p>
             </div>
-            <div class="space-y-1">
-              ${list.map(s => `<div class="flex items-center justify-between text-xs py-1 border-t border-border/50">
-                <span class="text-text-main">${s.name} <span class="text-text-muted">· ${s.stage.toUpperCase()}</span></span>
-                <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-primary font-semibold hover:underline cursor-pointer">Task →</button>
-              </div>`).join('')}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-
-  // Pipeline by stage
-  content += `<p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-3 flex items-center gap-1">
-    <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/></svg>
-    Pipeline by Stage
-  </p>`;
-
-  stageOrder.forEach(stage => {
-    const list = byStage[stage];
-    if (!list.length) return;
-    content += `<div class="mb-4">
-      <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">${stageLabels[stage]}</p>
-      ${list.map(s => {
-        const fee = courseFee(s);
-        return `<div class="flex items-center gap-3 py-2 border-b border-border last:border-0">
-          <div class="flex-1">
-            <p class="text-sm font-medium text-text-main">${s.name}</p>
-            <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
           </div>
-          <span class="font-mono text-sm font-bold text-success">${fmt(fee)}</span>
-          <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-xs font-semibold text-primary hover:underline cursor-pointer">Go to Task →</button>
-        </div>`;
-      }).join('')}
-    </div>`;
+          <svg id="chevron-opp-${key}" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <div id="oppBody-${key}" class="hidden border-t border-border bg-surface/30">
+          ${list.length === 0
+            ? `<p class="text-xs text-text-muted text-center py-5">No students at this stage</p>`
+            : `<div class="divide-y divide-border/40">${list.map(s => {
+                const fee = courseFeeLocal(s);
+                const flag = countryFlag[s.country] || '🌍';
+                const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+                return `
+                  <div class="flex items-center gap-3 px-3.5 py-3 hover:bg-surface/60 transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-[11px] flex items-center justify-center flex-shrink-0">${initials}</div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-text-main">${s.name} <span class="text-sm">${flag}</span></p>
+                      <p class="text-[11px] text-text-muted">${s.course}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-1.5">
+                      <span class="text-xs font-bold font-mono text-success">${fmt(fee)}</span>
+                      <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition-colors whitespace-nowrap">Take to Task →</button>
+                    </div>
+                  </div>`;
+              }).join('')}</div>`
+          }
+        </div>
+      </div>
+    `;
   });
 
-  openDrawer('Opportunity Pipeline', content, false);
+  // Generate More Referrals accordion card
+  const allRefStudents = [...new Map(
+    [...getReferralCohort('visa'), ...getReferralCohort('premium'), ...getReferralCohort('sti')]
+    .map(s => [s.id, s])
+  ).values()];
+  const stageLabelMap = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+  const stageClsMap   = { sti:'bg-orange-100 text-orange-700', application:'bg-blue-100 text-blue-700', deposit:'bg-green-100 text-green-700', lockin:'bg-purple-100 text-purple-700' };
+
+  content += `
+    <div class="border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+      <button onclick="toggleOppCard('referral')" class="w-full flex items-center justify-between p-3.5 bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 transition-colors text-left">
+        <div class="flex items-center gap-3">
+          <span class="text-xl leading-none">🤝</span>
+          <div>
+            <p class="font-semibold text-sm text-text-main">Generate More Referrals</p>
+            <p class="text-xs text-text-muted">${allRefStudents.length} students most likely to refer</p>
+          </div>
+        </div>
+        <svg id="chevron-opp-referral" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="oppBody-referral" class="hidden border-t border-purple-100">
+        ${allRefStudents.length === 0
+          ? `<p class="text-xs text-text-muted text-center py-5">No referral candidates yet</p>`
+          : `<div class="divide-y divide-border/40">${allRefStudents.map(s => {
+              const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+              const flag = countryFlag[s.country] || '🌍';
+              return `
+                <div class="px-3.5 py-3 bg-purple-50/30 hover:bg-purple-50/60 transition-colors">
+                  <div class="flex items-center gap-3 mb-2.5">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-bold text-[11px] flex items-center justify-center flex-shrink-0">${initials}</div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-text-main">${s.name} <span class="text-sm">${flag}</span></p>
+                      <p class="text-[11px] text-text-muted">${s.course}</p>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageClsMap[s.stage] || 'bg-gray-100 text-gray-600'}">${stageLabelMap[s.stage] || s.stage}</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <button onclick="openReferralWAMessage('${s.id}')" class="flex-1 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                      <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.118.555 4.107 1.523 5.832L0 24l6.335-1.524A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 11.999 0zM12 22c-1.943 0-3.779-.517-5.376-1.428l-.387-.226-3.993.96.994-3.866-.253-.4A9.975 9.975 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                      Ask for Referral
+                    </button>
+                    <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">Take to Task →</button>
+                  </div>
+                </div>`;
+            }).join('')}</div>`
+        }
+      </div>
+    </div>
+  `;
+
+  content += `</div>`; // close space-y-2.5
+  openDrawer('Opportunity Size', content, false);
+}
+
+function toggleOppCard(key) {
+  const body    = document.getElementById(`oppBody-${key}`);
+  const chevron = document.getElementById(`chevron-opp-${key}`);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function openReferralWAMessage(studentId) {
+  const s = STUDENTS.find(x => x.id === studentId);
+  if (!s) return;
+  const counselorName = (state.currentUser && state.currentUser.name) ? state.currentUser.name : 'Your Counselor';
+  const msgTemplate = `Hi ${s.name}! 👋\n\nThis is ${counselorName} from Leap. I hope your journey with us has been great so far! 🎓\n\nWe'd love to help your friends and family who are also planning to study abroad. If you know anyone who might be interested, please do share our details with them!\n\nFor every successful referral, you and your friend both get special benefits. 🎁\n\nThank you for being an amazing part of the Leap family! 🙏`;
+  const encodedMsg = encodeURIComponent(msgTemplate);
+  const groups = s.whatsappGroups || [];
+
+  const groupsHtml = groups.length ? `
+    <div class="mb-4">
+      <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">WhatsApp Groups</p>
+      <div class="space-y-2">
+        ${groups.map(g => `
+          <div class="flex items-center justify-between p-2.5 bg-green-50 border border-green-200 rounded-xl">
+            <div>
+              <p class="text-xs font-semibold text-text-main">${g.groupName}</p>
+              <p class="text-[10px] text-text-muted mt-0.5">${g.studentJoined ? '✅ Student joined' : '⏳ Student not in group'}</p>
+            </div>
+            <a href="https://wa.me/?text=${encodedMsg}" target="_blank"
+               class="text-[10px] font-bold bg-green-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+              Send to Group
+            </a>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const safeMsg = msgTemplate.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+  const content = `
+    <div class="mb-4 flex items-center gap-3 p-3.5 bg-purple-50 border border-purple-200 rounded-xl">
+      <div class="w-10 h-10 rounded-full bg-purple-200 text-purple-800 font-bold text-xs flex items-center justify-center flex-shrink-0">
+        ${s.name.split(' ').map(w => w[0]).join('').slice(0,2)}
+      </div>
+      <div>
+        <p class="font-bold text-sm text-text-main">${s.name}</p>
+        <p class="text-xs text-text-muted">${s.course} · Stage: ${s.stage.toUpperCase()}</p>
+      </div>
+    </div>
+    ${groupsHtml}
+    <div class="mb-4">
+      <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">Message Template</p>
+      <div class="p-3.5 bg-surface border border-border rounded-xl text-[11px] text-text-main whitespace-pre-wrap leading-relaxed font-mono">${msgTemplate}</div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="navigator.clipboard.writeText(\`${safeMsg}\`).then(()=>showToast('✅ Message copied to clipboard!','success'))"
+        class="flex-1 text-sm font-semibold bg-surface border border-border text-text-main hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors">
+        📋 Copy Message
+      </button>
+      <a href="https://wa.me/?text=${encodedMsg}" target="_blank"
+         class="flex-1 text-sm font-semibold bg-green-600 text-white hover:bg-green-700 px-4 py-2.5 rounded-xl transition-colors text-center flex items-center justify-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.118.555 4.107 1.523 5.832L0 24l6.335-1.524A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 11.999 0zM12 22c-1.943 0-3.779-.517-5.376-1.428l-.387-.226-3.993.96.994-3.866-.253-.4A9.975 9.975 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        Open WhatsApp
+      </a>
+    </div>
+  `;
+  state.drawerPrevMode = 'opportunity';
+  openDrawer('Ask for Referral — ' + s.name, content, true);
 }
 
 /* Offer Drawer */
@@ -3487,64 +3755,105 @@ function endFlow() {
 
 function handleStartMyDayStep(userText) {
   const bc = state.botConversation;
+  const firstName = (state.currentUser?.name || 'there').split(' ')[0];
 
   if (bc.step === 0) {
     const c = getCounselorData();
+    const today = new Date();
+
+    // Metrics report card
     const metrics = [
       { label:'STIs',         actual:c.stis,         target:TARGETS.stis,         navType:'sti'         },
-      { label:'Applications', actual:c.applications, target:TARGETS.applications, navType:'application' },
       { label:'Deposits',     actual:c.deposits,     target:TARGETS.deposits,     navType:'deposit'     },
+      { label:'Applications', actual:c.applications, target:TARGETS.applications, navType:'application' },
       { label:'Lock-ins',     actual:c.lockins,      target:TARGETS.lockins,      navType:'lockin'      },
     ];
     metrics.forEach(m => { m.pct = Math.round((m.actual / m.target) * 100); });
-    metrics.sort((a, b) => {
-      const pri = m => m.pct < 60 ? 0 : m.pct < 100 ? 1 : 2;
-      return pri(a) - pri(b);
-    });
-
-    const allGreen = metrics.every(m => m.pct >= 100);
-    if (allGreen) {
-      const msg = "You're doing great across all metrics! Keep the momentum going. Here's your task board:";
-      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
-      addToHistory('bot', msg);
-      setTimeout(() => switchTab('tab1'), 400);
-      endFlow();
-      return;
-    }
+    metrics.sort((a, b) => a.pct - b.pct); // weakest first
+    const weakest = metrics[0];
 
     const emo = p => p >= 100 ? '🟢' : p >= 60 ? '🟡' : '🔴';
-    const sts = p => p >= 100 ? 'great work!' : p >= 60 ? 'on track' : 'needs attention';
-    const lines = metrics.map(m => `${emo(m.pct)} ${m.label}: ${m.actual} / ${m.target} (${m.pct}%) — ${sts(m.pct)}`).join('\n');
+    const reportLines = metrics.map(m => `${emo(m.pct)} **${m.label}:** ${m.actual}/${m.target} (${m.pct}%)`).join('\n');
 
-    const urgent = metrics[0];
-    const waitCount = getViewingStudents().filter(s => s.stage === urgent.navType).length;
-    const boostLabel = `Boost ${urgent.label}`;
+    // Priority students: overdue follow-ups + high-value stage
+    const stagePriority = { lockin:4, deposit:3, application:2, sti:1 };
+    const priorityStudents = getViewingStudents()
+      .filter(s => s.stage !== 'joined')
+      .map(s => {
+        const fDate = s.followup ? new Date(s.followup) : null;
+        const daysOverdue = fDate ? Math.floor((today - fDate) / 86400000) : -99;
+        return { ...s, daysOverdue, stagePri: stagePriority[s.stage] || 0 };
+      })
+      .sort((a, b) => {
+        if (a.daysOverdue > 0 && b.daysOverdue <= 0) return -1;
+        if (b.daysOverdue > 0 && a.daysOverdue <= 0) return 1;
+        if (a.daysOverdue > 0 && b.daysOverdue > 0) return b.daysOverdue - a.daysOverdue;
+        return b.stagePri - a.stagePri;
+      });
 
-    const msgText = `Good morning! Here's where things stand for you today:\n${lines}\n\nMy suggestion: start with **${boostLabel}** — you have ${waitCount} student${waitCount !== 1 ? 's' : ''} waiting there. Want me to take you there now?`;
+    const top1 = priorityStudents[0];
+    const top2 = priorityStudents[1];
 
-    bc.collected.urgentNavType = urgent.navType;
-    bc.collected.boostLabel = boostLabel;
+    let actionLines = [];
+    if (top1) {
+      const od1 = top1.daysOverdue > 0 ? ` _(${top1.daysOverdue}d overdue)_` : '';
+      actionLines.push(`📞 **Call ${top1.name}** — ${top1.stage.toUpperCase()} · ${top1.course}${od1}`);
+    }
+    if (top2) {
+      const od2 = top2.daysOverdue > 0 ? ` _(${top2.daysOverdue}d overdue)_` : '';
+      actionLines.push(`📋 **Follow up with ${top2.name}** — ${top2.stage.toUpperCase()} · ${top2.course}${od2}`);
+    }
+    actionLines.push(`🎯 **Boost ${weakest.label}** — at ${weakest.pct}% of target, needs focus today`);
+
+    const msgText = `Good morning, ${firstName}! Here's your day plan 📋\n\n**Yesterday's Report Card:**\n${reportLines}\n\n**Top Actions for Today:**\n${actionLines.join('\n')}\n\nWhere do you want to start?`;
+
+    bc.collected.top1Id   = top1?.id;
+    bc.collected.top1Name = top1?.name;
+    bc.collected.top2Id   = top2?.id;
+    bc.collected.top2Name = top2?.name;
+    bc.collected.urgentNavType  = weakest.navType;
+    bc.collected.urgentLabel    = weakest.label;
     bc.step = 1;
 
     appendBotMessageLive(`<p>${formatBotText(msgText)}</p>`);
     addToHistory('bot', msgText);
-    appendQuickReplies([`→ Yes, take me to ${boostLabel}`, `I'll explore myself`]);
+
+    const qrs = [];
+    if (top1) qrs.push(`📞 Call ${top1.name}`);
+    if (top2) qrs.push(`📋 Follow up ${top2.name}`);
+    qrs.push(`🎯 Boost ${weakest.label}`);
+    qrs.push(`📑 Open Task List`);
+    appendQuickReplies(qrs);
 
   } else if (bc.step === 1) {
-    const lower = userText.toLowerCase();
-    const isYes = lower.includes('yes') || lower.includes('take me') || lower.includes('→') || lower.includes('yeah');
+    const lower = (userText || '').toLowerCase();
+    const top1Id   = bc.collected.top1Id;
+    const top1Name = bc.collected.top1Name || '';
+    const top2Id   = bc.collected.top2Id;
+    const top2Name = bc.collected.top2Name || '';
+    const navType  = bc.collected.urgentNavType;
+    const navLabel = bc.collected.urgentLabel;
 
-    if (isYes) {
-      const navType = bc.collected.urgentNavType;
-      const msg = "Here you go! This is where you can start. Good luck today. 💪";
+    if (top1Id && (lower.includes('call') || lower.includes(top1Name.toLowerCase()))) {
+      const msg = `Taking you to ${top1Name}'s profile. Make it count! 💪`;
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
-      setTimeout(() => { switchTab('tab1'); setTimeout(() => openBoostDrawer(navType), 300); }, 300);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openStudentDetail(top1Id), 350); }, 300);
+    } else if (top2Id && (lower.includes('follow') || lower.includes(top2Name.toLowerCase()))) {
+      const msg = `Opening ${top2Name}'s profile. Good luck! 💪`;
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openStudentDetail(top2Id), 350); }, 300);
+    } else if (lower.includes('task')) {
+      const msg = "Here's your full task list — let's clear those to-dos! ✅";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openOwnTaskDrawer(), 350); }, 300);
     } else {
-      const msg = "No worries! Tab 1 is your starting point. Have a great day.";
-      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      const msg = `Heading to **Boost ${navLabel}** — ${getViewingStudents().filter(s => s.stage === navType).length} students waiting. Go get it! 🎯`;
+      appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
       addToHistory('bot', msg);
-      setTimeout(() => switchTab('tab1'), 300);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openBoostDrawer(navType), 350); }, 300);
     }
     endFlow();
   }
@@ -3649,15 +3958,16 @@ function handleGreetingStep(userText) {
     const lower = (userText || '').toLowerCase();
     endFlow();
 
-    const isPositive = /\b(good|great|well|fine|amazing|awesome|fantastic|excellent|wonderful|happy|perfect|nice|okay|ok|not bad|alright|doing well|doing good|sahi|badhiya|mast|accha)\b/.test(lower);
-    const isNegative = /\b(not good|not well|bad|sad|tired|stressed|upset|down|not okay|not ok|struggling|rough|tough|horrible|terrible|not great|nahi|bura|thaka|tension)\b/.test(lower);
+    // Check negative FIRST — "not good" contains "good" at word boundary so must not match positive
+    const isNegative = /\b(not good|not well|not great|not ok|not okay|bad|sad|tired|stressed|upset|down|struggling|rough|tough|horrible|terrible|nahi|bura|thaka|tension|feeling low|not feeling|exhausted|overwhelmed)\b/.test(lower);
+    const isPositive = !isNegative && /\b(good|great|well|fine|amazing|awesome|fantastic|excellent|wonderful|happy|perfect|nice|okay|ok|not bad|alright|doing well|doing good|sahi|badhiya|mast|accha)\b/.test(lower);
 
-    if (isPositive) {
-      const msg = `Great to hear that, ${firstName}! 😊 Please tell me — how can I help you today?`;
+    if (isNegative) {
+      const msg = `Oops! Sorry to hear that, ${firstName} 😔 How can I help?`;
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
-    } else if (isNegative) {
-      const msg = `Oops! Sorry to hear that, ${firstName} 😔 Let's see how I can help you feel better — what do you need?`;
+    } else if (isPositive) {
+      const msg = `Great to hear that, ${firstName}! 😊 Please tell me — how can I help you today?`;
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
     } else {
@@ -4086,7 +4396,13 @@ function appendQuickReplies(buttons) {
       addToHistory('user', label);
       appendTypingIndicator();
       setTimeout(() => {
-        if (state.botConversation.flow) handleFlowStep(label);
+        removeTypingIndicator();
+        if (state.botConversation.flow) {
+          handleFlowStep(label);
+        } else {
+          // No active flow — route through intent classifier
+          processBotInput(label);
+        }
       }, 400);
     }, { once: true });
     row.appendChild(btn);
@@ -4094,6 +4410,20 @@ function appendQuickReplies(buttons) {
 
   container.appendChild(row);
   container.scrollTop = container.scrollHeight;
+}
+
+/* Route a message without re-adding user history (already added by quick reply handler) */
+function processBotInput(userText) {
+  const { intent, entity } = classifyIntent(userText);
+  state.botConversation.lastIntent = intent;
+  if (FLOW_INTENTS.includes(intent)) {
+    startFlow(intent, userText);
+  } else if (intent === 'fallback') {
+    startFlow('clarify_before_answering', userText);
+  } else {
+    renderBotResponse(intent, entity);
+    maybeAddFollowUp(intent);
+  }
 }
 
 /* ── Create Bot Ticket ── */
