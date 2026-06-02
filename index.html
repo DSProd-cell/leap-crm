@@ -1179,7 +1179,7 @@
 <div id="rightDrawer" class="drawer fixed top-0 right-0 h-full w-full sm:w-[480px] z-50 bg-white shadow-2xl flex flex-col translate-x-full">
   <div class="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
     <div class="flex items-center gap-2">
-      <button id="drawerBack" class="hidden p-1 rounded-lg hover:bg-surface cursor-pointer" onclick="drawerGoBack()">
+      <button id="drawerBack" class="hidden p-2 -ml-1 rounded-lg hover:bg-surface active:bg-surface/80 cursor-pointer touch-manipulation" onclick="event.stopPropagation(); drawerGoBack()" aria-label="Go back">
         <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <h2 id="drawerTitle" class="font-semibold text-text-main text-base"></h2>

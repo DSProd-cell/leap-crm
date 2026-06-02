@@ -129,15 +129,15 @@ const SUPPORT_TICKETS = [
 
 /* ── Mock students for Priya Sharma (counselor id:1) ── */
 const STUDENTS = [
-  { id:'U1001', name:'Aarav Mehta',     course:'MBA Finance',      stage:'sti',         followup:'2026-05-25', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:82, lastConnected:'20 May 2026 11:42 AM', country:'UK',
+  { id:'U1001', name:'Aarav Mehta',     course:'MBA Finance',      stage:'sti',         followup:'2026-06-02', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:82, lastConnected:'20 May 2026 11:42 AM', country:'UK',
     whatsappGroups:[{ groupName:'MBA Batch A – Jun 2026', counselorJoined:true, studentJoined:true },{ groupName:'Finance Study Group', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'20 May 11:42 AM', notes:'Discussed fees', outcome:'Connected' }, { label:'Send a WhatsApp message', done:true, timestamp:'20 May 1:00 PM', notes:'Sent brochure', outcome:'Connected' }, { label:'Follow up on payment', done:false }, { label:'Book a session / demo', done:false }, { label:'Update application status', done:false }],
     activity:[{ type:'Call logged', time:'20 May 11:42 AM', notes:'Student interested, follow up on fee waiver' }, { type:'WhatsApp sent', time:'20 May 1:00 PM', notes:'Sent MBA brochure PDF' }] },
-  { id:'U1002', name:'Sanya Kapoor',    course:'BBA Marketing',    stage:'application', followup:'2026-05-24', appDownloaded:false, lastCallDate:'19 May 2026', lastCallOutcome:'Not Reachable', qualityScore:65, lastConnected:'18 May 2026 4:15 PM', country:'Canada',
+  { id:'U1002', name:'Sanya Kapoor',    course:'BBA Marketing',    stage:'application', followup:'2026-06-02', appDownloaded:false, lastCallDate:'19 May 2026', lastCallOutcome:'Not Reachable', qualityScore:65, lastConnected:'18 May 2026 4:15 PM', country:'Canada',
     whatsappGroups:[{ groupName:'BBA General – Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'19 May 4:15 PM', notes:'Not reachable', outcome:'Not Reachable' }, { label:'Send a WhatsApp message', done:false }, { label:'Follow up on payment', done:false }, { label:'Book a session / demo', done:false }, { label:'Update application status', done:true, timestamp:'19 May 5:00 PM', notes:'Stage updated to application', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'19 May 4:15 PM', notes:'Not reachable — tried 3 times' }, { type:'Application updated', time:'19 May 5:00 PM', notes:'Marked as application submitted' }] },
-  { id:'U1003', name:'Rahul Verma',     course:'B.Tech CSE',       stage:'deposit',     followup:'2026-05-23', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Promise to Pay', qualityScore:74, lastConnected:'21 May 2026 10:00 AM', country:'Australia',
+  { id:'U1003', name:'Rahul Verma',     course:'B.Tech CSE',       stage:'deposit',     followup:'2026-06-02', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Promise to Pay', qualityScore:74, lastConnected:'21 May 2026 10:00 AM', country:'Australia',
     whatsappGroups:[{ groupName:'CSE Batch Jun 2026', counselorJoined:true, studentJoined:true },{ groupName:'Tech Prep Group', counselorJoined:false, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'21 May 10:00 AM', notes:'Promised to pay by 23rd', outcome:'Promise to Pay' }, { label:'Follow up on payment', done:false }, { label:'Send a WhatsApp message', done:true, timestamp:'21 May 11:00 AM', notes:'Sent payment link', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 10:00 AM', notes:'Promised deposit by 23 May' }, { type:'WhatsApp sent', time:'21 May 11:00 AM', notes:'Payment link shared' }] },
@@ -145,7 +145,7 @@ const STUDENTS = [
     whatsappGroups:[{ groupName:'MBA General – Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }, { label:'Share a document / template', done:false }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'22 May 3:00 PM', notes:'Requested callback at 5 PM tomorrow' }] },
-  { id:'U1005', name:'Devansh Joshi',   course:'BCA Data Science',  stage:'lockin',      followup:'2026-05-24', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Connected', qualityScore:90, lastConnected:'21 May 2026 2:30 PM', country:'Germany',
+  { id:'U1005', name:'Devansh Joshi',   course:'BCA Data Science',  stage:'lockin',      followup:'2026-06-02', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Connected', qualityScore:90, lastConnected:'21 May 2026 2:30 PM', country:'Germany',
     whatsappGroups:[{ groupName:'BCA Batch A', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:true, timestamp:'21 May 2:30 PM', notes:'Received offer, finalizing', outcome:'Connected' }, { label:'Update application status', done:true, timestamp:'21 May 3:00 PM', notes:'Shortlisted — awaiting lock-in payment', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 2:30 PM', notes:'Shortlisting offer shared, student reviewing' }, { type:'Application updated', time:'21 May 3:00 PM', notes:'Stage: Shortlisted — lock-in pending' }] },
@@ -157,7 +157,7 @@ const STUDENTS = [
     whatsappGroups:[{ groupName:'B.Com General', counselorJoined:true, studentJoined:false },{ groupName:'Finance Study Group', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }],
     activity:[{ type:'Call logged', time:'22 May 9:00 AM', notes:'Not reachable for 3 days' }] },
-  { id:'U1008', name:'Meenal Shah',     course:'MBA Marketing',     stage:'deposit',     followup:'2026-05-25', appDownloaded:true,  lastCallDate:'22 May 2026', lastCallOutcome:'Connected', qualityScore:79, lastConnected:'22 May 2026 12:00 PM', country:'New Zealand',
+  { id:'U1008', name:'Meenal Shah',     course:'MBA Marketing',     stage:'deposit',     followup:'2026-06-02', appDownloaded:true,  lastCallDate:'22 May 2026', lastCallOutcome:'Connected', qualityScore:79, lastConnected:'22 May 2026 12:00 PM', country:'New Zealand',
     whatsappGroups:[{ groupName:'MBA Batch B – Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:false }, { label:'Call the student', done:true, timestamp:'22 May 12:00 PM', notes:'Confirming deposit timeline', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'22 May 12:00 PM', notes:'Deposit expected by 25 May' }] },
@@ -667,6 +667,7 @@ let state = {
   drawerPrevMode: null,
   selectedSubtask: null,
   ownTasks: [],
+  boostAcknowledged: {},
   botOpen: false,
   botActiveTab: 'chat',
   chatPanel: { unreadCount: 0, lastOpenedAt: null },
@@ -1172,28 +1173,40 @@ function openBoostReferralsDrawer() {
   state.drawerMode = 'boostReferrals';
   state.drawerPrevMode = null;
 
+  const todayStr    = new Date().toISOString().split('T')[0];
+  const acked       = _boostIsAcknowledged('referrals');
   const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
   const stageLabelMap = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
   const stageClsMap   = { sti:'bg-orange-100 text-orange-700', application:'bg-blue-100 text-blue-700', deposit:'bg-green-100 text-green-700', lockin:'bg-purple-100 text-purple-700' };
 
-  const cohorts = [
+  const allCohorts = [
     { key:'visa',    label:'Visa Approved',  icon:'✅', tagCls:'bg-emerald-100 text-emerald-700 border-emerald-200', students: getReferralCohort('visa')    },
     { key:'premium', label:'Premium Paid',   icon:'⭐', tagCls:'bg-amber-100 text-amber-700 border-amber-200',     students: getReferralCohort('premium') },
     { key:'sti',     label:'STI Done',       icon:'🎯', tagCls:'bg-sky-100 text-sky-700 border-sky-200',           students: getReferralCohort('sti')     },
   ];
 
+  // Apply today filter when not acknowledged
+  const cohorts = allCohorts.map(c => ({
+    ...c,
+    students: acked ? c.students : c.students.filter(s => s.followup === todayStr),
+    allStudents: c.students,
+  }));
+
   // Deduplicate for total count
-  const allUnique = [...new Map(
-    cohorts.flatMap(c => c.students).map(s => [s.id, s])
-  ).values()];
+  const displayStudents = cohorts.flatMap(c => c.students);
+  const allUnique = [...new Map(displayStudents.map(s => [s.id, s])).values()];
+
+  // Check if all today's tasks done (for ack prompt)
+  const allTodayDone = !acked && allUnique.length > 0 && allUnique.every(s => s.subtasks.every(t => t.done));
 
   let content = `
+    ${!acked ? _renderBoostTodayHeader(allUnique.length) : _renderBoostAckHeader()}
     <div class="mb-4 p-3.5 bg-purple-50 border border-purple-200 rounded-xl">
       <div class="flex items-center gap-2 mb-1">
         <span class="text-lg">🤝</span>
         <p class="font-bold text-sm text-purple-800">Referral Boost Pipeline</p>
       </div>
-      <p class="text-xs text-purple-600">${allUnique.length} students identified as high-potential referrers</p>
+      <p class="text-xs text-purple-600">${allUnique.length} student${allUnique.length !== 1 ? 's' : ''} ${acked ? 'identified as high-potential referrers' : 'due today across all cohorts'}</p>
     </div>
     <div class="space-y-2.5">
   `;
@@ -1206,7 +1219,7 @@ function openBoostReferralsDrawer() {
             <span class="text-xl leading-none">${icon}</span>
             <div>
               <p class="font-semibold text-sm text-text-main">${label}</p>
-              <p class="text-xs text-text-muted">${students.length} student${students.length !== 1 ? 's' : ''}</p>
+              <p class="text-xs text-text-muted">${students.length} student${students.length !== 1 ? 's' : ''}${!acked ? ' due today' : ''}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -1218,7 +1231,7 @@ function openBoostReferralsDrawer() {
         </button>
         <div id="bref-body-${key}" class="hidden border-t border-border">
           ${students.length === 0
-            ? `<p class="text-xs text-text-muted text-center py-5">No students in this cohort</p>`
+            ? `<p class="text-xs text-text-muted text-center py-5">No students due today in this cohort</p>`
             : `<div class="divide-y divide-border/40">${students.map(s => {
                 const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
                 const flag = countryFlag[s.country] || '🌍';
@@ -1248,6 +1261,7 @@ function openBoostReferralsDrawer() {
   });
 
   content += `</div>`;
+  if (allTodayDone) content += _renderBoostAckPrompt('referrals');
   openDrawer('Boost Referrals', content, false);
 }
 
@@ -1325,10 +1339,32 @@ function markOwnTaskDone(idx) {
 
 /* Funnel drawer: STI → Application → Lock-in all in one view */
 /* helpers shared by funnel + sub-card */
-function _boostMetricCard(id, label, students, todayStr, onclickFn) {
-  const dueToday    = students.filter(s => s.followup === todayStr).length;
+function _boostMetricCard(id, label, students, todayStr, onclickFn, todayOnly) {
+  const dueToday     = students.filter(s => s.followup === todayStr).length;
   const totalPending = students.length;
   const clickHandler = onclickFn || `openBoostSubCard('${id}')`;
+
+  if (todayOnly) {
+    // students is already today-filtered; count = students.length
+    const count   = students.length;
+    const allDone = count === 0;
+    return `
+    <div class="boost-metric-card ${allDone ? 'opacity-70 cursor-default' : ''}" ${allDone ? '' : `onclick="${clickHandler}"`}>
+      <div class="flex items-center justify-between mb-3">
+        <span class="font-semibold text-sm text-text-main leading-snug">${label}</span>
+        ${allDone
+          ? `<span class="text-green-500 text-base ml-2">✓</span>`
+          : `<svg class="w-4 h-4 flex-shrink-0 text-indigo-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>`}
+      </div>
+      <div class="flex items-end gap-3">
+        <div>
+          <p class="text-2xl font-bold ${allDone ? 'text-green-500' : 'text-orange-500'} leading-none">${count}</p>
+          <p class="text-[11px] text-text-muted mt-1">${allDone ? 'All done today ✓' : 'Due Today'}</p>
+        </div>
+      </div>
+    </div>`;
+  }
+
   return `
     <div class="boost-metric-card" onclick="${clickHandler}">
       <div class="flex items-center justify-between mb-3">
@@ -1350,31 +1386,99 @@ function _boostMetricCard(id, label, students, todayStr, onclickFn) {
     </div>`;
 }
 
-function openBoostFunnelDrawer() {
-  state.drawerMode = 'boost';
-  const all = getViewingStudents();
-  const todayStr = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+/* ── Boost Today-Only UX helpers ── */
 
-  /* ── three priority action cards ── */
-  const lockinStiNotDone = all.filter(s =>
-    s.stage === 'lockin' && s.subtasks.some(t => !t.done)
-  );
-  const onHoldDrafts = all.filter(s =>
-    s.stage === 'application' &&
-    ['Not Reachable', 'Callback Requested'].includes(s.lastCallOutcome)
-  );
-  const f2fNotLocked = all.filter(s =>
-    s.stage !== 'lockin' &&
-    ['Connected', 'Promise to Pay'].includes(s.lastCallOutcome)
-  );
+function _boostIsAcknowledged(drawerType) {
+  return !!(state.boostAcknowledged && state.boostAcknowledged[drawerType]);
+}
 
-  const content = `
-    <div class="space-y-3">
-      <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
-      ${_boostMetricCard('lockin-sti-not-done', 'Lock-in Done and STI Not Done', lockinStiNotDone, todayStr)}
-      ${_boostMetricCard('on-hold-drafts',      'On Hold Application Drafts',    onHoldDrafts,      todayStr)}
-      ${_boostMetricCard('f2f-not-locked',      'F2F Done but Not Locked In',    f2fNotLocked,      todayStr)}
+function acknowledgeBoostComplete(drawerType) {
+  if (!state.boostAcknowledged) state.boostAcknowledged = {};
+  state.boostAcknowledged[drawerType] = true;
+  if      (drawerType === 'funnel')    openBoostFunnelDrawer();
+  else if (drawerType === 'revenue')   openBoostRevenueDrawer();
+  else if (drawerType === 'referrals') openBoostReferralsDrawer();
+  else                                 openBoostDrawer(drawerType); // deposit, sti, etc.
+}
+
+function _renderBoostTodayHeader(count) {
+  return `
+    <div class="flex items-center gap-2 mb-3">
+      <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Today's Tasks Only
+      </span>
+      <span class="text-xs text-text-muted">${count} student${count !== 1 ? 's' : ''} due today</span>
     </div>`;
+}
+
+function _renderBoostAckHeader() {
+  return `
+    <div class="flex items-center gap-2 mb-3">
+      <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        Acknowledged — Full Pipeline View
+      </span>
+    </div>`;
+}
+
+function _renderBoostAckPrompt(drawerType) {
+  return `
+    <div class="mt-4 p-5 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl text-center shadow-sm">
+      <div class="text-3xl mb-2">🎉</div>
+      <p class="font-bold text-base text-green-800 mb-1">All Today's Tasks Complete!</p>
+      <p class="text-xs text-green-600 mb-4">Great work! You've cleared all tasks due today.<br>Acknowledge to unlock the full pipeline view.</p>
+      <button onclick="acknowledgeBoostComplete('${drawerType}')"
+        class="bg-green-600 text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-green-700 active:bg-green-800 transition-colors w-full shadow-sm">
+        ✓ Mark Acknowledged &amp; View All Tasks
+      </button>
+    </div>`;
+}
+
+function openBoostFunnelDrawer() {
+  state.drawerMode     = 'boostFunnel';
+  state.drawerPrevMode = null;
+  const all      = getViewingStudents();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const acked    = _boostIsAcknowledged('funnel');
+
+  /* ── three priority action buckets ── */
+  const lockinStiNotDone = all.filter(s => s.stage === 'lockin' && s.subtasks.some(t => !t.done));
+  const onHoldDrafts     = all.filter(s => s.stage === 'application' && ['Not Reachable','Callback Requested'].includes(s.lastCallOutcome));
+  const f2fNotLocked     = all.filter(s => s.stage !== 'lockin' && ['Connected','Promise to Pay'].includes(s.lastCallOutcome));
+
+  let content;
+  if (!acked) {
+    // Today-only view
+    const todayLockin = lockinStiNotDone.filter(s => s.followup === todayStr);
+    const todayDrafts = onHoldDrafts.filter(s => s.followup === todayStr);
+    const todayF2f    = f2fNotLocked.filter(s => s.followup === todayStr);
+    const totalToday  = new Set([...todayLockin, ...todayDrafts, ...todayF2f].map(s => s.id)).size;
+
+    // Check if all today's tasks done (all subtasks done for every today student)
+    const allToday = [...new Map([...todayLockin,...todayDrafts,...todayF2f].map(s => [s.id,s])).values()];
+    const allDone  = allToday.length > 0 && allToday.every(s => s.subtasks.every(t => t.done));
+
+    content = `
+      <div class="space-y-3">
+        ${_renderBoostTodayHeader(totalToday)}
+        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
+        ${_boostMetricCard('lockin-sti-not-done', 'Lock-in Done and STI Not Done', todayLockin, todayStr, null, true)}
+        ${_boostMetricCard('on-hold-drafts',      'On Hold Application Drafts',    todayDrafts, todayStr, null, true)}
+        ${_boostMetricCard('f2f-not-locked',      'F2F Done but Not Locked In',    todayF2f,    todayStr, null, true)}
+        ${allDone ? _renderBoostAckPrompt('funnel') : ''}
+      </div>`;
+  } else {
+    // Full view after acknowledgement
+    content = `
+      <div class="space-y-3">
+        ${_renderBoostAckHeader()}
+        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
+        ${_boostMetricCard('lockin-sti-not-done', 'Lock-in Done and STI Not Done', lockinStiNotDone, todayStr)}
+        ${_boostMetricCard('on-hold-drafts',      'On Hold Application Drafts',    onHoldDrafts,      todayStr)}
+        ${_boostMetricCard('f2f-not-locked',      'F2F Done but Not Locked In',    f2fNotLocked,      todayStr)}
+      </div>`;
+  }
 
   openDrawer('Boost Pipeline', content, false);
 }
@@ -1383,6 +1487,7 @@ function openBoostFunnelDrawer() {
 function openBoostSubCard(type) {
   const all      = getViewingStudents();
   const todayStr = new Date().toISOString().split('T')[0];
+  const acked    = _boostIsAcknowledged('funnel');
 
   const configs = {
     'lockin-sti-not-done': {
@@ -1423,28 +1528,32 @@ function openBoostSubCard(type) {
   if (!cfg) return;
 
   /* set back-nav state BEFORE opening drawer */
-  state.drawerMode         = 'boostSubCardView';
+  state.drawerMode          = 'boostSubCardView';
   state.drawerBoostSubCardId = type;
-  state.drawerPrevMode    = cfg.prevMode;
-  state.drawerBoostSubType = (cfg.prevMode === 'boostSubCard') ? 'f2f-not-locked' : null;
+  state.drawerPrevMode      = cfg.prevMode;
+  state.drawerBoostSubType  = (cfg.prevMode === 'boostSubCard') ? 'f2f-not-locked' : null;
 
-  const students = all.filter(cfg.filter);
+  let students = all.filter(cfg.filter);
+  if (!acked) students = students.filter(s => s.followup === todayStr);
 
   /* nested card shown inside F2F drawer — no student list when a nested card exists */
   if (cfg.nested) {
-    const nestedStudents = all.filter(cfg.nested.filter);
+    let nestedStudents = all.filter(cfg.nested.filter);
+    if (!acked) nestedStudents = nestedStudents.filter(s => s.followup === todayStr);
     const nestedHTML = `
       <div class="space-y-3">
+        ${!acked ? _renderBoostTodayHeader(nestedStudents.length) : _renderBoostAckHeader()}
         <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
-        ${_boostMetricCard(cfg.nested.id, cfg.nested.label, nestedStudents, todayStr)}
+        ${_boostMetricCard(cfg.nested.id, cfg.nested.label, nestedStudents, todayStr, null, !acked)}
       </div>`;
     openDrawer(cfg.title, nestedHTML, true);
     return;
   }
 
+  const todayLabel = !acked ? `<div class="mb-3">${_renderBoostTodayHeader(students.length)}</div>` : `<div class="mb-3">${_renderBoostAckHeader()}</div>`;
   const listHTML = students.length
-    ? `<div class="space-y-2">${renderStudentList(students)}</div>`
-    : `<p class="text-xs text-text-muted italic text-center py-6">No students match this criteria right now.</p>`;
+    ? `${todayLabel}<div class="space-y-2">${renderStudentList(students)}</div>`
+    : `${todayLabel}<p class="text-xs text-text-muted italic text-center py-6">No students due today for this criteria.</p>`;
 
   openDrawer(cfg.title, listHTML, true);
 }
@@ -1874,20 +1983,45 @@ function openVolumeMetricDrawer(key) {
 /* ═══════════════ BOOST REVENUE ═══════════════ */
 
 function openBoostRevenueDrawer() {
-  state.drawerMode = 'boostRevenue';
-  const all = getViewingStudents();
+  state.drawerMode     = 'boostRevenue';
+  state.drawerPrevMode = null;
+  const all      = getViewingStudents();
   const todayStr = new Date().toISOString().split('T')[0];
+  const acked    = _boostIsAcknowledged('revenue');
+
   const nonPartner   = all.filter(s => s.isQlPremium);
   const primeEnrol   = all.filter(s => s.islRating >= 8 || s.hasFinalisedUniversity || s.hasDocs);
   const specServices = all.filter(s => s.specialServices && s.specialServices.length > 0);
 
-  const content = `
-    <div class="space-y-3">
-      <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Revenue Categories</p>
-      ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue', nonPartner, todayStr, "openRevenueSubCard('non-partner-revenue')")}
-      ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',   primeEnrol,  todayStr, "openRevenueSubCard('prime-enrolments')")}
-      ${_boostMetricCard('specialised-services','Specialised Services',specServices,todayStr, "openRevenueSubCard('specialised-services')")}
-    </div>`;
+  let content;
+  if (!acked) {
+    const todayNP  = nonPartner.filter(s => s.followup === todayStr);
+    const todayPE  = primeEnrol.filter(s => s.followup === todayStr);
+    const todaySS  = specServices.filter(s => s.followup === todayStr);
+    const totalToday = new Set([...todayNP,...todayPE,...todaySS].map(s => s.id)).size;
+
+    const allToday = [...new Map([...todayNP,...todayPE,...todaySS].map(s => [s.id,s])).values()];
+    const allDone  = allToday.length > 0 && allToday.every(s => s.subtasks.every(t => t.done));
+
+    content = `
+      <div class="space-y-3">
+        ${_renderBoostTodayHeader(totalToday)}
+        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Revenue Categories</p>
+        ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue',  todayNP, todayStr, "openRevenueSubCard('non-partner-revenue')", true)}
+        ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',     todayPE, todayStr, "openRevenueSubCard('prime-enrolments')",    true)}
+        ${_boostMetricCard('specialised-services','Specialised Services',  todaySS, todayStr, "openRevenueSubCard('specialised-services')", true)}
+        ${allDone ? _renderBoostAckPrompt('revenue') : ''}
+      </div>`;
+  } else {
+    content = `
+      <div class="space-y-3">
+        ${_renderBoostAckHeader()}
+        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Revenue Categories</p>
+        ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue', nonPartner, todayStr, "openRevenueSubCard('non-partner-revenue')")}
+        ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',   primeEnrol,  todayStr, "openRevenueSubCard('prime-enrolments')")}
+        ${_boostMetricCard('specialised-services','Specialised Services',specServices,todayStr, "openRevenueSubCard('specialised-services')")}
+      </div>`;
+  }
 
   openDrawer('Boost Revenue', content, false);
 }
@@ -1927,10 +2061,14 @@ function openRevenueSubCard(type) {
   state.drawerRevenueSubCardId = type;
   state.drawerPrevMode = 'boostRevenue';
 
-  const students = all.filter(cfg.filter);
+  const acked    = _boostIsAcknowledged('revenue');
+  let students   = all.filter(cfg.filter);
+  if (!acked) students = students.filter(s => s.followup === todayStr);
+
+  const headerHtml = !acked ? `<div class="mb-3">${_renderBoostTodayHeader(students.length)}</div>` : `<div class="mb-3">${_renderBoostAckHeader()}</div>`;
 
   const listHTML = students.length
-    ? `<div class="space-y-2">${students.map(s => `
+    ? `${headerHtml}<div class="space-y-2">${students.map(s => `
         <div class="student-card" onclick="openStudentDetail('${s.id}')">
           <div class="flex items-start justify-between mb-2">
             <div>
@@ -1942,7 +2080,7 @@ function openRevenueSubCard(type) {
           <div class="text-xs text-text-muted">📅 Follow-up: ${s.followup}</div>
           <p class="text-xs text-primary font-semibold mt-2 cursor-pointer">Open →</p>
         </div>`).join('')}</div>`
-    : `<p class="text-xs text-text-muted italic text-center py-6">No students match this criteria right now.</p>`;
+    : `${headerHtml}<p class="text-xs text-text-muted italic text-center py-6">No students due today for this category.</p>`;
 
   openDrawer(cfg.title, listHTML, true);
 }
@@ -2890,26 +3028,63 @@ function drawerGoBack() {
 
 /* Boost Drawer */
 function openBoostDrawer(type) {
-  state.drawerMode     = 'boost';
+  state.drawerMode      = 'boost';
   state.drawerBoostType = type;
-  const students = getViewingStudents().filter(s => s.stage === type);
+  state.drawerPrevMode  = null;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const all      = getViewingStudents().filter(s => s.stage === type);
   const labels   = { sti:'Boost STI', application:'Boost Application', deposit:'Boost Deposit', lockin:'Boost Lock-in' };
-  const title    = `${labels[type]} — ${students.length} student${students.length !== 1 ? 's' : ''}`;
+  const acked    = _boostIsAcknowledged(type);
 
-  const content = `
-    <div class="mb-4">
-      <input type="text" placeholder="Search by name or ID…" oninput="filterStudentList(this.value, '${type}')"
-        class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-    </div>
-    <div id="studentListInner" class="space-y-3">${renderStudentList(students)}</div>
-  `;
-  openDrawer(title, content, false);
+  let content;
+  if (!acked) {
+    const todayStudents = all.filter(s => s.followup === todayStr);
+    const allDone = todayStudents.length > 0 && todayStudents.every(s => s.subtasks.every(t => t.done));
+    const title = `${labels[type] || type} — Today (${todayStudents.length})`;
+
+    if (allDone) {
+      content = `
+        ${_renderBoostTodayHeader(todayStudents.length)}
+        ${_renderBoostAckPrompt(type)}`;
+    } else {
+      content = `
+        ${_renderBoostTodayHeader(todayStudents.length)}
+        ${todayStudents.length === 0 ? `
+          <div class="flex flex-col items-center justify-center py-10 text-center">
+            <div class="text-4xl mb-3">✅</div>
+            <p class="font-semibold text-text-main mb-1">No tasks due today!</p>
+            <p class="text-xs text-text-muted">All caught up — no students have a follow-up today.</p>
+          </div>` : `
+          <div class="mb-3">
+            <input type="text" placeholder="Search by name or ID…" oninput="filterStudentList(this.value, '${type}')"
+              class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+          </div>
+          <div id="studentListInner" class="space-y-3">${renderStudentList(todayStudents)}</div>`}
+      `;
+    }
+    openDrawer(title, content, false);
+  } else {
+    const title = `${labels[type] || type} — All Tasks (${all.length})`;
+    content = `
+      ${_renderBoostAckHeader()}
+      <div class="mb-3">
+        <input type="text" placeholder="Search by name or ID…" oninput="filterStudentList(this.value, '${type}')"
+          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      </div>
+      <div id="studentListInner" class="space-y-3">${renderStudentList(all)}</div>
+    `;
+    openDrawer(title, content, false);
+  }
 }
 
 function filterStudentList(q, type) {
-  const students = getViewingStudents().filter(s => s.stage === type && (
+  const todayStr = new Date().toISOString().split('T')[0];
+  const acked    = _boostIsAcknowledged(type);
+  let students   = getViewingStudents().filter(s => s.stage === type);
+  if (!acked) students = students.filter(s => s.followup === todayStr);
+  students = students.filter(s =>
     s.name.toLowerCase().includes(q.toLowerCase()) || s.id.toLowerCase().includes(q.toLowerCase())
-  ));
+  );
   document.getElementById('studentListInner').innerHTML = renderStudentList(students);
 }
 
@@ -2937,7 +3112,11 @@ function renderStudentList(students) {
 
 /* Student Detail */
 function openStudentDetail(studentId) {
-  state.drawerPrevMode = state.drawerMode || 'boost';
+  // Only update prevMode when navigating INTO student detail for the first time.
+  // Do NOT overwrite it when re-rendering from saveSubtask / toggleSubtask (already 'student').
+  if (state.drawerMode !== 'student') {
+    state.drawerPrevMode = state.drawerMode || 'boost';
+  }
   state.drawerMode = 'student';
   state.drawerOfferId = state.drawerOfferId || null;
   const s = STUDENTS.find(x => x.id === studentId);
@@ -4822,7 +5001,7 @@ function logout() {
   if (b10x) b10x.classList.add('hidden');
   const mc = document.getElementById('mainContent');
   if (mc) mc.style.marginTop = '104px';
-  state = { role:'counselor', currentUser:null, viewingCounselorId:1, historyPeriod:'7d', leaderPeriod:'today', currentTab:'tab1', currentAdminPanel:'users', loginAttempts:0, lockedUntil:null, earningsChart:null, drawerMode:null, drawerBoostType:null, drawerBoostSubType:null, drawerBoostSubCardId:null, drawerVolumeMetricKey:null, drawerRevenueSubCardId:null, drawerSelectedStudent:null, drawerPrevMode:null, selectedSubtask:null, ownTasks:[], botOpen:false, botActiveTab:'chat', chatPanel:{ unreadCount:0, lastOpenedAt:null }, botConversation:{ flow:null, step:0, collected:{}, history:[], lastIntent:null, shownFollowUps:[] } };
+  state = { role:'counselor', currentUser:null, viewingCounselorId:1, historyPeriod:'7d', leaderPeriod:'today', currentTab:'tab1', currentAdminPanel:'users', loginAttempts:0, lockedUntil:null, earningsChart:null, drawerMode:null, drawerBoostType:null, drawerBoostSubType:null, drawerBoostSubCardId:null, drawerVolumeMetricKey:null, drawerRevenueSubCardId:null, drawerSelectedStudent:null, drawerPrevMode:null, selectedSubtask:null, ownTasks:[], boostAcknowledged:{}, botOpen:false, botActiveTab:'chat', chatPanel:{ unreadCount:0, lastOpenedAt:null }, botConversation:{ flow:null, step:0, collected:{}, history:[], lastIntent:null, shownFollowUps:[] } };
   document.getElementById('appShell').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginEmail').value = '';
@@ -5599,7 +5778,11 @@ function callStudent(studentId) {
 // Override openStudentDetail to include call button + WhatsApp history
 const _origOpenStudentDetail = openStudentDetail;
 function openStudentDetail(studentId) {
-  state.drawerPrevMode = state.drawerMode || 'boost';
+  // Only update prevMode when navigating INTO student detail for the first time.
+  // Do NOT overwrite it when re-rendering from saveSubtask / toggleSubtask (already 'student').
+  if (state.drawerMode !== 'student') {
+    state.drawerPrevMode = state.drawerMode || 'boost';
+  }
   state.drawerMode = 'student';
   state.drawerOfferId = state.drawerOfferId || null;
   const s = STUDENTS.find(x => x.id === studentId);
