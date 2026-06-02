@@ -221,17 +221,21 @@
         <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
       </section>
 
-      <!-- ③ Your Scorecard — Expandable -->
+      <!-- ③ Scorecard — TL role only (hidden for counsellors via JS) -->
       <section id="reportCardSection" class="bg-white rounded-xl border border-border overflow-hidden">
         <button onclick="toggleSection('scorecard')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
           <div class="text-left">
             <h2 class="font-bold text-text-main flex items-center gap-2">
               <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-              Your Scorecard — Yesterday, 26 May 2026
+              Scorecard — Yesterday, 26 May 2026
             </h2>
             <p id="reportCardSummary" class="text-xs text-text-muted mt-0.5 text-left"></p>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
+            <!-- TL: Counsellor filter (shown only for TL role via JS) -->
+            <select id="scorecardCounsellorFilter" class="hidden text-xs px-2 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent font-medium"
+              onclick="event.stopPropagation()" onchange="changeScorecardCounsellor(this.value)">
+            </select>
             <span class="text-[10px] px-2 py-1 bg-surface border border-border rounded-lg text-text-muted font-medium">Read-only</span>
             <svg id="chevron-scorecard" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </div>
@@ -273,7 +277,7 @@
         </div>
       </section>
 
-      <!-- ⑤ Your Performance So Far (was "Use for Stand Up") — collapsible, collapsed by default -->
+      <!-- ⑤ Performance Summary — counsellor: combined scorecard + standup | TL: standup only -->
       <section class="bg-white rounded-xl border border-border overflow-hidden">
         <!-- Header row — uses div to avoid nested-button HTML-parsing issue -->
         <div class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer" onclick="toggleSection('standup')">
@@ -282,8 +286,8 @@
               <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             </div>
             <div class="text-left">
-              <h2 class="font-bold text-text-main text-sm">Your Performance So Far</h2>
-              <p class="text-xs text-text-muted mt-0.5">Targets vs actuals — use for daily stand-up</p>
+              <h2 class="font-bold text-text-main text-sm">Performance Summary</h2>
+              <p class="text-xs text-text-muted mt-0.5">Scorecard · Targets vs Actuals — use filter to drill down</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -369,6 +373,21 @@
 
         <!-- Table body — hidden by default (collapsed) -->
         <div id="body-standup" class="hidden border-t border-border">
+          <!-- Scorecard summary strip — counsellor only, hidden for TL -->
+          <div id="standupScoreStrip" class="hidden px-5 pt-4 pb-3 border-b border-border">
+            <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Quality Scorecard</p>
+            <div id="summaryScoreCounts" class="grid grid-cols-3 gap-3 mb-3"></div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead><tr class="border-b border-border">
+                  <th class="text-left py-1.5 font-semibold text-text-muted">Metric</th>
+                  <th class="text-center py-1.5 font-semibold text-text-muted">T · A</th>
+                  <th class="text-center py-1.5 font-semibold text-text-muted">Status</th>
+                </tr></thead>
+                <tbody id="summaryScoreTable" class="divide-y divide-border"></tbody>
+              </table>
+            </div>
+          </div>
           <!-- Legend strip -->
           <div class="flex items-center gap-4 px-5 pt-4 pb-2">
             <span class="text-[10px] text-text-muted font-semibold uppercase tracking-wide">Status:</span>

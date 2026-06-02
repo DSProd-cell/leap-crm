@@ -817,6 +817,32 @@ function bootApp(role, email) {
     sel.value = state.viewingCounselorId;
   }
 
+  // Role-aware Scorecard & Performance Summary visibility
+  const reportCardSection = document.getElementById('reportCardSection');
+  const standupScoreStrip = document.getElementById('standupScoreStrip');
+  if (role === 'counselor') {
+    // Counsellor: hide standalone scorecard, show scorecard strip inside Performance Summary
+    if (reportCardSection) reportCardSection.classList.add('hidden');
+    if (standupScoreStrip) standupScoreStrip.classList.remove('hidden');
+  } else if (role === 'team_lead') {
+    // TL: show standalone scorecard with counsellor filter, hide strip
+    if (reportCardSection) reportCardSection.classList.remove('hidden');
+    if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
+    // Populate TL counsellor filter on the scorecard
+    const scFilter = document.getElementById('scorecardCounsellorFilter');
+    if (scFilter) {
+      scFilter.classList.remove('hidden');
+      scFilter.innerHTML = '';
+      const cList = COUNSELORS.filter(c => c.team === state.currentUser.team);
+      cList.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id; o.textContent = c.name;
+        scFilter.appendChild(o);
+      });
+      scFilter.value = state.viewingCounselorId;
+    }
+  }
+
   // Standup manager-only filters (Counsellor Name + TL Name)
   if (role !== 'counselor') {
     const cfSel = document.getElementById('standupCounsellorFilter');
@@ -941,6 +967,7 @@ function renderAll() {
   renderAdminInfoHub();
   renderFaqList();
   renderReportCard();
+  renderSummaryScoreStrip();
   renderStandupTable();
   renderAlertIcon();
 }
@@ -5111,6 +5138,54 @@ function renderReportCard() {
         </div>
       </div>`;
   }
+}
+
+/* ── TL: change counsellor viewed in Scorecard ── */
+function changeScorecardCounsellor(id) {
+  if (!id) return;
+  state.viewingCounselorId = parseInt(id);
+  renderReportCard();
+}
+
+/* ── Counsellor: render scorecard strip inside Performance Summary ── */
+function renderSummaryScoreStrip() {
+  const countsEl = document.getElementById('summaryScoreCounts');
+  const tableEl  = document.getElementById('summaryScoreTable');
+  if (!countsEl || !tableEl) return;
+
+  const c = getCounselorData();
+  const METRICS = [
+    { name:'1st Call Quality',      actual: c.q1score,   target: 80,              unit:'%' },
+    { name:'2nd Call Quality',      actual: c.q2score,   target: 80,              unit:'%' },
+    { name:'CA to ISLs — 48H',      actual: 42,          target: 75,              unit:'%' },
+    { name:'CA to F2F — 15D',       actual: c.f2f,       target: TARGETS.f2f,     unit:''  },
+    { name:'CA to STI — 15D',       actual: c.stis,      target: TARGETS.stis,    unit:''  },
+    { name:'Admit to Deposit — 30D',actual: c.deposits,  target: TARGETS.deposits,unit:''  },
+    { name:'LinkedIn (Last 2D)',     actual: 3,           target: 5,               unit:''  },
+    { name:'LeapPay Deposits (Y)',   actual: 2,           target: 4,               unit:''  },
+  ];
+  METRICS.forEach(m => {
+    const pct = m.target ? Math.round((m.actual / m.target) * 100) : 0;
+    m.status = pct >= 100 ? 'green' : pct >= 60 ? 'amber' : 'red';
+  });
+  const green = METRICS.filter(m => m.status === 'green').length;
+  const amber = METRICS.filter(m => m.status === 'amber').length;
+  const red   = METRICS.filter(m => m.status === 'red').length;
+
+  countsEl.innerHTML = `
+    <div class="scorecard-col green"><p class="sc-count">${green}</p><p class="sc-label">Working Well</p></div>
+    <div class="scorecard-col amber"><p class="sc-count">${amber}</p><p class="sc-label">Improving</p></div>
+    <div class="scorecard-col red"><p class="sc-count">${red}</p><p class="sc-label">Needs Focus</p></div>`;
+
+  tableEl.innerHTML = METRICS.map(m => {
+    const statusBg = m.status === 'green' ? 'bg-green-100 text-success' : m.status === 'amber' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-danger';
+    const unit = m.unit;
+    return `<tr>
+      <td class="py-1.5 font-medium text-text-main">${m.name}</td>
+      <td class="py-1.5 text-center font-mono">T — ${m.target}${unit} · A — ${m.actual}${unit}</td>
+      <td class="py-1.5 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBg}">${m.status === 'green' ? '✓ Good' : m.status === 'amber' ? '~ On Track' : '! Focus'}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 /* ═══════════════════════════════════════════════════════
