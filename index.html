@@ -373,30 +373,17 @@
 
         <!-- Table body — hidden by default (collapsed) -->
         <div id="body-standup" class="hidden border-t border-border">
-          <!-- Scorecard summary strip — counsellor only, hidden for TL -->
-          <div id="standupScoreStrip" class="hidden px-5 pt-4 pb-3 border-b border-border">
-            <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Quality Scorecard</p>
-            <div id="summaryScoreCounts" class="grid grid-cols-3 gap-3 mb-3"></div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-xs">
-                <thead><tr class="border-b border-border">
-                  <th class="text-left py-1.5 font-semibold text-text-muted">Metric</th>
-                  <th class="text-center py-1.5 font-semibold text-text-muted">T · A</th>
-                  <th class="text-center py-1.5 font-semibold text-text-muted">Status</th>
-                </tr></thead>
-                <tbody id="summaryScoreTable" class="divide-y divide-border"></tbody>
-              </table>
-            </div>
-          </div>
+          <!-- Status summary — filled by renderStandupTable() -->
+          <div id="standupStatusSummary" class="px-5 pt-4 pb-2"></div>
           <!-- Legend strip -->
-          <div class="flex items-center gap-4 px-5 pt-4 pb-2">
-            <span class="text-[10px] text-text-muted font-semibold uppercase tracking-wide">Status:</span>
-            <span class="flex items-center gap-1 text-[10px] text-success font-medium"><span class="w-2 h-2 rounded-full bg-success inline-block"></span>On Track (≥80%)</span>
-            <span class="flex items-center gap-1 text-[10px] text-accent font-medium"><span class="w-2 h-2 rounded-full bg-accent inline-block"></span>At Risk (50–79%)</span>
-            <span class="flex items-center gap-1 text-[10px] text-danger font-medium"><span class="w-2 h-2 rounded-full bg-danger inline-block"></span>Behind (&lt;50%)</span>
+          <div class="flex items-center gap-4 px-5 pb-3">
+            <span class="text-[10px] text-text-muted font-semibold uppercase tracking-wide">Legend:</span>
+            <span class="flex items-center gap-1 text-[10px] text-success font-medium"><span class="w-2 h-2 rounded-full bg-success inline-block"></span>Good (≥80%)</span>
+            <span class="flex items-center gap-1 text-[10px] text-accent font-medium"><span class="w-2 h-2 rounded-full bg-accent inline-block"></span>On Track (50–79%)</span>
+            <span class="flex items-center gap-1 text-[10px] text-danger font-medium"><span class="w-2 h-2 rounded-full bg-danger inline-block"></span>Focus (&lt;50%)</span>
           </div>
           <div class="overflow-x-auto px-5 pb-5">
-            <table class="w-full text-xs min-w-[760px] border-collapse">
+            <table class="w-full text-xs min-w-[920px] border-collapse">
               <thead>
                 <tr>
                   <th class="text-left px-3 py-2.5 font-semibold text-text-muted rounded-tl-lg bg-surface sticky left-0 border-b border-border"># Metric</th>
@@ -409,7 +396,8 @@
                   <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border" title="3 Days Ago">Y-2</th>
                   <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border" title="This Week">W0</th>
                   <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border" title="Last Week">W-1</th>
-                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border rounded-tr-lg" title="Last Month">M-1</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border" title="Last Month">M-1</th>
+                  <th class="text-center px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border rounded-tr-lg whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody id="standupTableBody" class="divide-y divide-border/50"></tbody>

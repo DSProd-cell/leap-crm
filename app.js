@@ -2883,6 +2883,8 @@ function drawerGoBack() {
     openOpportunityDrawer();
   } else if (state.drawerPrevMode === 'boostReferrals') {
     openBoostReferralsDrawer();
+  } else if (state.drawerPrevMode === 'waGroup') {
+    openWAGroupDetailsDrawer();
   }
 }
 
@@ -5282,76 +5284,195 @@ function renderStandupTable(filterData) {
     caDateTo:       document.getElementById('standupCADateTo')?.value          || '',
     servicingType:  document.getElementById('standupServicingType')?.value     || '',
   };
-  const data = generateStandupData(filters);
   const tbody = document.getElementById('standupTableBody');
   const empty = document.getElementById('standupEmpty');
   if (!tbody) return;
-
-  if (!data.length) {
-    tbody.innerHTML = '';
-    if (empty) empty.classList.remove('hidden');
-    return;
-  }
   if (empty) empty.classList.add('hidden');
 
-  const fmtCell = (val, row) => row.isCurrency ? fmt(val) : row.isPct ? `${val}%` : val;
+  const c = getCounselorData();
+  const allData = generateStandupData(filters);
 
-  // Colored cell: green ≥80%, amber 50–79%, red <50%
-  function perfCell(val, metricName, metricKey, target, isCurrency, isPct) {
-    const fval = isCurrency ? fmt(val) : isPct ? `${val}%` : val;
-    const pct = target > 0 ? Math.round((val / target) * 100) : (val > 0 ? 100 : 0);
-    const cls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
-    const dot = pct >= 80 ? '●' : pct >= 50 ? '●' : '●';
-    const dotCls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
-    return `<span class="standup-link cursor-pointer hover:underline font-semibold ${cls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
+  // ── SECTION 1: VOLUME METRICS ──────────────────────────────
+  const VOLUME_MAP   = { leads:'Leads', isl_24h:'ISL Shared', f2f:'F2F Done', stis:'STI', deposits:'Deposits', visas:'Visa', revenue_collected:'Revenue Generated' };
+  const VOLUME_ORDER = ['leads','isl_24h','f2f','stis','deposits','visas','revenue_collected'];
+
+  const volumeRows = VOLUME_ORDER.map(key => {
+    const row = allData.find(r => r.key === key);
+    return row ? { ...row, name: VOLUME_MAP[key] } : null;
+  }).filter(Boolean);
+
+  // Insert "Admits" after STI (position 3)
+  const admitsBase = Math.max(1, Math.round((c.lockins || 2) * 0.4));
+  const admitsMTD  = admitsBase * 22;
+  const admitsYTD  = admitsBase * 264;
+  volumeRows.splice(3, 0, {
+    name:'Admits', key:'admits', isCurrency:false, isPct:false,
+    tYTD: admitsYTD,                         tMTD: admitsMTD,
+    aYTD: Math.round(admitsYTD * 0.82),      aMTD: Math.round(admitsMTD * 0.82),
+    Y: admitsBase,     Y1: Math.max(0, admitsBase - 1),  Y2: admitsBase,
+    W0: admitsBase * 5, W01: admitsBase * 4, M01: Math.round(admitsMTD * 0.88),
+  });
+
+  // ── SECTION 2: CONVERSION FUNNEL ───────────────────────────
+  const FUNNEL_DEF = [
+    { name:'ISL Shared in 24 Hours',              target:75,  actual:72, offsets:[1,3,2,2,4,3] },
+    { name:'CA to ISL',                           target:80,  actual:65, offsets:[3,5,4,4,6,5] },
+    { name:'CA to STI — 14 Days',                target:30,  actual:18, offsets:[2,4,3,3,5,4] },
+    { name:'CA to F2F — 14 Days',                target:25,  actual:22, offsets:[0,2,1,1,3,2] },
+    { name:'STI to Admits — 30 Days',            target:40,  actual:35, offsets:[2,3,2,3,4,3] },
+    { name:'Admit to Deposits — 14 Days',        target:50,  actual:28, offsets:[4,6,5,5,7,6] },
+    { name:'CA to Visa',                          target:20,  actual:12, offsets:[1,2,1,2,3,2] },
+    { name:'CA to Revenue (Excl. Partner Visa)', target:15,  actual:11, offsets:[2,3,2,2,4,3] },
+    { name:'Deposit to Leap Pay %',              target:60,  actual:42, offsets:[3,5,4,4,6,5] },
+  ];
+  const funnelRows = FUNNEL_DEF.map((m, i) => ({
+    name: m.name, key: `funnel_${i}`, isPct: true, isCurrency: false,
+    tYTD: m.target, tMTD: m.target,
+    aYTD: m.actual, aMTD: m.actual,
+    Y:   m.actual,
+    Y1:  Math.max(0, m.actual - m.offsets[0]),
+    Y2:  Math.max(0, m.actual - m.offsets[1]),
+    W0:  m.actual,
+    W01: Math.max(0, m.actual - m.offsets[2]),
+    M01: Math.max(0, m.actual - m.offsets[3]),
+  }));
+
+  // ── STATUS COMPUTATION ─────────────────────────────────────
+  function addStatus(rows) {
+    rows.forEach(r => {
+      const aMTD = typeof r.aMTD === 'string' ? parseFloat(r.aMTD.replace(/[^0-9.]/g,'')) : r.aMTD;
+      const tMTD = typeof r.tMTD === 'string' ? parseFloat(r.tMTD.replace(/[^0-9.]/g,'')) : r.tMTD;
+      r.mtdPct = tMTD > 0 ? Math.round((aMTD / tMTD) * 100) : (aMTD > 0 ? 100 : 0);
+      r.status  = r.mtdPct >= 80 ? 'good' : r.mtdPct >= 50 ? 'ontrack' : 'focus';
+    });
+  }
+  addStatus(volumeRows);
+  addStatus(funnelRows);
+
+  // ── STATUS SUMMARY ─────────────────────────────────────────
+  const allRows    = [...volumeRows, ...funnelRows];
+  const goodCnt    = allRows.filter(r => r.status === 'good').length;
+  const ontrackCnt = allRows.filter(r => r.status === 'ontrack').length;
+  const focusCnt   = allRows.filter(r => r.status === 'focus').length;
+
+  const summaryEl = document.getElementById('standupStatusSummary');
+  if (summaryEl) {
+    summaryEl.innerHTML = `
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Summary:</span>
+        <div class="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
+          <span class="w-2 h-2 rounded-full bg-success inline-block"></span>
+          <span class="font-bold text-success text-sm">${goodCnt}</span>
+          <span class="text-[10px] text-success font-medium ml-0.5">Good</span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+          <span class="w-2 h-2 rounded-full bg-accent inline-block"></span>
+          <span class="font-bold text-accent text-sm">${ontrackCnt}</span>
+          <span class="text-[10px] text-accent font-medium ml-0.5">On Track</span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+          <span class="w-2 h-2 rounded-full bg-danger inline-block"></span>
+          <span class="font-bold text-danger text-sm">${focusCnt}</span>
+          <span class="text-[10px] text-danger font-medium ml-0.5">Focus</span>
+        </div>
+      </div>`;
   }
 
-  function dayCell(val, metricName, metricKey, isCurrency, isPct) {
-    const fval = isCurrency ? fmt(val) : isPct ? `${val}%` : val;
-    return `<span class="standup-link cursor-pointer hover:text-accent hover:underline text-text-muted" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
+  // ── RENDER HELPERS ─────────────────────────────────────────
+  function fmtV(val, isPct, isCurrency) {
+    if (isCurrency) return fmt(val);
+    if (isPct) return `${val}%`;
+    return val;
   }
 
-  // Trend arrow comparing W0 to W01
+  function statusBadge(status) {
+    if (status === 'good')    return `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-success whitespace-nowrap">✓ Good</span>`;
+    if (status === 'ontrack') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 whitespace-nowrap">~ On Track</span>`;
+    return `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-danger whitespace-nowrap">! Focus</span>`;
+  }
+
+  function statusDotRow(status) {
+    const color = status === 'good' ? 'bg-success' : status === 'ontrack' ? 'bg-accent' : 'bg-danger';
+    return `<span class="w-2 h-2 rounded-full ${color} inline-block mr-1.5 flex-shrink-0"></span>`;
+  }
+
+  function perfCell(val, isPct, isCurrency, target) {
+    const fval = fmtV(val, isPct, isCurrency);
+    const numV = typeof val    === 'string' ? parseFloat(val.replace(/[^0-9.]/g,''))    : val;
+    const numT = typeof target === 'string' ? parseFloat(target.replace(/[^0-9.]/g,'')) : target;
+    const pct  = numT > 0 ? Math.round((numV / numT) * 100) : (numV > 0 ? 100 : 0);
+    const cls  = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
+    return `<span class="font-semibold ${cls}">${fval}</span>`;
+  }
+
   function trendArrow(current, prev) {
     if (current > prev) return `<span class="text-success text-[10px] ml-0.5">↑</span>`;
     if (current < prev) return `<span class="text-danger text-[10px] ml-0.5">↓</span>`;
     return `<span class="text-text-muted text-[10px] ml-0.5">→</span>`;
   }
 
-  // MTD status dot
-  function statusDot(mtdPct) {
-    if (mtdPct >= 80) return `<span class="w-2 h-2 rounded-full bg-success inline-block mr-1.5 flex-shrink-0" title="On Track"></span>`;
-    if (mtdPct >= 50) return `<span class="w-2 h-2 rounded-full bg-accent inline-block mr-1.5 flex-shrink-0" title="At Risk"></span>`;
-    return `<span class="w-2 h-2 rounded-full bg-danger inline-block mr-1.5 flex-shrink-0" title="Behind"></span>`;
+  function sectionHeader(title, groupId, count, goodN, ontrackN, focusN) {
+    return `<tr onclick="togglePerfSection('${groupId}')" class="cursor-pointer hover:bg-slate-200/60 transition-colors select-none">
+      <td colspan="12" class="px-3 py-2.5 bg-slate-100 border-y border-border">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${title}</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500 font-semibold">${count} metrics</span>
+            <span class="text-[9px] text-success font-semibold">${goodN}✓</span>
+            <span class="text-[9px] text-accent font-semibold">${ontrackN}~</span>
+            <span class="text-[9px] text-danger font-semibold">${focusN}!</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] text-slate-400 font-medium">tap to expand</span>
+            <svg id="chevron-perf-${groupId}" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+      </td>
+    </tr>`;
   }
 
-  tbody.innerHTML = data.map((row, idx) => {
-    const tooltipAttr = row.tooltip ? ` title="${row.tooltip}"` : '';
-    const mtdNum = typeof row.aMTD === 'string' ? parseFloat(row.aMTD.replace(/[^0-9.]/g,'')) : row.aMTD;
-    const tMTDNum = typeof row.tMTD === 'string' ? parseFloat(row.tMTD.replace(/[^0-9.]/g,'')) : row.tMTD;
-    const mtdPct = tMTDNum > 0 ? Math.round((mtdNum / tMTDNum) * 100) : (mtdNum > 0 ? 100 : 0);
-    const rowBg = idx % 2 === 0 ? '' : 'bg-surface/30';
-    const nameHtml = row.tooltip
-      ? `${idx+1}. ${row.name} <span class="text-[9px] text-primary font-semibold ml-1 bg-primary/10 px-1.5 py-0.5 rounded-full">% of Leads</span>`
-      : `${idx+1}. ${row.name}`;
-    return `
-    <tr class="hover:bg-primary/5 transition-colors ${rowBg}">
-      <td class="px-3 py-2.5 font-medium text-text-main sticky left-0 ${rowBg || 'bg-white'} whitespace-nowrap cursor-pointer hover:text-primary"${tooltipAttr} onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">
-        <div class="flex items-center">${statusDot(mtdPct)}${nameHtml}</div>
+  function dataRow(row, idx, i, groupId) {
+    const rowBg = i % 2 === 0 ? '' : 'bg-surface/30';
+    return `<tr class="hover:bg-primary/5 transition-colors ${rowBg} perf-row-${groupId} hidden">
+      <td class="px-3 py-2.5 font-medium text-text-main sticky left-0 ${rowBg || 'bg-white'} whitespace-nowrap">
+        <div class="flex items-center">${statusDotRow(row.status)}${idx + 1}. ${row.name}</div>
       </td>
-      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tYTD, row)}</td>
-      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tMTD, row)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aYTD, row.name, row.key, row.tYTD || 1, row.isCurrency, row.isPct)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aMTD, row.name, row.key, row.tMTD || 1, row.isCurrency, row.isPct)}</td>
-      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y,   row.name, row.key, row.isCurrency, row.isPct)}</td>
-      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y1,  row.name, row.key, row.isCurrency, row.isPct)}</td>
-      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y2,  row.name, row.key, row.isCurrency, row.isPct)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W0, row.name, row.key, row.isCurrency, row.isPct)}${trendArrow(row.W0, row.W01)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W01, row.name, row.key, row.isCurrency, row.isPct)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.M01, row.name, row.key, row.isCurrency, row.isPct)}</td>
-    </tr>
-  `;
-  }).join('');
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtV(row.tYTD, row.isPct, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtV(row.tMTD, row.isPct, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aYTD, row.isPct, row.isCurrency, row.tYTD || 1)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aMTD, row.isPct, row.isCurrency, row.tMTD || 1)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted">${fmtV(row.Y,   row.isPct, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted">${fmtV(row.Y1,  row.isPct, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted">${fmtV(row.Y2,  row.isPct, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40 text-text-muted">${fmtV(row.W0,  row.isPct, row.isCurrency)}${trendArrow(row.W0, row.W01)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40 text-text-muted">${fmtV(row.W01, row.isPct, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40 text-text-muted">${fmtV(row.M01, row.isPct, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-center">${statusBadge(row.status)}</td>
+    </tr>`;
+  }
+
+  // Per-section status counts for header badges
+  const vGood = volumeRows.filter(r => r.status === 'good').length;
+  const vOn   = volumeRows.filter(r => r.status === 'ontrack').length;
+  const vFoc  = volumeRows.filter(r => r.status === 'focus').length;
+  const fGood = funnelRows.filter(r => r.status === 'good').length;
+  const fOn   = funnelRows.filter(r => r.status === 'ontrack').length;
+  const fFoc  = funnelRows.filter(r => r.status === 'focus').length;
+
+  tbody.innerHTML =
+    sectionHeader('📊 Volume Metrics',    'volume', volumeRows.length, vGood, vOn, vFoc) +
+    volumeRows.map((r, i) => dataRow(r, i, i, 'volume')).join('') +
+    sectionHeader('🔁 Conversion Funnel', 'funnel', funnelRows.length, fGood, fOn, fFoc) +
+    funnelRows.map((r, i) => dataRow(r, i, i, 'funnel')).join('');
+}
+
+function togglePerfSection(groupId) {
+  const rows = document.querySelectorAll(`.perf-row-${groupId}`);
+  const chevron = document.getElementById(`chevron-perf-${groupId}`);
+  if (!rows.length) return;
+  const isCollapsed = rows[0].classList.contains('hidden');
+  rows.forEach(r => r.classList.toggle('hidden', !isCollapsed));
+  if (chevron) chevron.style.transform = isCollapsed ? 'rotate(180deg)' : '';
 }
 
 function toggleStandupAdvancedFilter() {
@@ -5813,6 +5934,7 @@ function openWAGroupDetailsDrawer() {
     ${accordion('replied',   '💬', 'Groups With Messages Not Replied', notRepliedStudents.length, 'text-red-700', 'bg-red-50',      'border-red-200',     notRepliedStudents.map(s => waRepliedRow(s)).join(''))}
   `;
 
+  state.drawerMode = 'waGroup';
   openDrawer('WA Group Details', content, false);
 }
 
