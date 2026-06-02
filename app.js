@@ -1530,6 +1530,7 @@ function renderWhatsappCoverage() {
     });
   });
   const el = document.getElementById('whatsappCoverage');
+  if (!el) return;
   el.innerHTML = `
     <div class="wa-chip ok cursor-pointer hover:opacity-80 transition-opacity" onclick="openGroupsDetail('counselor')" title="Click to see group membership details">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
@@ -1555,28 +1556,58 @@ function getDeferralOpportunityStudents() {
   ));
 }
 
+function getBestPerformer(field) {
+  // Returns { name, value } for the counselor with highest value in given field
+  let best = null;
+  COUNSELORS.forEach(c => {
+    const v = c.today[field];
+    if (v !== undefined && (best === null || v > best.value)) {
+      best = { name: c.name.split(' ')[0], value: v };
+    }
+  });
+  return best;
+}
+
+function getWAGroupStats() {
+  const students = getViewingStudents();
+  let active = 0, inactive = 0, notJoined = 0, notReplied = getWANotRepliedStudents().length;
+  students.forEach(s => {
+    s.whatsappGroups.forEach(g => {
+      if (g.counselorJoined && g.studentJoined) active++;
+      else if (!g.counselorJoined) inactive++;
+      if (!g.studentJoined) notJoined++;
+    });
+  });
+  return { active, inactive, notJoined, notReplied };
+}
+
 function renderMetricCards() {
   const c = getCounselorData();
   const totalStudents = getViewingStudents().length;
-  const convPct = (v) => totalStudents ? Math.round((v / totalStudents) * 100) : 0;
 
   const allStudents = getViewingStudents();
   const unhappyCount = allStudents.filter(s => s.islRating < 8 || s.hasEscalation).length;
-  const paidPremiumCount = allStudents.filter(s => s.hasPaidPremium).length;
-  const waNotRepliedCount = getWANotRepliedStudents().length;
   const deferralCount = getDeferralOpportunityStudents().length;
+  const waStats = getWAGroupStats();
+
+  // Best performers for quality metrics
+  const bestISL      = getBestPerformer('isl');
+  const bestRef      = getBestPerformer('referralPct');
+  const bestQ1       = getBestPerformer('q1score');
 
   const volumeMetrics = [
-    { label:'Tasks Completed',           value:c.tasks,           target:TARGETS.tasks,      extra:`${fmtPct(c.tasks, TARGETS.tasks)}% of daily target`, unit:'', key:'tasks' },
     { label:'Unhappy Cohort',            value:unhappyCount,      target:allStudents.length, extra:'ISL < 8 / 10 or Escalation', unit:'', key:'unhappy', isNegative:true },
     { label:'Deferrals Opportunity',     value:deferralCount,     target:0,                  extra:'Admit received / Deposit paid', unit:'', key:'deferrals', isOpportunity:true },
   ];
 
   const qualityMetrics = [
-    { label:'ISL Feedback Rating',       value:c.isl,             target:5,                  extra:`${Math.round((c.isl/5)*100)}%`, unit:'', isRating:true },
-    { label:'Referral % from CA',        value:c.referralPct,     target:TARGETS.referral,   extra:`${c.referralPct}% of assigned`, unit:'', isPct:true },
-    { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score },
-    { label:'WA Not Replied',            value:waNotRepliedCount, target:0,                  extra:'Student questions pending reply', unit:'', key:'waNotReplied', isNegative:true },
+    { label:'ISL Feedback Rating',       value:c.isl,             target:5,                  extra:`${Math.round((c.isl/5)*100)}%`, unit:'', isRating:true,
+      bestLabel: bestISL ? `🏆 Best: ${bestISL.name} · ${bestISL.value.toFixed(1)}/5` : '' },
+    { label:'Referral % from CA',        value:c.referralPct,     target:TARGETS.referral,   extra:`${c.referralPct}% of assigned`, unit:'', isPct:true,
+      bestLabel: bestRef ? `🏆 Best: ${bestRef.name} · ${bestRef.value}%` : '' },
+    { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score,
+      bestLabel: bestQ1 ? `🏆 Best: ${bestQ1.name} · ${bestQ1.value}%` : '' },
+    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats },
   ];
 
   renderMetricGrid('volumeMetrics', volumeMetrics);
@@ -1586,6 +1617,40 @@ function renderMetricCards() {
 function renderMetricGrid(elId, metrics) {
   const el = document.getElementById(elId);
   el.innerHTML = metrics.map(m => {
+    // ── Special: WA Group Details card ──
+    if (m.isWAGroups) {
+      const ws = m.waStats;
+      return `
+        <div class="metric-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow col-span-2 lg:col-span-1"
+          style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
+          onclick="openWAGroupDetailsDrawer()">
+          <div class="metric-deco"></div>
+          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">💬 WA Group Details</p>
+          <div class="grid grid-cols-2 gap-1.5 mt-1">
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm text-emerald-700">${ws.active}</p>
+              <p class="text-[10px] text-emerald-600 font-medium leading-tight">Active</p>
+            </div>
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm ${ws.inactive > 0 ? 'text-amber-600' : 'text-emerald-700'}">${ws.inactive}</p>
+              <p class="text-[10px] ${ws.inactive > 0 ? 'text-amber-600' : 'text-emerald-600'} font-medium leading-tight">Inactive</p>
+            </div>
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm ${ws.notJoined > 0 ? 'text-orange-600' : 'text-emerald-700'}">${ws.notJoined}</p>
+              <p class="text-[10px] ${ws.notJoined > 0 ? 'text-orange-600' : 'text-emerald-600'} font-medium leading-tight">Not Joined</p>
+            </div>
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm ${ws.notReplied > 0 ? 'text-red-600' : 'text-emerald-700'}">${ws.notReplied}</p>
+              <p class="text-[10px] ${ws.notReplied > 0 ? 'text-red-600' : 'text-emerald-600'} font-medium leading-tight">Not Replied</p>
+            </div>
+          </div>
+          <div class="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-700">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            View all groups →
+          </div>
+        </div>`;
+    }
+
     let pct, displayVal, subText;
     if (m.isDual) {
       pct = Math.round((m.q1 + m.q2) / 2);
@@ -1631,6 +1696,7 @@ function renderMetricGrid(elId, metrics) {
               <span class="text-xs font-bold ${cls === 'green' ? 'text-success' : cls === 'amber' ? 'text-accent' : 'text-danger'}">${m.isDual ? pct : pct}%</span>
             </div>`
         }
+        ${m.bestLabel ? `<div class="mt-1.5 pt-1.5 border-t border-white/40"><p class="text-[10px] text-text-muted font-medium truncate">${m.bestLabel}</p></div>` : ''}
       </div>
     `;
   }).join('');
@@ -5144,27 +5210,60 @@ function renderStandupTable(filterData) {
   if (empty) empty.classList.add('hidden');
 
   const fmtCell = (val, row) => row.isCurrency ? fmt(val) : val;
-  const sdCell = (val, metricName, metricKey, extraCls='text-text-muted', isCurrency=false) =>
-    `<span class="standup-link cursor-pointer hover:text-accent hover:underline ${extraCls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${isCurrency ? fmt(val) : val}</span>`;
 
-  tbody.innerHTML = data.map((row, i) => {
+  // Colored cell: green ≥80%, amber 50–79%, red <50%
+  function perfCell(val, metricName, metricKey, target, isCurrency) {
+    const fval = isCurrency ? fmt(val) : val;
+    const pct = target > 0 ? Math.round((val / target) * 100) : (val > 0 ? 100 : 0);
+    const cls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
+    const dot = pct >= 80 ? '●' : pct >= 50 ? '●' : '●';
+    const dotCls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
+    return `<span class="standup-link cursor-pointer hover:underline font-semibold ${cls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
+  }
+
+  function dayCell(val, metricName, metricKey, isCurrency) {
+    const fval = isCurrency ? fmt(val) : val;
+    return `<span class="standup-link cursor-pointer hover:text-accent hover:underline text-text-muted" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
+  }
+
+  // Trend arrow comparing W0 to W01
+  function trendArrow(current, prev) {
+    if (current > prev) return `<span class="text-success text-[10px] ml-0.5">↑</span>`;
+    if (current < prev) return `<span class="text-danger text-[10px] ml-0.5">↓</span>`;
+    return `<span class="text-text-muted text-[10px] ml-0.5">→</span>`;
+  }
+
+  // MTD status dot
+  function statusDot(mtdPct) {
+    if (mtdPct >= 80) return `<span class="w-2 h-2 rounded-full bg-success inline-block mr-1.5 flex-shrink-0" title="On Track"></span>`;
+    if (mtdPct >= 50) return `<span class="w-2 h-2 rounded-full bg-accent inline-block mr-1.5 flex-shrink-0" title="At Risk"></span>`;
+    return `<span class="w-2 h-2 rounded-full bg-danger inline-block mr-1.5 flex-shrink-0" title="Behind"></span>`;
+  }
+
+  tbody.innerHTML = data.map((row, idx) => {
     const tooltipAttr = row.tooltip ? ` title="${row.tooltip}"` : '';
+    const mtdNum = typeof row.aMTD === 'string' ? parseFloat(row.aMTD.replace(/[^0-9.]/g,'')) : row.aMTD;
+    const tMTDNum = typeof row.tMTD === 'string' ? parseFloat(row.tMTD.replace(/[^0-9.]/g,'')) : row.tMTD;
+    const mtdPct = tMTDNum > 0 ? Math.round((mtdNum / tMTDNum) * 100) : (mtdNum > 0 ? 100 : 0);
+    const rowBg = idx % 2 === 0 ? '' : 'bg-surface/30';
     const nameHtml = row.tooltip
-      ? `${i+1}. ${row.name} <span class="text-[9px] text-primary font-semibold ml-1 bg-primary/10 px-1.5 py-0.5 rounded-full">% of Leads</span>`
-      : `${i+1}. ${row.name}`;
+      ? `${idx+1}. ${row.name} <span class="text-[9px] text-primary font-semibold ml-1 bg-primary/10 px-1.5 py-0.5 rounded-full">% of Leads</span>`
+      : `${idx+1}. ${row.name}`;
     return `
-    <tr class="hover:bg-surface/50 transition-colors">
-      <td class="px-3 py-2 font-medium text-text-main sticky left-0 bg-white whitespace-nowrap cursor-pointer hover:text-accent"${tooltipAttr} onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">${nameHtml}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tYTD, row)}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tMTD, row)}</td>
-      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aYTD, row.name, row.key, row.ytdCls, row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aMTD, row.name, row.key, row.mtdCls, row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y1, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y2, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W0, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.M01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
+    <tr class="hover:bg-primary/5 transition-colors ${rowBg}">
+      <td class="px-3 py-2.5 font-medium text-text-main sticky left-0 ${rowBg || 'bg-white'} whitespace-nowrap cursor-pointer hover:text-primary"${tooltipAttr} onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">
+        <div class="flex items-center">${statusDot(mtdPct)}${nameHtml}</div>
+      </td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tYTD, row)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tMTD, row)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aYTD, row.name, row.key, row.tYTD || 1, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aMTD, row.name, row.key, row.tMTD || 1, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y,   row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y1,  row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y2,  row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W0, row.name, row.key, row.isCurrency)}${trendArrow(row.W0, row.W01)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W01, row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.M01, row.name, row.key, row.isCurrency)}</td>
     </tr>
   `;
   }).join('');
@@ -5539,6 +5638,106 @@ function openGroupsDetail(mode) {
 
     openDrawer('Students Not in Groups', content, false);
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   WA GROUP DETAILS DRAWER  (4 accordion sub-cards)
+═══════════════════════════════════════════════════════ */
+
+function openWAGroupDetailsDrawer() {
+  const students = getViewingStudents();
+
+  // Build flat list of student-group pairs
+  const pairs = [];
+  students.forEach(s => {
+    s.whatsappGroups.forEach(g => {
+      pairs.push({ student: s, group: g });
+    });
+  });
+
+  // Categories
+  const activeGroups     = pairs.filter(p => p.group.counselorJoined && p.group.studentJoined);
+  const inactiveGroups   = pairs.filter(p => !p.group.counselorJoined);
+  const notJoinedGroups  = pairs.filter(p => !p.group.studentJoined);
+  const notRepliedStudents = getWANotRepliedStudents();
+
+  function waGroupRow(p, showWABtn = true) {
+    const waLink = `https://wa.me/?text=${encodeURIComponent('Hi ' + p.student.name + ', joining you on the group now!')}`;
+    return `
+      <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+        <div>
+          <p class="text-xs font-semibold text-text-main">${escHtml(p.student.name)}</p>
+          <p class="text-[10px] text-text-muted">${escHtml(p.group.groupName)}</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          ${showWABtn ? `<a href="${waLink}" target="_blank" class="flex items-center gap-1 text-[10px] px-2 py-1 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/30 rounded-lg font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.549 4.08 1.507 5.793L.057 23.25a.75.75 0 00.92.92l5.457-1.45A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.75 9.75 0 01-5.024-1.396l-.36-.215-3.735.99.99-3.735-.215-.36A9.75 9.75 0 1112 21.75z"/></svg>
+            Open WA Group
+          </a>` : ''}
+          <button onclick="openStudentDetail('${p.student.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
+        </div>
+      </div>`;
+  }
+
+  function waRepliedRow(s) {
+    const msgs = WA_UNANSWERED[s.id] || [];
+    const waLink = `https://wa.me/?text=${encodeURIComponent('Hi ' + s.name + ', following up on your question!')}`;
+    return `
+      <div class="flex items-start justify-between py-2 border-b border-border/50 last:border-0">
+        <div class="flex-1 min-w-0 mr-2">
+          <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
+          <p class="text-[10px] text-text-muted mb-1">${msgs.length} unanswered question${msgs.length !== 1 ? 's' : ''}</p>
+          ${msgs.map(m => `<p class="text-[10px] text-amber-700 italic truncate">"${escHtml(m.question)}"</p>`).join('')}
+        </div>
+        <div class="flex flex-col gap-1 flex-shrink-0">
+          <a href="${waLink}" target="_blank" class="flex items-center gap-1 text-[10px] px-2 py-1 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/30 rounded-lg font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.549 4.08 1.507 5.793L.057 23.25a.75.75 0 00.92.92l5.457-1.45A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.75 9.75 0 01-5.024-1.396l-.36-.215-3.735.99.99-3.735-.215-.36A9.75 9.75 0 1112 21.75z"/></svg>
+            Reply on WA
+          </a>
+          <button onclick="openStudentDetail('${s.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
+        </div>
+      </div>`;
+  }
+
+  function accordion(id, icon, title, count, colorCls, bgCls, borderCls, rows) {
+    const isEmpty = rows.length === 0;
+    return `
+      <div class="rounded-xl border ${borderCls} overflow-hidden mb-3">
+        <button onclick="toggleWACard('${id}')" class="w-full flex items-center justify-between px-4 py-3 ${bgCls} hover:opacity-90 transition-opacity cursor-pointer">
+          <div class="flex items-center gap-2">
+            <span class="text-base">${icon}</span>
+            <span class="text-sm font-semibold ${colorCls}">${title}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/60 ${colorCls} font-bold">${count}</span>
+          </div>
+          <svg id="chevron-wa-${id}" class="w-4 h-4 ${colorCls} transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="wa-body-${id}" class="hidden px-4 pb-3 pt-2 bg-white">
+          ${isEmpty
+            ? `<p class="text-xs text-text-muted italic text-center py-3">All good here! 🎉</p>`
+            : rows
+          }
+        </div>
+      </div>`;
+  }
+
+  const content = `
+    <p class="text-xs text-text-muted mb-4">Overview of all WhatsApp group activity across your students. Tap a section to expand.</p>
+    ${accordion('active',    '✅', 'Active Groups',                   activeGroups.length,    'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', activeGroups.map(p => waGroupRow(p, true)).join(''))}
+    ${accordion('inactive',  '⚠️', 'In-Active Groups',                inactiveGroups.length,  'text-amber-700',   'bg-amber-50',    'border-amber-200',   inactiveGroups.map(p => waGroupRow(p, true)).join(''))}
+    ${accordion('notjoined', '🚫', 'Students not joined Groups',      notJoinedGroups.length, 'text-orange-700',  'bg-orange-50',   'border-orange-200',  notJoinedGroups.map(p => waGroupRow(p, true)).join(''))}
+    ${accordion('replied',   '💬', 'Groups With Messages Not Replied', notRepliedStudents.length, 'text-red-700', 'bg-red-50',      'border-red-200',     notRepliedStudents.map(s => waRepliedRow(s)).join(''))}
+  `;
+
+  openDrawer('WA Group Details', content, false);
+}
+
+function toggleWACard(id) {
+  const body = document.getElementById(`wa-body-${id}`);
+  const chevron = document.getElementById(`chevron-wa-${id}`);
+  if (!body) return;
+  const isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
 }
 
 /* ═══════════════════════════════════════════════════════
