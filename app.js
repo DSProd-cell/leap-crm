@@ -1614,7 +1614,6 @@ function renderMetricCards() {
 
   // Best performers for quality metrics
   const bestISL      = getBestPerformer('isl');
-  const bestRef      = getBestPerformer('referralPct');
   const bestQ1       = getBestPerformer('q1score');
 
   const volumeMetrics = [
@@ -1626,8 +1625,6 @@ function renderMetricCards() {
   const qualityMetrics = [
     { label:'ISL Feedback Rating',       value:c.isl,             target:5,                  extra:`${Math.round((c.isl/5)*100)}%`, unit:'', isRating:true,
       bestLabel: bestISL ? `🏆 Best: ${bestISL.name} · ${bestISL.value.toFixed(1)}/5` : '' },
-    { label:'Referral % from CA',        value:c.referralPct,     target:TARGETS.referral,   extra:`${c.referralPct}% of assigned`, unit:'', isPct:true,
-      bestLabel: bestRef ? `🏆 Best: ${bestRef.name} · ${bestRef.value}%` : '' },
     { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score,
       bestLabel: bestQ1 ? `🏆 Best: ${bestQ1.name} · ${bestQ1.value}%` : '' },
     { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats },
@@ -5203,6 +5200,7 @@ const STANDUP_METRICS = [
   { name:'Total Deposits',            key:'deposits'          },
   { name:'Total Visas',               key:'visas'             },
   { name:'Revenue Collected',         key:'revenue_collected', isCurrency:true },
+  { name:'Referral % from CA',        key:'referral_pct',      isPctMetric:true, tooltip:'% of assigned students who referred someone' },
 ];
 
 function generateStandupData(filters) {
@@ -5216,6 +5214,7 @@ function generateStandupData(filters) {
     lockins: c.lockins, f2f: c.f2f, walkin: 2,
     stis: c.stis, deposits: c.deposits, visas: 1,
     revenue_collected: c.revenueCollected,
+    referral_pct: c.referralPct,
   };
   // Apply lightweight filter noise for realism
   const multiplier  = filters.country    && filters.country    !== '' ? 0.6  : 1;
@@ -5239,6 +5238,20 @@ function generateStandupData(filters) {
   }
 
   return STANDUP_METRICS.map((m, i) => {
+    // Percentage metrics (e.g. Referral %) — show % directly, not day-multiplied
+    if (m.isPctMetric) {
+      const pctVal  = base[m.key] || 0;
+      const target  = TARGETS.referral;
+      const ytdPct  = target ? Math.round((pctVal / target) * 100) : 0;
+      const mtdPct  = ytdPct;
+      const ytdCls  = ytdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
+      const mtdCls  = mtdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
+      return { ...m,
+        tYTD: target, tMTD: target, aYTD: pctVal, aMTD: pctVal,
+        Y: pctVal, Y1: pctVal, Y2: pctVal, W0: pctVal, W01: pctVal, M01: pctVal,
+        ytdCls, mtdCls, isPct: true,
+      };
+    }
     const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult * caDateMult * servMult);
     const tYTD   = daily * 264;   // 264 working days
     const tMTD   = daily * 22;
@@ -5281,11 +5294,11 @@ function renderStandupTable(filterData) {
   }
   if (empty) empty.classList.add('hidden');
 
-  const fmtCell = (val, row) => row.isCurrency ? fmt(val) : val;
+  const fmtCell = (val, row) => row.isCurrency ? fmt(val) : row.isPct ? `${val}%` : val;
 
   // Colored cell: green ≥80%, amber 50–79%, red <50%
-  function perfCell(val, metricName, metricKey, target, isCurrency) {
-    const fval = isCurrency ? fmt(val) : val;
+  function perfCell(val, metricName, metricKey, target, isCurrency, isPct) {
+    const fval = isCurrency ? fmt(val) : isPct ? `${val}%` : val;
     const pct = target > 0 ? Math.round((val / target) * 100) : (val > 0 ? 100 : 0);
     const cls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
     const dot = pct >= 80 ? '●' : pct >= 50 ? '●' : '●';
@@ -5293,8 +5306,8 @@ function renderStandupTable(filterData) {
     return `<span class="standup-link cursor-pointer hover:underline font-semibold ${cls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
   }
 
-  function dayCell(val, metricName, metricKey, isCurrency) {
-    const fval = isCurrency ? fmt(val) : val;
+  function dayCell(val, metricName, metricKey, isCurrency, isPct) {
+    const fval = isCurrency ? fmt(val) : isPct ? `${val}%` : val;
     return `<span class="standup-link cursor-pointer hover:text-accent hover:underline text-text-muted" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
   }
 
@@ -5328,14 +5341,14 @@ function renderStandupTable(filterData) {
       </td>
       <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tYTD, row)}</td>
       <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tMTD, row)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aYTD, row.name, row.key, row.tYTD || 1, row.isCurrency)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aMTD, row.name, row.key, row.tMTD || 1, row.isCurrency)}</td>
-      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y,   row.name, row.key, row.isCurrency)}</td>
-      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y1,  row.name, row.key, row.isCurrency)}</td>
-      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y2,  row.name, row.key, row.isCurrency)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W0, row.name, row.key, row.isCurrency)}${trendArrow(row.W0, row.W01)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W01, row.name, row.key, row.isCurrency)}</td>
-      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.M01, row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aYTD, row.name, row.key, row.tYTD || 1, row.isCurrency, row.isPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aMTD, row.name, row.key, row.tMTD || 1, row.isCurrency, row.isPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y,   row.name, row.key, row.isCurrency, row.isPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y1,  row.name, row.key, row.isCurrency, row.isPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y2,  row.name, row.key, row.isCurrency, row.isPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W0, row.name, row.key, row.isCurrency, row.isPct)}${trendArrow(row.W0, row.W01)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W01, row.name, row.key, row.isCurrency, row.isPct)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.M01, row.name, row.key, row.isCurrency, row.isPct)}</td>
     </tr>
   `;
   }).join('');
