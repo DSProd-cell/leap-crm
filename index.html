@@ -199,19 +199,94 @@
     <!-- ─────────────────────────────── TAB 1 ─────────────────────────────── -->
     <div id="tab1" class="tab-panel p-5 space-y-6 max-w-screen-xl mx-auto">
 
-      <!-- ① Use for Stand Up — collapsible, collapsed by default -->
+      <!-- ① Boost your Output (Action Required — moved to top) -->
+      <section>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1 h-5 rounded-full bg-gradient-to-b from-accent to-primary"></div>
+          <h2 class="text-sm font-bold text-text-main uppercase tracking-wide">🚀 Boost Output</h2>
+          <span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-semibold">Action Required</span>
+        </div>
+        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-5 gap-4 items-start"></div>
+      </section>
+
+      <!-- ② Boost Input (Volume + Quality Metrics merged) -->
+      <section>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1 h-5 rounded-full bg-gradient-to-b from-emerald-500 to-teal-600"></div>
+          <h2 class="text-sm font-bold text-text-main uppercase tracking-wide">📊 Boost Input</h2>
+          <span class="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-semibold border border-emerald-200">Volume + Quality</span>
+        </div>
+        <!-- Volume + Quality metrics (single unified grid) -->
+        <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4"></div>
+        <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </section>
+
+      <!-- ③ Your Scorecard — Expandable -->
+      <section id="reportCardSection" class="bg-white rounded-xl border border-border overflow-hidden">
+        <button onclick="toggleSection('scorecard')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
+          <div class="text-left">
+            <h2 class="font-bold text-text-main flex items-center gap-2">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+              Your Scorecard — Yesterday, 26 May 2026
+            </h2>
+            <p id="reportCardSummary" class="text-xs text-text-muted mt-0.5 text-left"></p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-[10px] px-2 py-1 bg-surface border border-border rounded-lg text-text-muted font-medium">Read-only</span>
+            <svg id="chevron-scorecard" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </button>
+        <div id="body-scorecard" class="hidden px-5 pb-5">
+          <div id="reportScoreSummary" class="grid grid-cols-3 gap-3 mb-4"></div>
+          <div class="overflow-x-auto mb-4">
+            <table class="w-full text-xs">
+              <thead><tr class="border-b border-border">
+                <th class="text-left py-2 font-semibold text-text-muted">Metric</th>
+                <th class="text-center py-2 font-semibold text-text-muted">T · A</th>
+                <th class="text-center py-2 font-semibold text-text-muted">Status</th>
+              </tr></thead>
+              <tbody id="reportMetricTable" class="divide-y divide-border"></tbody>
+            </table>
+          </div>
+          <div id="reportNextSteps" class="mb-4"></div>
+          <div id="reportTopPerformers" class="mb-3"></div>
+          <p class="text-xs text-text-muted text-center italic border-t border-border pt-3">You've got this — pick one item from the table above to tackle today.</p>
+        </div>
+      </section>
+
+      <!-- ④ Top Performers — Expandable -->
       <section class="bg-white rounded-xl border border-border overflow-hidden">
-        <!-- Header — click to expand/collapse -->
-        <button onclick="toggleSection('standup')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
+        <button onclick="toggleSection('topPerformers')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
+          <h2 class="font-semibold text-text-main flex items-center gap-2">
+            <svg class="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Top Performers
+          </h2>
+          <svg id="chevron-topPerformers" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="body-topPerformers" class="hidden px-5 pb-5">
+          <div class="flex gap-1 bg-surface rounded-lg p-1 mb-4 w-fit">
+            <button class="period-btn active text-xs px-3 py-1 rounded-md" onclick="switchLeader('today',this)">Today</button>
+            <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('month',this)">This Month</button>
+            <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('year',this)">This Year</button>
+          </div>
+          <div id="leaderboardGrid" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- ⑤ Your Performance So Far (was "Use for Stand Up") — collapsible, collapsed by default -->
+      <section class="bg-white rounded-xl border border-border overflow-hidden">
+        <!-- Header row — uses div to avoid nested-button HTML-parsing issue -->
+        <div class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer" onclick="toggleSection('standup')">
           <div class="flex items-center gap-3">
-            <svg class="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
             <div class="text-left">
-              <h2 class="font-bold text-text-main text-sm">Use for Stand Up</h2>
-              <p class="text-xs text-text-muted mt-0.5">Your metrics at a glance for daily stand-up</p>
+              <h2 class="font-bold text-text-main text-sm">Your Performance So Far</h2>
+              <p class="text-xs text-text-muted mt-0.5">Targets vs actuals — use for daily stand-up</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <!-- Advanced Filter trigger (stops propagation so it doesn't toggle section) -->
             <button onclick="event.stopPropagation(); toggleStandupAdvancedFilter()"
               id="advFilterBtn"
               class="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-border rounded-lg bg-white text-text-muted hover:bg-surface hover:text-primary transition-colors font-medium">
@@ -220,9 +295,9 @@
             </button>
             <svg id="chevron-standup" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </div>
-        </button>
+        </div>
 
-        <!-- Advanced Filter panel — hidden by default -->
+        <!-- Advanced Filter panel -->
         <div id="standupAdvancedFilter" class="hidden border-t border-border bg-surface/40 px-5 py-4">
           <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Advanced Filters</p>
           <div class="flex flex-wrap items-end gap-3">
@@ -294,100 +369,34 @@
 
         <!-- Table body — hidden by default (collapsed) -->
         <div id="body-standup" class="hidden border-t border-border">
-          <div class="overflow-x-auto p-5 pt-4">
-            <table class="w-full text-xs min-w-[700px]">
+          <!-- Legend strip -->
+          <div class="flex items-center gap-4 px-5 pt-4 pb-2">
+            <span class="text-[10px] text-text-muted font-semibold uppercase tracking-wide">Status:</span>
+            <span class="flex items-center gap-1 text-[10px] text-success font-medium"><span class="w-2 h-2 rounded-full bg-success inline-block"></span>On Track (≥80%)</span>
+            <span class="flex items-center gap-1 text-[10px] text-accent font-medium"><span class="w-2 h-2 rounded-full bg-accent inline-block"></span>At Risk (50–79%)</span>
+            <span class="flex items-center gap-1 text-[10px] text-danger font-medium"><span class="w-2 h-2 rounded-full bg-danger inline-block"></span>Behind (&lt;50%)</span>
+          </div>
+          <div class="overflow-x-auto px-5 pb-5">
+            <table class="w-full text-xs min-w-[760px] border-collapse">
               <thead>
-                <tr class="bg-surface border-b border-border">
-                  <th class="text-left px-3 py-2 font-semibold text-text-muted sticky left-0 bg-surface"># Metric</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Target YTD</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Target MTD</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Achv YTD</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Achv MTD</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted">Y</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted">Y-1</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted">Y-2</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted">W0</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted">W0-1</th>
-                  <th class="text-right px-2 py-2 font-semibold text-text-muted">M0-1</th>
+                <tr>
+                  <th class="text-left px-3 py-2.5 font-semibold text-text-muted rounded-tl-lg bg-surface sticky left-0 border-b border-border"># Metric</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-blue-50/60 border-b border-border whitespace-nowrap">Target YTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-blue-50/60 border-b border-border whitespace-nowrap">Target MTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-emerald-50/60 border-b border-border whitespace-nowrap">Achv YTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-emerald-50/60 border-b border-border whitespace-nowrap">Achv MTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border" title="Yesterday">Y</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border" title="2 Days Ago">Y-1</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border" title="3 Days Ago">Y-2</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border" title="This Week">W0</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border" title="Last Week">W-1</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border rounded-tr-lg" title="Last Month">M-1</th>
                 </tr>
               </thead>
-              <tbody id="standupTableBody" class="divide-y divide-border"></tbody>
+              <tbody id="standupTableBody" class="divide-y divide-border/50"></tbody>
             </table>
           </div>
           <p id="standupEmpty" class="hidden text-center text-text-muted text-sm py-6 px-5">No data for selected filters. Try adjusting the Advanced Filters.</p>
-        </div>
-      </section>
-
-      <!-- ② Your Scorecard — Expandable -->
-      <section id="reportCardSection" class="bg-white rounded-xl border border-border overflow-hidden">
-        <button onclick="toggleSection('scorecard')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
-          <div class="text-left">
-            <h2 class="font-bold text-text-main flex items-center gap-2">
-              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-              Your Scorecard — Yesterday, 26 May 2026
-            </h2>
-            <p id="reportCardSummary" class="text-xs text-text-muted mt-0.5 text-left"></p>
-          </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <span class="text-[10px] px-2 py-1 bg-surface border border-border rounded-lg text-text-muted font-medium">Read-only</span>
-            <svg id="chevron-scorecard" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-          </div>
-        </button>
-        <div id="body-scorecard" class="hidden px-5 pb-5">
-          <div id="reportScoreSummary" class="grid grid-cols-3 gap-3 mb-4"></div>
-          <div class="overflow-x-auto mb-4">
-            <table class="w-full text-xs">
-              <thead><tr class="border-b border-border">
-                <th class="text-left py-2 font-semibold text-text-muted">Metric</th>
-                <th class="text-center py-2 font-semibold text-text-muted">T · A</th>
-                <th class="text-center py-2 font-semibold text-text-muted">Status</th>
-              </tr></thead>
-              <tbody id="reportMetricTable" class="divide-y divide-border"></tbody>
-            </table>
-          </div>
-          <div id="reportNextSteps" class="mb-4"></div>
-          <div id="reportTopPerformers" class="mb-3"></div>
-          <p class="text-xs text-text-muted text-center italic border-t border-border pt-3">You've got this — pick one item from the table above to tackle today.</p>
-        </div>
-      </section>
-
-      <!-- ③ Action Required — Boost Tasks -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Action Required — Boost Tasks</h2>
-        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 items-start"></div>
-      </section>
-
-      <!-- WhatsApp Group Coverage -->
-      <div id="whatsappCoverage" class="flex flex-wrap gap-3 text-sm"></div>
-
-      <!-- ④ Volume Metrics -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Volume Metrics</h2>
-        <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-      </section>
-
-      <!-- ⑤ Quality Metrics -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Quality Metrics</h2>
-        <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-      </section>
-
-      <!-- ⑥ Top Performers — Expandable -->
-      <section class="bg-white rounded-xl border border-border overflow-hidden">
-        <button onclick="toggleSection('topPerformers')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
-          <h2 class="font-semibold text-text-main flex items-center gap-2">
-            <svg class="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-            Top Performers
-          </h2>
-          <svg id="chevron-topPerformers" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div id="body-topPerformers" class="hidden px-5 pb-5">
-          <div class="flex gap-1 bg-surface rounded-lg p-1 mb-4 w-fit">
-            <button class="period-btn active text-xs px-3 py-1 rounded-md" onclick="switchLeader('today',this)">Today</button>
-            <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('month',this)">This Month</button>
-            <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('year',this)">This Year</button>
-          </div>
-          <div id="leaderboardGrid" class="space-y-3"></div>
         </div>
       </section>
 
