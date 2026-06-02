@@ -96,19 +96,23 @@ const INCENTIVE_SLABS = [
 ];
 
 const TRAINING_MODULES = [
-  { id:'m1', name:'Sales Fundamentals', lessons:3, items:[
+  { id:'m1', name:'Soft Training', lessons:3, items:[
     { title:'Cold Calling Mastery',      desc:'Master the art of opening conversations.',    type:'Video'    },
     { title:'Objection Handling Guide',  desc:'Handling common objections with confidence.', type:'Document' },
     { title:'Follow-up Framework',       desc:'A systematic approach to follow-up.',         type:'Link'     },
   ]},
-  { id:'m2', name:'Product Knowledge', lessons:3, items:[
+  { id:'m2', name:'Domain Training', lessons:3, items:[
     { title:'Course Catalogue 2025',     desc:'Complete overview of all courses & fees.',    type:'Document' },
     { title:'Scholarship Matrix',        desc:'Understanding scholarship eligibility.',       type:'Link'     },
     { title:'Demo Session Walkthrough',  desc:'How to run an effective product demo.',       type:'Video'    },
   ]},
-  { id:'m3', name:'CRM & Tools', lessons:2, items:[
+  { id:'m3', name:'System Training', lessons:2, items:[
     { title:'Using EduCRM Effectively',  desc:'Tips for logging tasks & tracking perf.',     type:'Video'    },
     { title:'WhatsApp Communication SOP',desc:'Standard operating procedure for WA.',       type:'Document' },
+  ]},
+  { id:'m4', name:'New Features', lessons:2, items:[
+    { title:'Latest Platform Updates',   desc:'Overview of new features rolled out recently.', type:'Video'    },
+    { title:'Feature Adoption Guide',    desc:'Step-by-step guide to using new features.',     type:'Document' },
   ]},
 ];
 
