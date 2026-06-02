@@ -1131,12 +1131,6 @@ function renderBoostCards() {
       <div class="boost-sub">Revenue opportunities</div>
       <span class="boost-cta">View Pipeline →</span>
     </div>
-    <div class="boost-card deposit" onclick="openOwnTaskDrawer()">
-      <div class="boost-label">Own Tasks</div>
-      <div class="boost-count">${ownCount}</div>
-      <div class="boost-sub">${ownCount === 1 ? '1 pending reminder' : ownCount + ' pending reminders'}</div>
-      <span class="boost-cta">View Tasks →</span>
-    </div>
     <div class="boost-card" style="background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%);color:#fff;" onclick="openBoostReferralsDrawer()">
       <div class="boost-label" style="color:rgba(255,255,255,0.85)">Boost Referrals</div>
       <div class="boost-count" style="color:#fff">${refCount}</div>
@@ -1588,6 +1582,7 @@ function renderMetricCards() {
   const allStudents = getViewingStudents();
   const unhappyCount = allStudents.filter(s => s.islRating < 8 || s.hasEscalation).length;
   const deferralCount = getDeferralOpportunityStudents().length;
+  const ownCount = state.ownTasks.filter(t => !t.done).length;
   const waStats = getWAGroupStats();
 
   // Best performers for quality metrics
@@ -1598,6 +1593,7 @@ function renderMetricCards() {
   const volumeMetrics = [
     { label:'Unhappy Cohort',            value:unhappyCount,      target:allStudents.length, extra:'ISL < 8 / 10 or Escalation', unit:'', key:'unhappy', isNegative:true },
     { label:'Deferrals Opportunity',     value:deferralCount,     target:0,                  extra:'Admit received / Deposit paid', unit:'', key:'deferrals', isOpportunity:true },
+    { label:'Own Tasks',                 value:ownCount,          target:TARGETS.tasks,      extra:`${ownCount === 1 ? '1 pending reminder' : ownCount + ' pending reminders'}`, unit:'', key:'ownTasks' },
   ];
 
   const qualityMetrics = [
@@ -1703,6 +1699,7 @@ function renderMetricGrid(elId, metrics) {
 }
 
 function openVolumeMetricDrawer(key) {
+  if (key === 'ownTasks') { openOwnTaskDrawer(); return; }
   const all = getViewingStudents();
   const configs = {
     stis:         { title: 'STIs Submitted',         filter: s => true },
