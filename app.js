@@ -83,6 +83,16 @@ const INCENTIVE_SLABS = [
       { name:'Priya Sharma',count:'2 lock-ins', earned:16000 },
     ],
   },
+  {
+    component:'Referrals', rule:'₹3,000 per successful referral enrolment', status:'1 referral (50%)', earned:3000,
+    drivePeriod:'01 May – 31 May 2026',
+    earners:[
+      { name:'Sahil Joshi',  count:'5 referrals', earned:15000 },
+      { name:'Karan Nair',   count:'3 referrals', earned:9000  },
+      { name:'Rohan Mehta',  count:'2 referrals', earned:6000  },
+      { name:'Priya Sharma', count:'1 referral',  earned:3000  },
+    ],
+  },
 ];
 
 const TRAINING_MODULES = [
@@ -407,7 +417,7 @@ const BOT_INTENT_MAP = {
     navAction: null,
   },
   incentive_slabs: {
-    keywords: ['incentive','slab','bonus','earning','salary','kitna milega','kitna kamaonga','paise','commission','kya milega'],
+    keywords: ['incentive details', 'incentive','slab','bonus','earning','salary','kitna milega','kitna kamaonga','paise','commission','kya milega'],
     answer: `💰 **How your incentives work:**\n\n1. **Calls Slab** — Bonus for hitting ≥80% of daily call target\n2. **Enrolment Bonus** — Fixed ₹6,000 per confirmed enrolment\n3. **Revenue Bonus** — 1% of revenue above ₹2 Lakh threshold\n\nYour current earning: ₹38,400 this month. Projected at 100%: ₹72,000.\n\nSee the full breakdown in the Incentives tab.`,
     navLabel: '→ See Incentive Breakdown',
     navAction: () => { switchTab('tab2'); },
@@ -442,6 +452,30 @@ const BOT_INTENT_MAP = {
     navLabel: '→ Browse Info Hub',
     navAction: () => { switchTab('tab3'); setTimeout(() => { const el = document.getElementById('infoHubSection'); if (el) { el.scrollIntoView({ behavior:'smooth', block:'start' }); if (!document.getElementById('infoHubBody').classList.contains('block')) toggleInfoHub(); } }, 400); },
   },
+  greeting: {
+    keywords: ['good morning', 'good afternoon', 'good evening', 'good night', 'hello there', 'hi there', 'hey there', 'namaste', 'hello', 'hi', 'hey', 'hii', 'helo', 'heyy'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  training_help: {
+    keywords: ['training / i want to learn', 'i want to learn', 'how to get training', 'need training', 'want training', 'training chahiye', 'training karo', 'sikha do', 'learn something', 'skill improve', 'improve my skill', 'training'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  live_offers_query: {
+    keywords: ['live offers running?', 'live offers running', 'what live offer', 'offers running', 'live offer running', 'kya offer chal raha', 'offer kya hai', 'what offers are running', 'current live offer'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  earn_more_guide: {
+    keywords: ['how can i earn more', 'earn more money', 'increase my earnings', 'how to earn more', 'zyada earn', 'more paise', 'earn kaise karu', 'boost my income'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  target_today_guide: {
+    keywords: ['target for today', 'what is target for today', 'aaj ka target', 'target today', 'what are my targets today'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  who_to_call_guide: {
+    keywords: ['who should i call today', 'whom should i call', 'who to call today', 'call list today', 'aaj kise call'],
+    answer: null, navLabel: null, navAction: null,
+  },
   start_my_day: {
     keywords: ['start my day', 'what should i do today', 'where do i begin', 'morning routine', 'start kahan', 'how do i start', 'what to do today', 'morning'],
     answer: null,
@@ -461,7 +495,7 @@ const BOT_INTENT_MAP = {
     navAction: null,
   },
   top_performer: {
-    keywords: ['top performer', 'best performer', 'who is top', 'top kaun', 'highest performer', 'cluster top', 'org top', 'who performed best', 'best counsellor', 'top counsellor', 'highest calls', 'highest revenue', 'best this month'],
+    keywords: ['top performer in my cluster', 'top performer in org', 'top performer in the org', 'top performing counsellor', 'top performing counselor', 'who is the top performing', 'top performing', 'top performer', 'best performer', 'who is top', 'top kaun', 'highest performer', 'cluster top', 'org top', 'who performed best', 'best counsellor', 'top counsellor', 'highest calls', 'highest revenue', 'best this month', 'performing counsellor', 'performing counselor'],
     answer: null,
     navLabel: null,
     navAction: null,
@@ -495,6 +529,23 @@ const BOT_INTENT_MAP = {
     answer: `🎁 **Live offers for you are in the Incentives tab!**\n\nThe **Live for Counsellors** section shows all active performance drives — with the full incentive structure and exactly which students to target to earn from each.\n\nClick any offer card to see:\n• The earning milestones & prizes\n• Specific students in your pipeline to focus on`,
     navLabel: '→ See Live Offers for Me',
     navAction: () => { switchTab('tab2'); setTimeout(() => { const el = document.getElementById('counsellorOffersRow'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); }, 400); },
+  },
+  view_leaderboard: {
+    keywords: ['show me the leaderboard', 'show leaderboard', 'view leaderboard', 'open leaderboard', 'leaderboard dekhna', 'top performers table', 'top performers list', 'leaderboard'],
+    answer: `🏆 **Taking you to the Top Performers leaderboard!**\n\nYou can switch between **Today**, **This Month**, and **This Year** to compare across the team.`,
+    navLabel: '→ View Top Performers',
+    navAction: () => {
+      switchTab('tab1');
+      setTimeout(() => {
+        const body = document.getElementById('body-topPerformers');
+        if (body && body.classList.contains('hidden')) {
+          toggleSection('topPerformers');
+        }
+        const el = document.getElementById('leaderboardGrid');
+        const mc = document.getElementById('mainContent');
+        if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+      }, 400);
+    },
   },
   clarify_before_answering: {
     keywords: ['help me', "i'm stuck", 'im stuck', 'something wrong', "something's wrong"],
@@ -818,6 +869,47 @@ function bootApp(role, email) {
   switchTab('tab1');
   // Show Join 10x banner after a short delay
   setTimeout(show10xBanner, 800);
+  // Clear chat and show IST time-based greeting on every fresh login
+  setTimeout(initBotWithGreeting, 300);
+}
+
+function initBotWithGreeting() {
+  // Reset bot state completely
+  state.botConversation = { flow: 'greeting', step: 1, collected: {}, history: [], lastIntent: null, shownFollowUps: [] };
+  if (state.currentUser) localStorage.removeItem(`bot_history_${state.currentUser.id}`);
+
+  // Determine IST greeting by offset (UTC+5:30)
+  const now = new Date();
+  const istHour = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (5.5 * 3600000)).getHours();
+  const greet = istHour >= 5 && istHour < 12 ? 'Good Morning'
+              : istHour >= 12 && istHour < 17 ? 'Good Afternoon'
+              : istHour >= 17 && istHour < 21 ? 'Good Evening'
+              : 'Good Night';
+
+  const firstName = (state.currentUser?.name || 'there').split(' ')[0];
+  const msg = `${greet}, ${firstName}! 👋 How are you doing today?`;
+
+  const container = document.getElementById('botMessages');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const div = document.createElement('div');
+  div.className = 'flex gap-2';
+  div.innerHTML = `
+    <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+      <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <div class="bot-msg-bubble">
+      <p class="text-sm font-semibold text-text-main mb-0.5">Leap CRM Assistant</p>
+      <p class="text-sm">${escHtml(msg)}</p>
+    </div>
+  `;
+  container.appendChild(div);
+  addToHistory('bot', msg);
+
+  // Update input placeholder
+  const inp = document.getElementById('botInput');
+  if (inp) inp.placeholder = 'Type "Hi" or "Hello" to Start the Chat';
 }
 
 function onCounselorChange() {
@@ -876,9 +968,113 @@ function switchTab(tab) {
   if (tab === 'tab2' && !state.earningsChart) {
     setTimeout(initEarningsChart, 50);
   }
+  if (tab === 'tab2') {
+    setTimeout(() => renderReferralCards('visa'), 80);
+  }
   if (tab === 'tab3') {
     renderQuickLinks();
   }
+}
+
+/* ═══════════════ REFERRAL COHORTS ═══════════════ */
+
+function getReferralCohort(type) {
+  return STUDENTS.filter(s => {
+    if (type === 'visa')    return (s.specialServices || []).includes('Visa') || s.stage === 'lockin';
+    if (type === 'premium') return s.hasPaidPremium === true;
+    if (type === 'sti')     return ['application','deposit','lockin'].includes(s.stage);
+    return false;
+  });
+}
+
+function switchReferralTab(type) {
+  const tabs = ['visa','premium','sti'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`refTab-${t}`);
+    if (!btn) return;
+    const isActive = t === type;
+    btn.classList.toggle('border-purple-600', isActive);
+    btn.classList.toggle('text-purple-700', isActive);
+    btn.classList.toggle('bg-purple-50/40', isActive);
+    btn.classList.toggle('border-transparent', !isActive);
+    btn.classList.toggle('text-text-muted', !isActive);
+    btn.classList.toggle('bg-transparent', !isActive);
+    const badge = document.getElementById(`refCount-${t}`);
+    if (badge) {
+      badge.className = isActive
+        ? 'ml-0.5 bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full'
+        : 'ml-0.5 bg-gray-300 text-gray-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full';
+    }
+  });
+  renderReferralCards(type);
+}
+
+function renderReferralCards(type) {
+  const container = document.getElementById('referralCards');
+  if (!container) return;
+
+  // Update all count badges
+  ['visa','premium','sti'].forEach(t => {
+    const el = document.getElementById(`refCount-${t}`);
+    if (el) el.textContent = getReferralCohort(t).length;
+  });
+
+  const students = getReferralCohort(type);
+  const stageLabel = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+  const stageCls   = {
+    sti:         'bg-orange-100 text-orange-700 border-orange-200',
+    application: 'bg-blue-100 text-blue-700 border-blue-200',
+    deposit:     'bg-green-100 text-green-700 border-green-200',
+    lockin:      'bg-purple-100 text-purple-700 border-purple-200',
+  };
+  const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
+  const cohortTag  = {
+    visa:    { label:'Visa Approved', cls:'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    premium: { label:'Premium Paid',  cls:'bg-amber-50 text-amber-700 border-amber-200' },
+    sti:     { label:'STI Done',      cls:'bg-sky-50 text-sky-700 border-sky-200' },
+  };
+
+  if (!students.length) {
+    container.innerHTML = `<p class="text-center text-text-muted text-sm py-8">No students in this cohort yet</p>`;
+    return;
+  }
+
+  container.innerHTML = students.map(s => {
+    const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+    const flag     = countryFlag[s.country] || '🌍';
+    const sClsKey  = stageCls[s.stage] || 'bg-gray-100 text-gray-600 border-gray-200';
+    const tag      = cohortTag[type];
+    const amtHtml  = s.hasPaidPremium && s.amountPaid
+      ? `<span class="text-xs font-semibold text-success">₹${(s.amountPaid/1000).toFixed(0)}K paid</span>`
+      : '';
+    return `
+    <div class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50/30 transition-colors cursor-pointer group" onclick="openStudentDetail('${s.id}')">
+      <!-- Avatar -->
+      <div class="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center flex-shrink-0">
+        ${initials}
+      </div>
+      <!-- Main info -->
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="font-semibold text-sm text-text-main">${s.name}</p>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sClsKey}">${stageLabel[s.stage] || s.stage}</span>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tag.cls}">${tag.label}</span>
+        </div>
+        <p class="text-xs text-text-muted mt-0.5 truncate">${s.course} &nbsp;·&nbsp; ${flag} ${s.country}</p>
+        <div class="flex items-center gap-3 mt-1 text-[11px] text-text-muted">
+          <span>Follow-up: <strong class="text-text-main">${s.followup}</strong></span>
+          <span>ISL: <strong class="text-text-main">${s.islRating}/10</strong></span>
+          <span>QS: <strong class="text-text-main">${s.qualityScore}</strong></span>
+          ${amtHtml}
+        </div>
+      </div>
+      <!-- Action -->
+      <button onclick="event.stopPropagation(); showToast('Referral noted for ${s.name} 👍', 'success')"
+        class="flex-shrink-0 text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1.5 rounded-lg hover:bg-purple-100 transition-colors whitespace-nowrap">
+        Ask Referral →
+      </button>
+    </div>`;
+  }).join('');
 }
 
 /* ═══════════════ BADGE STRIP ═══════════════ */
@@ -911,6 +1107,11 @@ function renderBoostCards() {
   const ownCount = state.ownTasks.filter(t => !t.done).length;
   const grid = document.getElementById('boostCardsGrid');
 
+  const refCount = [...new Map(
+    [...getReferralCohort('visa'), ...getReferralCohort('premium'), ...getReferralCohort('sti')]
+    .map(s => [s.id, s])
+  ).values()].length;
+
   grid.innerHTML = `
     <div class="boost-card sti" onclick="openBoostFunnelDrawer()">
       <div class="boost-label">Boost STI</div>
@@ -936,7 +1137,106 @@ function renderBoostCards() {
       <div class="boost-sub">${ownCount === 1 ? '1 pending reminder' : ownCount + ' pending reminders'}</div>
       <span class="boost-cta">View Tasks →</span>
     </div>
+    <div class="boost-card" style="background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%);color:#fff;" onclick="openBoostReferralsDrawer()">
+      <div class="boost-label" style="color:rgba(255,255,255,0.85)">Boost Referrals</div>
+      <div class="boost-count" style="color:#fff">${refCount}</div>
+      <div class="boost-sub" style="color:rgba(255,255,255,0.75)">${refCount === 1 ? '1 student can refer' : refCount + ' students can refer'}</div>
+      <span class="boost-cta" style="color:rgba(255,255,255,0.9)">Ask for Referral →</span>
+    </div>
   `;
+}
+
+/* ── Boost Referrals Drawer ── */
+function openBoostReferralsDrawer() {
+  state.drawerMode = 'boostReferrals';
+  state.drawerPrevMode = null;
+
+  const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
+  const stageLabelMap = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+  const stageClsMap   = { sti:'bg-orange-100 text-orange-700', application:'bg-blue-100 text-blue-700', deposit:'bg-green-100 text-green-700', lockin:'bg-purple-100 text-purple-700' };
+
+  const cohorts = [
+    { key:'visa',    label:'Visa Approved',  icon:'✅', tagCls:'bg-emerald-100 text-emerald-700 border-emerald-200', students: getReferralCohort('visa')    },
+    { key:'premium', label:'Premium Paid',   icon:'⭐', tagCls:'bg-amber-100 text-amber-700 border-amber-200',     students: getReferralCohort('premium') },
+    { key:'sti',     label:'STI Done',       icon:'🎯', tagCls:'bg-sky-100 text-sky-700 border-sky-200',           students: getReferralCohort('sti')     },
+  ];
+
+  // Deduplicate for total count
+  const allUnique = [...new Map(
+    cohorts.flatMap(c => c.students).map(s => [s.id, s])
+  ).values()];
+
+  let content = `
+    <div class="mb-4 p-3.5 bg-purple-50 border border-purple-200 rounded-xl">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-lg">🤝</span>
+        <p class="font-bold text-sm text-purple-800">Referral Boost Pipeline</p>
+      </div>
+      <p class="text-xs text-purple-600">${allUnique.length} students identified as high-potential referrers</p>
+    </div>
+    <div class="space-y-2.5">
+  `;
+
+  cohorts.forEach(({ key, label, icon, tagCls, students }) => {
+    content += `
+      <div class="border border-border rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleBoostRefCard('${key}')" class="w-full flex items-center justify-between p-3.5 bg-white hover:bg-surface transition-colors text-left">
+          <div class="flex items-center gap-3">
+            <span class="text-xl leading-none">${icon}</span>
+            <div>
+              <p class="font-semibold text-sm text-text-main">${label}</p>
+              <p class="text-xs text-text-muted">${students.length} student${students.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${tagCls}">${label}</span>
+            <svg id="bref-chev-${key}" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </button>
+        <div id="bref-body-${key}" class="hidden border-t border-border">
+          ${students.length === 0
+            ? `<p class="text-xs text-text-muted text-center py-5">No students in this cohort</p>`
+            : `<div class="divide-y divide-border/40">${students.map(s => {
+                const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+                const flag = countryFlag[s.country] || '🌍';
+                return `
+                  <div class="px-3.5 py-3 hover:bg-surface/60 transition-colors">
+                    <div class="flex items-center gap-3 mb-2.5">
+                      <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-bold text-[11px] flex items-center justify-center flex-shrink-0">${initials}</div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-text-main">${s.name} <span class="text-sm">${flag}</span></p>
+                        <p class="text-[11px] text-text-muted">${s.course}</p>
+                      </div>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageClsMap[s.stage] || 'bg-gray-100 text-gray-600'}">${stageLabelMap[s.stage] || s.stage}</span>
+                    </div>
+                    <div class="flex gap-2">
+                      <button onclick="openReferralWAMessage('${s.id}')" class="flex-1 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                        <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.118.555 4.107 1.523 5.832L0 24l6.335-1.524A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 11.999 0zM12 22c-1.943 0-3.779-.517-5.376-1.428l-.387-.226-3.993.96.994-3.866-.253-.4A9.975 9.975 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                        Ask for Referral
+                      </button>
+                      <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='boostReferrals';" class="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">Take to Task →</button>
+                    </div>
+                  </div>`;
+              }).join('')}</div>`
+          }
+        </div>
+      </div>
+    `;
+  });
+
+  content += `</div>`;
+  openDrawer('Boost Referrals', content, false);
+}
+
+function toggleBoostRefCard(key) {
+  const body    = document.getElementById(`bref-body-${key}`);
+  const chevron = document.getElementById(`bref-chev-${key}`);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function openOwnTaskDrawer() {
@@ -1230,6 +1530,7 @@ function renderWhatsappCoverage() {
     });
   });
   const el = document.getElementById('whatsappCoverage');
+  if (!el) return;
   el.innerHTML = `
     <div class="wa-chip ok cursor-pointer hover:opacity-80 transition-opacity" onclick="openGroupsDetail('counselor')" title="Click to see group membership details">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
@@ -1255,28 +1556,58 @@ function getDeferralOpportunityStudents() {
   ));
 }
 
+function getBestPerformer(field) {
+  // Returns { name, value } for the counselor with highest value in given field
+  let best = null;
+  COUNSELORS.forEach(c => {
+    const v = c.today[field];
+    if (v !== undefined && (best === null || v > best.value)) {
+      best = { name: c.name.split(' ')[0], value: v };
+    }
+  });
+  return best;
+}
+
+function getWAGroupStats() {
+  const students = getViewingStudents();
+  let active = 0, inactive = 0, notJoined = 0, notReplied = getWANotRepliedStudents().length;
+  students.forEach(s => {
+    s.whatsappGroups.forEach(g => {
+      if (g.counselorJoined && g.studentJoined) active++;
+      else if (!g.counselorJoined) inactive++;
+      if (!g.studentJoined) notJoined++;
+    });
+  });
+  return { active, inactive, notJoined, notReplied };
+}
+
 function renderMetricCards() {
   const c = getCounselorData();
   const totalStudents = getViewingStudents().length;
-  const convPct = (v) => totalStudents ? Math.round((v / totalStudents) * 100) : 0;
 
   const allStudents = getViewingStudents();
   const unhappyCount = allStudents.filter(s => s.islRating < 8 || s.hasEscalation).length;
-  const paidPremiumCount = allStudents.filter(s => s.hasPaidPremium).length;
-  const waNotRepliedCount = getWANotRepliedStudents().length;
   const deferralCount = getDeferralOpportunityStudents().length;
+  const waStats = getWAGroupStats();
+
+  // Best performers for quality metrics
+  const bestISL      = getBestPerformer('isl');
+  const bestRef      = getBestPerformer('referralPct');
+  const bestQ1       = getBestPerformer('q1score');
 
   const volumeMetrics = [
-    { label:'Tasks Completed',           value:c.tasks,           target:TARGETS.tasks,      extra:`${fmtPct(c.tasks, TARGETS.tasks)}% of daily target`, unit:'', key:'tasks' },
     { label:'Unhappy Cohort',            value:unhappyCount,      target:allStudents.length, extra:'ISL < 8 / 10 or Escalation', unit:'', key:'unhappy', isNegative:true },
     { label:'Deferrals Opportunity',     value:deferralCount,     target:0,                  extra:'Admit received / Deposit paid', unit:'', key:'deferrals', isOpportunity:true },
   ];
 
   const qualityMetrics = [
-    { label:'ISL Feedback Rating',       value:c.isl,             target:5,                  extra:`${Math.round((c.isl/5)*100)}%`, unit:'', isRating:true },
-    { label:'Referral % from CA',        value:c.referralPct,     target:TARGETS.referral,   extra:`${c.referralPct}% of assigned`, unit:'', isPct:true },
-    { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score },
-    { label:'WA Not Replied',            value:waNotRepliedCount, target:0,                  extra:'Student questions pending reply', unit:'', key:'waNotReplied', isNegative:true },
+    { label:'ISL Feedback Rating',       value:c.isl,             target:5,                  extra:`${Math.round((c.isl/5)*100)}%`, unit:'', isRating:true,
+      bestLabel: bestISL ? `🏆 Best: ${bestISL.name} · ${bestISL.value.toFixed(1)}/5` : '' },
+    { label:'Referral % from CA',        value:c.referralPct,     target:TARGETS.referral,   extra:`${c.referralPct}% of assigned`, unit:'', isPct:true,
+      bestLabel: bestRef ? `🏆 Best: ${bestRef.name} · ${bestRef.value}%` : '' },
+    { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score,
+      bestLabel: bestQ1 ? `🏆 Best: ${bestQ1.name} · ${bestQ1.value}%` : '' },
+    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats },
   ];
 
   renderMetricGrid('volumeMetrics', volumeMetrics);
@@ -1286,6 +1617,40 @@ function renderMetricCards() {
 function renderMetricGrid(elId, metrics) {
   const el = document.getElementById(elId);
   el.innerHTML = metrics.map(m => {
+    // ── Special: WA Group Details card ──
+    if (m.isWAGroups) {
+      const ws = m.waStats;
+      return `
+        <div class="metric-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow col-span-2 lg:col-span-1"
+          style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
+          onclick="openWAGroupDetailsDrawer()">
+          <div class="metric-deco"></div>
+          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">💬 WA Group Details</p>
+          <div class="grid grid-cols-2 gap-1.5 mt-1">
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm text-emerald-700">${ws.active}</p>
+              <p class="text-[10px] text-emerald-600 font-medium leading-tight">Active</p>
+            </div>
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm ${ws.inactive > 0 ? 'text-amber-600' : 'text-emerald-700'}">${ws.inactive}</p>
+              <p class="text-[10px] ${ws.inactive > 0 ? 'text-amber-600' : 'text-emerald-600'} font-medium leading-tight">Inactive</p>
+            </div>
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm ${ws.notJoined > 0 ? 'text-orange-600' : 'text-emerald-700'}">${ws.notJoined}</p>
+              <p class="text-[10px] ${ws.notJoined > 0 ? 'text-orange-600' : 'text-emerald-600'} font-medium leading-tight">Not Joined</p>
+            </div>
+            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
+              <p class="font-bold text-sm ${ws.notReplied > 0 ? 'text-red-600' : 'text-emerald-700'}">${ws.notReplied}</p>
+              <p class="text-[10px] ${ws.notReplied > 0 ? 'text-red-600' : 'text-emerald-600'} font-medium leading-tight">Not Replied</p>
+            </div>
+          </div>
+          <div class="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-700">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            View all groups →
+          </div>
+        </div>`;
+    }
+
     let pct, displayVal, subText;
     if (m.isDual) {
       pct = Math.round((m.q1 + m.q2) / 2);
@@ -1331,6 +1696,7 @@ function renderMetricGrid(elId, metrics) {
               <span class="text-xs font-bold ${cls === 'green' ? 'text-success' : cls === 'amber' ? 'text-accent' : 'text-danger'}">${m.isDual ? pct : pct}%</span>
             </div>`
         }
+        ${m.bestLabel ? `<div class="mt-1.5 pt-1.5 border-t border-white/40"><p class="text-[10px] text-text-muted font-medium truncate">${m.bestLabel}</p></div>` : ''}
       </div>
     `;
   }).join('');
@@ -2494,6 +2860,8 @@ function drawerGoBack() {
     openOfferDrawer(state.drawerOfferId);
   } else if (state.drawerPrevMode === 'opportunity') {
     openOpportunityDrawer();
+  } else if (state.drawerPrevMode === 'boostReferrals') {
+    openBoostReferralsDrawer();
   }
 }
 
@@ -2679,81 +3047,192 @@ function openOpportunityDrawer() {
   state.drawerMode     = 'opportunity';
   state.drawerPrevMode = null;
   const students = getViewingStudents();
-  const byStage = { sti:[], application:[], deposit:[], lockin:[] };
+  const courseFeeLocal = s => s.course.includes('MBA') ? 120000 : s.course.includes('B.Tech') ? 100000 : 80000;
+  const totalVal = students.reduce((sum, s) => sum + courseFeeLocal(s), 0);
+  const byStage = { lockin:[], deposit:[], application:[], sti:[] };
   students.forEach(s => { if (byStage[s.stage]) byStage[s.stage].push(s); });
-  const stageOrder = ['lockin','deposit','application','sti'];
-  const stageLabels = { sti:'Boost STI', application:'Boost Application', deposit:'Boost Deposit', lockin:'Boost Lock-in' };
-  const courseFee = s => s.course.includes('MBA') ? 120000 : s.course.includes('B.Tech') ? 100000 : 80000;
-  const totalVal = students.reduce((sum, s) => sum + courseFee(s), 0);
+  const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
 
-  // Tasks cohort — group students by their first pending task
-  const taskCohorts = {};
-  students.forEach(s => {
-    const pending = (s.subtasks || []).find(t => !t.done);
-    const label = pending ? pending.label : 'No Pending Tasks';
-    if (!taskCohorts[label]) taskCohorts[label] = [];
-    taskCohorts[label].push(s);
-  });
-  const taskCohortEntries = Object.entries(taskCohorts).filter(([k]) => k !== 'No Pending Tasks');
+  const stageConfig = [
+    { key:'lockin',      label:'Boost Lock-in',    icon:'🔒', accentCls:'bg-purple-600' },
+    { key:'deposit',     label:'Boost Deposit',     icon:'💰', accentCls:'bg-green-600'  },
+    { key:'application', label:'Boost Application', icon:'📋', accentCls:'bg-blue-600'   },
+    { key:'sti',         label:'Boost STI',         icon:'⚡', accentCls:'bg-orange-500' },
+  ];
 
-  let content = `<div class="mb-4 p-3 bg-accent/10 border border-accent/20 rounded-xl">
-    <p class="text-xs text-text-muted">Total Opportunity</p>
-    <p class="font-mono text-2xl font-bold text-accent">${fmt(totalVal)}</p>
-  </div>`;
+  let content = `
+    <div class="mb-4 p-3.5 bg-accent/10 border border-accent/20 rounded-xl">
+      <p class="text-xs text-text-muted mb-0.5">Total Pipeline Opportunity</p>
+      <p class="font-mono text-2xl font-bold text-accent">${fmt(totalVal)}</p>
+      <p class="text-xs text-text-muted mt-1">${students.length} students across all stages</p>
+    </div>
+    <div class="space-y-2.5">
+  `;
 
-  // Tasks Cohort section
-  if (taskCohortEntries.length) {
-    content += `<div class="mb-5">
-      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
-        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-        Tasks Cohort
-      </p>
-      <div class="space-y-2">
-        ${taskCohortEntries.map(([task, list]) => {
-          const cohortVal = list.reduce((sum, s) => sum + courseFee(s), 0);
-          return `<div class="p-3 bg-surface rounded-xl border border-border">
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-xs font-semibold text-text-main">${task}</p>
-              <span class="text-xs font-mono font-bold text-accent">${fmt(cohortVal)}</span>
+  stageConfig.forEach(({ key, label, icon }) => {
+    const list = byStage[key];
+    const stageVal = list.reduce((sum, s) => sum + courseFeeLocal(s), 0);
+    content += `
+      <div class="border border-border rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleOppCard('${key}')" class="w-full flex items-center justify-between p-3.5 bg-white hover:bg-surface transition-colors text-left">
+          <div class="flex items-center gap-3">
+            <span class="text-xl leading-none">${icon}</span>
+            <div>
+              <p class="font-semibold text-sm text-text-main">${label}</p>
+              <p class="text-xs text-text-muted">${list.length} student${list.length !== 1 ? 's' : ''} · <span class="font-mono font-semibold text-success">${fmt(stageVal)}</span></p>
             </div>
-            <div class="space-y-1">
-              ${list.map(s => `<div class="flex items-center justify-between text-xs py-1 border-t border-border/50">
-                <span class="text-text-main">${s.name} <span class="text-text-muted">· ${s.stage.toUpperCase()}</span></span>
-                <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-primary font-semibold hover:underline cursor-pointer">Task →</button>
-              </div>`).join('')}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-
-  // Pipeline by stage
-  content += `<p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-3 flex items-center gap-1">
-    <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/></svg>
-    Pipeline by Stage
-  </p>`;
-
-  stageOrder.forEach(stage => {
-    const list = byStage[stage];
-    if (!list.length) return;
-    content += `<div class="mb-4">
-      <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">${stageLabels[stage]}</p>
-      ${list.map(s => {
-        const fee = courseFee(s);
-        return `<div class="flex items-center gap-3 py-2 border-b border-border last:border-0">
-          <div class="flex-1">
-            <p class="text-sm font-medium text-text-main">${s.name}</p>
-            <p class="text-xs text-text-muted">${s.id} · ${s.course}</p>
           </div>
-          <span class="font-mono text-sm font-bold text-success">${fmt(fee)}</span>
-          <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-xs font-semibold text-primary hover:underline cursor-pointer">Go to Task →</button>
-        </div>`;
-      }).join('')}
-    </div>`;
+          <svg id="chevron-opp-${key}" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <div id="oppBody-${key}" class="hidden border-t border-border bg-surface/30">
+          ${list.length === 0
+            ? `<p class="text-xs text-text-muted text-center py-5">No students at this stage</p>`
+            : `<div class="divide-y divide-border/40">${list.map(s => {
+                const fee = courseFeeLocal(s);
+                const flag = countryFlag[s.country] || '🌍';
+                const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+                return `
+                  <div class="flex items-center gap-3 px-3.5 py-3 hover:bg-surface/60 transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-[11px] flex items-center justify-center flex-shrink-0">${initials}</div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-text-main">${s.name} <span class="text-sm">${flag}</span></p>
+                      <p class="text-[11px] text-text-muted">${s.course}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-1.5">
+                      <span class="text-xs font-bold font-mono text-success">${fmt(fee)}</span>
+                      <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full transition-colors whitespace-nowrap">Take to Task →</button>
+                    </div>
+                  </div>`;
+              }).join('')}</div>`
+          }
+        </div>
+      </div>
+    `;
   });
 
-  openDrawer('Opportunity Pipeline', content, false);
+  // Generate More Referrals accordion card
+  const allRefStudents = [...new Map(
+    [...getReferralCohort('visa'), ...getReferralCohort('premium'), ...getReferralCohort('sti')]
+    .map(s => [s.id, s])
+  ).values()];
+  const stageLabelMap = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+  const stageClsMap   = { sti:'bg-orange-100 text-orange-700', application:'bg-blue-100 text-blue-700', deposit:'bg-green-100 text-green-700', lockin:'bg-purple-100 text-purple-700' };
+
+  content += `
+    <div class="border border-purple-200 rounded-xl overflow-hidden shadow-sm">
+      <button onclick="toggleOppCard('referral')" class="w-full flex items-center justify-between p-3.5 bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 transition-colors text-left">
+        <div class="flex items-center gap-3">
+          <span class="text-xl leading-none">🤝</span>
+          <div>
+            <p class="font-semibold text-sm text-text-main">Generate More Referrals</p>
+            <p class="text-xs text-text-muted">${allRefStudents.length} students most likely to refer</p>
+          </div>
+        </div>
+        <svg id="chevron-opp-referral" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="oppBody-referral" class="hidden border-t border-purple-100">
+        ${allRefStudents.length === 0
+          ? `<p class="text-xs text-text-muted text-center py-5">No referral candidates yet</p>`
+          : `<div class="divide-y divide-border/40">${allRefStudents.map(s => {
+              const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+              const flag = countryFlag[s.country] || '🌍';
+              return `
+                <div class="px-3.5 py-3 bg-purple-50/30 hover:bg-purple-50/60 transition-colors">
+                  <div class="flex items-center gap-3 mb-2.5">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-bold text-[11px] flex items-center justify-center flex-shrink-0">${initials}</div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-semibold text-text-main">${s.name} <span class="text-sm">${flag}</span></p>
+                      <p class="text-[11px] text-text-muted">${s.course}</p>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageClsMap[s.stage] || 'bg-gray-100 text-gray-600'}">${stageLabelMap[s.stage] || s.stage}</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <button onclick="openReferralWAMessage('${s.id}')" class="flex-1 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                      <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.118.555 4.107 1.523 5.832L0 24l6.335-1.524A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 11.999 0zM12 22c-1.943 0-3.779-.517-5.376-1.428l-.387-.226-3.993.96.994-3.866-.253-.4A9.975 9.975 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                      Ask for Referral
+                    </button>
+                    <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='opportunity';" class="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">Take to Task →</button>
+                  </div>
+                </div>`;
+            }).join('')}</div>`
+        }
+      </div>
+    </div>
+  `;
+
+  content += `</div>`; // close space-y-2.5
+  openDrawer('Opportunity Size', content, false);
+}
+
+function toggleOppCard(key) {
+  const body    = document.getElementById(`oppBody-${key}`);
+  const chevron = document.getElementById(`chevron-opp-${key}`);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function openReferralWAMessage(studentId) {
+  const s = STUDENTS.find(x => x.id === studentId);
+  if (!s) return;
+  const counselorName = (state.currentUser && state.currentUser.name) ? state.currentUser.name : 'Your Counselor';
+  const msgTemplate = `Hi ${s.name}! 👋\n\nThis is ${counselorName} from Leap. I hope your journey with us has been great so far! 🎓\n\nWe'd love to help your friends and family who are also planning to study abroad. If you know anyone who might be interested, please do share our details with them!\n\nFor every successful referral, you and your friend both get special benefits. 🎁\n\nThank you for being an amazing part of the Leap family! 🙏`;
+  const encodedMsg = encodeURIComponent(msgTemplate);
+  const groups = s.whatsappGroups || [];
+
+  const groupsHtml = groups.length ? `
+    <div class="mb-4">
+      <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">WhatsApp Groups</p>
+      <div class="space-y-2">
+        ${groups.map(g => `
+          <div class="flex items-center justify-between p-2.5 bg-green-50 border border-green-200 rounded-xl">
+            <div>
+              <p class="text-xs font-semibold text-text-main">${g.groupName}</p>
+              <p class="text-[10px] text-text-muted mt-0.5">${g.studentJoined ? '✅ Student joined' : '⏳ Student not in group'}</p>
+            </div>
+            <a href="https://wa.me/?text=${encodedMsg}" target="_blank"
+               class="text-[10px] font-bold bg-green-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+              Send to Group
+            </a>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const safeMsg = msgTemplate.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+  const content = `
+    <div class="mb-4 flex items-center gap-3 p-3.5 bg-purple-50 border border-purple-200 rounded-xl">
+      <div class="w-10 h-10 rounded-full bg-purple-200 text-purple-800 font-bold text-xs flex items-center justify-center flex-shrink-0">
+        ${s.name.split(' ').map(w => w[0]).join('').slice(0,2)}
+      </div>
+      <div>
+        <p class="font-bold text-sm text-text-main">${s.name}</p>
+        <p class="text-xs text-text-muted">${s.course} · Stage: ${s.stage.toUpperCase()}</p>
+      </div>
+    </div>
+    ${groupsHtml}
+    <div class="mb-4">
+      <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2">Message Template</p>
+      <div class="p-3.5 bg-surface border border-border rounded-xl text-[11px] text-text-main whitespace-pre-wrap leading-relaxed font-mono">${msgTemplate}</div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="navigator.clipboard.writeText(\`${safeMsg}\`).then(()=>showToast('✅ Message copied to clipboard!','success'))"
+        class="flex-1 text-sm font-semibold bg-surface border border-border text-text-main hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors">
+        📋 Copy Message
+      </button>
+      <a href="https://wa.me/?text=${encodedMsg}" target="_blank"
+         class="flex-1 text-sm font-semibold bg-green-600 text-white hover:bg-green-700 px-4 py-2.5 rounded-xl transition-colors text-center flex items-center justify-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.118.555 4.107 1.523 5.832L0 24l6.335-1.524A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 11.999 0zM12 22c-1.943 0-3.779-.517-5.376-1.428l-.387-.226-3.993.96.994-3.866-.253-.4A9.975 9.975 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        Open WhatsApp
+      </a>
+    </div>
+  `;
+  state.drawerPrevMode = 'opportunity';
+  openDrawer('Ask for Referral — ' + s.name, content, true);
 }
 
 /* Offer Drawer */
@@ -3089,8 +3568,13 @@ function renderBotResponse(intent, entity) {
     }
   }
 
-  // Navigation confirm button
-  if (data.navLabel && data.navAction) {
+  // Auto-navigate for view_leaderboard — no button needed, just go there
+  if (intent === 'view_leaderboard' && data.navAction) {
+    setTimeout(() => data.navAction(), 800);
+  }
+
+  // Navigation confirm button (for all other intents with navAction)
+  if (data.navLabel && data.navAction && intent !== 'view_leaderboard') {
     extraHtml += `<button class="bot-nav-btn" onclick="confirmBotNav('${intent}')">
       ${data.navLabel}
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -3126,7 +3610,7 @@ function escHtml(str) {
    BOT V3 — CONVERSATION ENGINE
 ═══════════════════════════════════════════════════════ */
 
-const FLOW_INTENTS = ['start_my_day', 'connect_business_team', 'clarify_before_answering', 'need_help', 'top_performer', 'incentive_clarify'];
+const FLOW_INTENTS = ['greeting', 'start_my_day', 'connect_business_team', 'clarify_before_answering', 'need_help', 'top_performer', 'incentive_clarify', 'training_help', 'live_offers_query', 'earn_more_guide', 'target_today_guide', 'who_to_call_guide'];
 const CANCEL_PHRASES = ['cancel', 'stop', 'nevermind', 'never mind'];
 
 const FOLLOW_UP_CONFIG = {
@@ -3293,11 +3777,17 @@ function startFlow(intent, userText) {
   bc.step = 0;
   bc.collected = {};
   removeTypingIndicator();
-  if (intent === 'start_my_day')            handleStartMyDayStep(null);
+  if (intent === 'greeting')               handleGreetingStep(null);
+  else if (intent === 'start_my_day')      handleStartMyDayStep(null);
   else if (intent === 'connect_business_team') handleConnectBusinessTeamStep(null);
-  else if (intent === 'need_help')          handleNeedHelpStep(null);
-  else if (intent === 'top_performer')      handleTopPerformerStep(null);
-  else if (intent === 'incentive_clarify')  handleIncentiveClarifyStep(null);
+  else if (intent === 'need_help')         handleNeedHelpStep(null);
+  else if (intent === 'top_performer')     handleTopPerformerStep(null);
+  else if (intent === 'incentive_clarify') handleIncentiveClarifyStep(null);
+  else if (intent === 'training_help')     handleTrainingStep(null);
+  else if (intent === 'live_offers_query') handleLiveOffersQueryStep(null);
+  else if (intent === 'earn_more_guide')   handleEarnMoreStep(null);
+  else if (intent === 'target_today_guide') handleTargetTodayGuideStep(null);
+  else if (intent === 'who_to_call_guide') handleWhoToCallGuideStep(null);
   else if (intent === 'clarify_before_answering') {
     bc.collected.originalMessage = userText;
     handleClarifyStep(null);
@@ -3307,11 +3797,17 @@ function startFlow(intent, userText) {
 function handleFlowStep(userText) {
   removeTypingIndicator();
   const flow = state.botConversation.flow;
-  if (flow === 'start_my_day')              handleStartMyDayStep(userText);
+  if (flow === 'greeting')                  handleGreetingStep(userText);
+  else if (flow === 'start_my_day')         handleStartMyDayStep(userText);
   else if (flow === 'connect_business_team') handleConnectBusinessTeamStep(userText);
   else if (flow === 'need_help')            handleNeedHelpStep(userText);
   else if (flow === 'top_performer')        handleTopPerformerStep(userText);
   else if (flow === 'incentive_clarify')    handleIncentiveClarifyStep(userText);
+  else if (flow === 'training_help')        handleTrainingStep(userText);
+  else if (flow === 'live_offers_query')    handleLiveOffersQueryStep(userText);
+  else if (flow === 'earn_more_guide')      handleEarnMoreStep(userText);
+  else if (flow === 'target_today_guide')   handleTargetTodayGuideStep(userText);
+  else if (flow === 'who_to_call_guide')    handleWhoToCallGuideStep(userText);
   else if (flow === 'clarify_before_answering') handleClarifyStep(userText);
 }
 
@@ -3325,64 +3821,105 @@ function endFlow() {
 
 function handleStartMyDayStep(userText) {
   const bc = state.botConversation;
+  const firstName = (state.currentUser?.name || 'there').split(' ')[0];
 
   if (bc.step === 0) {
     const c = getCounselorData();
+    const today = new Date();
+
+    // Metrics report card
     const metrics = [
       { label:'STIs',         actual:c.stis,         target:TARGETS.stis,         navType:'sti'         },
-      { label:'Applications', actual:c.applications, target:TARGETS.applications, navType:'application' },
       { label:'Deposits',     actual:c.deposits,     target:TARGETS.deposits,     navType:'deposit'     },
+      { label:'Applications', actual:c.applications, target:TARGETS.applications, navType:'application' },
       { label:'Lock-ins',     actual:c.lockins,      target:TARGETS.lockins,      navType:'lockin'      },
     ];
     metrics.forEach(m => { m.pct = Math.round((m.actual / m.target) * 100); });
-    metrics.sort((a, b) => {
-      const pri = m => m.pct < 60 ? 0 : m.pct < 100 ? 1 : 2;
-      return pri(a) - pri(b);
-    });
-
-    const allGreen = metrics.every(m => m.pct >= 100);
-    if (allGreen) {
-      const msg = "You're doing great across all metrics! Keep the momentum going. Here's your task board:";
-      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
-      addToHistory('bot', msg);
-      setTimeout(() => switchTab('tab1'), 400);
-      endFlow();
-      return;
-    }
+    metrics.sort((a, b) => a.pct - b.pct); // weakest first
+    const weakest = metrics[0];
 
     const emo = p => p >= 100 ? '🟢' : p >= 60 ? '🟡' : '🔴';
-    const sts = p => p >= 100 ? 'great work!' : p >= 60 ? 'on track' : 'needs attention';
-    const lines = metrics.map(m => `${emo(m.pct)} ${m.label}: ${m.actual} / ${m.target} (${m.pct}%) — ${sts(m.pct)}`).join('\n');
+    const reportLines = metrics.map(m => `${emo(m.pct)} **${m.label}:** ${m.actual}/${m.target} (${m.pct}%)`).join('\n');
 
-    const urgent = metrics[0];
-    const waitCount = getViewingStudents().filter(s => s.stage === urgent.navType).length;
-    const boostLabel = `Boost ${urgent.label}`;
+    // Priority students: overdue follow-ups + high-value stage
+    const stagePriority = { lockin:4, deposit:3, application:2, sti:1 };
+    const priorityStudents = getViewingStudents()
+      .filter(s => s.stage !== 'joined')
+      .map(s => {
+        const fDate = s.followup ? new Date(s.followup) : null;
+        const daysOverdue = fDate ? Math.floor((today - fDate) / 86400000) : -99;
+        return { ...s, daysOverdue, stagePri: stagePriority[s.stage] || 0 };
+      })
+      .sort((a, b) => {
+        if (a.daysOverdue > 0 && b.daysOverdue <= 0) return -1;
+        if (b.daysOverdue > 0 && a.daysOverdue <= 0) return 1;
+        if (a.daysOverdue > 0 && b.daysOverdue > 0) return b.daysOverdue - a.daysOverdue;
+        return b.stagePri - a.stagePri;
+      });
 
-    const msgText = `Good morning! Here's where things stand for you today:\n${lines}\n\nMy suggestion: start with **${boostLabel}** — you have ${waitCount} student${waitCount !== 1 ? 's' : ''} waiting there. Want me to take you there now?`;
+    const top1 = priorityStudents[0];
+    const top2 = priorityStudents[1];
 
-    bc.collected.urgentNavType = urgent.navType;
-    bc.collected.boostLabel = boostLabel;
+    let actionLines = [];
+    if (top1) {
+      const od1 = top1.daysOverdue > 0 ? ` _(${top1.daysOverdue}d overdue)_` : '';
+      actionLines.push(`📞 **Call ${top1.name}** — ${top1.stage.toUpperCase()} · ${top1.course}${od1}`);
+    }
+    if (top2) {
+      const od2 = top2.daysOverdue > 0 ? ` _(${top2.daysOverdue}d overdue)_` : '';
+      actionLines.push(`📋 **Follow up with ${top2.name}** — ${top2.stage.toUpperCase()} · ${top2.course}${od2}`);
+    }
+    actionLines.push(`🎯 **Boost ${weakest.label}** — at ${weakest.pct}% of target, needs focus today`);
+
+    const msgText = `Good morning, ${firstName}! Here's your day plan 📋\n\n**Yesterday's Report Card:**\n${reportLines}\n\n**Top Actions for Today:**\n${actionLines.join('\n')}\n\nWhere do you want to start?`;
+
+    bc.collected.top1Id   = top1?.id;
+    bc.collected.top1Name = top1?.name;
+    bc.collected.top2Id   = top2?.id;
+    bc.collected.top2Name = top2?.name;
+    bc.collected.urgentNavType  = weakest.navType;
+    bc.collected.urgentLabel    = weakest.label;
     bc.step = 1;
 
     appendBotMessageLive(`<p>${formatBotText(msgText)}</p>`);
     addToHistory('bot', msgText);
-    appendQuickReplies([`→ Yes, take me to ${boostLabel}`, `I'll explore myself`]);
+
+    const qrs = [];
+    if (top1) qrs.push(`📞 Call ${top1.name}`);
+    if (top2) qrs.push(`📋 Follow up ${top2.name}`);
+    qrs.push(`🎯 Boost ${weakest.label}`);
+    qrs.push(`📑 Open Task List`);
+    appendQuickReplies(qrs);
 
   } else if (bc.step === 1) {
-    const lower = userText.toLowerCase();
-    const isYes = lower.includes('yes') || lower.includes('take me') || lower.includes('→') || lower.includes('yeah');
+    const lower = (userText || '').toLowerCase();
+    const top1Id   = bc.collected.top1Id;
+    const top1Name = bc.collected.top1Name || '';
+    const top2Id   = bc.collected.top2Id;
+    const top2Name = bc.collected.top2Name || '';
+    const navType  = bc.collected.urgentNavType;
+    const navLabel = bc.collected.urgentLabel;
 
-    if (isYes) {
-      const navType = bc.collected.urgentNavType;
-      const msg = "Here you go! This is where you can start. Good luck today. 💪";
+    if (top1Id && (lower.includes('call') || lower.includes(top1Name.toLowerCase()))) {
+      const msg = `Taking you to ${top1Name}'s profile. Make it count! 💪`;
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
-      setTimeout(() => { switchTab('tab1'); setTimeout(() => openBoostDrawer(navType), 300); }, 300);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openStudentDetail(top1Id), 350); }, 300);
+    } else if (top2Id && (lower.includes('follow') || lower.includes(top2Name.toLowerCase()))) {
+      const msg = `Opening ${top2Name}'s profile. Good luck! 💪`;
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openStudentDetail(top2Id), 350); }, 300);
+    } else if (lower.includes('task')) {
+      const msg = "Here's your full task list — let's clear those to-dos! ✅";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openOwnTaskDrawer(), 350); }, 300);
     } else {
-      const msg = "No worries! Tab 1 is your starting point. Have a great day.";
-      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      const msg = `Heading to **Boost ${navLabel}** — ${getViewingStudents().filter(s => s.stage === navType).length} students waiting. Go get it! 🎯`;
+      appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
       addToHistory('bot', msg);
-      setTimeout(() => switchTab('tab1'), 300);
+      setTimeout(() => { switchTab('tab1'); setTimeout(() => openBoostDrawer(navType), 350); }, 300);
     }
     endFlow();
   }
@@ -3447,9 +3984,232 @@ function handleClarifyStep(userText) {
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
       renderBotResponse('fallback', '');
+    } else if (FLOW_INTENTS.includes(intent) && intent !== 'clarify_before_answering') {
+      // Flow intent matched — start that flow properly instead of calling renderBotResponse
+      startFlow(intent, combined);
     } else {
       renderBotResponse(intent, entity);
       maybeAddFollowUp(intent);
+    }
+  }
+}
+
+/* ── Helper: post-help quick replies ── */
+function showPostHelpQuickReplies() {
+  setTimeout(() => appendQuickReplies([
+    'How to Start my Day',
+    'Training / I want to Learn',
+    'Top Performer in Org',
+    'Top Performer in Cluster',
+    'Target for Today',
+    'Who Should I Call Today',
+    'Live Offers Running?',
+    'Incentive Details',
+    'How Can I Earn More',
+  ]), 400);
+}
+
+/* ── Flow 0: greeting ── */
+function handleGreetingStep(userText) {
+  const bc = state.botConversation;
+  const firstName = (state.currentUser?.name || 'there').split(' ')[0];
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = `Hello ${firstName}! 👋 How are you doing today?`;
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+
+  } else if (bc.step === 1) {
+    const lower = (userText || '').toLowerCase();
+    endFlow();
+
+    // Check negative FIRST — "not good" contains "good" at word boundary so must not match positive
+    const isNegative = /\b(not good|not well|not great|not ok|not okay|bad|sad|tired|stressed|upset|down|struggling|rough|tough|horrible|terrible|nahi|bura|thaka|tension|feeling low|not feeling|exhausted|overwhelmed)\b/.test(lower);
+    const isPositive = !isNegative && /\b(good|great|well|fine|amazing|awesome|fantastic|excellent|wonderful|happy|perfect|nice|okay|ok|not bad|alright|doing well|doing good|sahi|badhiya|mast|accha)\b/.test(lower);
+
+    if (isNegative) {
+      const msg = `Oops! Sorry to hear that, ${firstName} 😔 How can I help?`;
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+    } else if (isPositive) {
+      const msg = `Great to hear that, ${firstName}! 😊 Please tell me — how can I help you today?`;
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+    } else {
+      const msg = `Got it, ${firstName}! 😊 How can I help you today?`;
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+    }
+    showPostHelpQuickReplies();
+  }
+}
+
+/* ── Flow: training_help ── */
+function handleTrainingStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = 'Sure! What type of training are you looking for?';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(['Domain Training', 'Soft Skills', 'Objection Handling', 'System Training']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    let label = userText;
+    if (lower.includes('domain'))    label = 'Domain Training';
+    if (lower.includes('soft'))      label = 'Soft Skills';
+    if (lower.includes('objection')) label = 'Objection Handling';
+    if (lower.includes('system'))    label = 'System Training';
+
+    const msg = `Got it! Taking you to the **${label}** modules in the Learning & Development tab 📚`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    setTimeout(() => {
+      switchTab('tab3');
+      setTimeout(() => {
+        const el = document.getElementById('trainingModulesLD') || document.getElementById('trainingModules');
+        const mc = document.getElementById('mainContent');
+        if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+      }, 400);
+    }, 700);
+  }
+}
+
+/* ── Flow: live_offers_query ── */
+function handleLiveOffersQueryStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = 'Are you looking for offers for your **Students** or offers **For You** (Counsellor)?';
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['Offers for Students', 'Offers for Me (Counsellor)']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    const forCounsellor = lower.includes('me') || lower.includes('counsellor') || lower.includes('counselor') || lower.includes('for me');
+    const msg = forCounsellor
+      ? '🎁 Taking you to the **Live for Counsellors** section!'
+      : '🎁 Taking you to the **Live Offers for Students** section!';
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    setTimeout(() => {
+      switchTab('tab2');
+      setTimeout(() => {
+        const elId = forCounsellor ? 'counsellorOffersRow' : 'offersRow';
+        const el = document.getElementById(elId);
+        const mc = document.getElementById('mainContent');
+        if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+      }, 400);
+    }, 700);
+  }
+}
+
+/* ── Flow: earn_more_guide ── */
+function handleEarnMoreStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = '💰 Great question! The fastest way to earn more is to open your **Opportunity Pipeline** — it shows exactly which students are ready to convert.\n\nShould I take you to the Opportunity Pipeline now?';
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['Yes, take me there!', 'No, tell me more']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower.includes('take') || lower.includes('there')) {
+      const msg = '📊 Opening the Opportunity Pipeline for you!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab2'); setTimeout(() => openOpportunityDrawer(), 500); }, 700);
+    } else {
+      const msg = '📌 **3 ways to earn more right now:**\n\n• 🎯 Convert students with pending deposits — check **Boost Deposit** on your dashboard\n• 💡 Check **Live for Counsellors** offers in the Incentives tab for active performance sprints\n• 📞 Call students in your deferral list — they already have admits!';
+      appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+      addToHistory('bot', msg.replace(/\*\*/g,''));
+      showPostHelpQuickReplies();
+    }
+  }
+}
+
+/* ── Flow: target_today_guide ── */
+function handleTargetTodayGuideStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const c = getCounselorData();
+    const msg = `🎯 **Your targets for today:**\n\n• STIs: ${c.stis}/${TARGETS.stis} · Applications: ${c.applications}/${TARGETS.applications}\n• Deposits: ${c.deposits}/${TARGETS.deposits} · Lock-ins: ${c.lockins}/${TARGETS.lockins}\n• Calls: ${c.calls}/${TARGETS.calls}\n\nShould I take you to the **Action Required — Boost Tasks** section?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['Yes, take me there!', 'No thanks']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower.includes('take') || lower.includes('there')) {
+      const msg = '📋 Taking you to Action Required — Boost Tasks!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => {
+        switchTab('tab1');
+        setTimeout(() => {
+          const el = document.getElementById('boostCardsGrid');
+          const mc = document.getElementById('mainContent');
+          if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+        }, 400);
+      }, 600);
+    } else {
+      const msg = '👍 No problem! Your dashboard is always the best place to start — just look at the **Action Required** cards at the top for today\'s priorities.';
+      appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+      addToHistory('bot', msg.replace(/\*\*/g,''));
+    }
+  }
+}
+
+/* ── Flow: who_to_call_guide ── */
+function handleWhoToCallGuideStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const students = getViewingStudents();
+    const today = new Date('2026-05-31');
+    const overdue = students.filter(s => s.followup && new Date(s.followup) < today).slice(0,3);
+    const lines = overdue.length
+      ? overdue.map(s => `• **${s.name}** (${s.stage}) — overdue since ${s.followup}`).join('\n')
+      : '• No overdue follow-ups — you\'re all caught up! ✅';
+    const msg = `📞 **Priority students to call today:**\n\n${lines}\n\nShould I take you to **Action Required — Boost Tasks** for the full list?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['Yes, take me there!', 'No thanks']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower.includes('take') || lower.includes('there')) {
+      const msg = '📋 Taking you to Action Required — Boost Tasks!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => {
+        switchTab('tab1');
+        setTimeout(() => {
+          const el = document.getElementById('boostCardsGrid');
+          const mc = document.getElementById('mainContent');
+          if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+        }, 400);
+      }, 600);
+    } else {
+      const msg = '👍 Got it! Your **Boost STI** and **Boost Deposit** cards on the dashboard show exactly who needs attention first.';
+      appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+      addToHistory('bot', msg.replace(/\*\*/g,''));
     }
   }
 }
@@ -3702,7 +4462,13 @@ function appendQuickReplies(buttons) {
       addToHistory('user', label);
       appendTypingIndicator();
       setTimeout(() => {
-        if (state.botConversation.flow) handleFlowStep(label);
+        removeTypingIndicator();
+        if (state.botConversation.flow) {
+          handleFlowStep(label);
+        } else {
+          // No active flow — route through intent classifier
+          processBotInput(label);
+        }
       }, 400);
     }, { once: true });
     row.appendChild(btn);
@@ -3710,6 +4476,20 @@ function appendQuickReplies(buttons) {
 
   container.appendChild(row);
   container.scrollTop = container.scrollHeight;
+}
+
+/* Route a message without re-adding user history (already added by quick reply handler) */
+function processBotInput(userText) {
+  const { intent, entity } = classifyIntent(userText);
+  state.botConversation.lastIntent = intent;
+  if (FLOW_INTENTS.includes(intent)) {
+    startFlow(intent, userText);
+  } else if (intent === 'fallback') {
+    startFlow('clarify_before_answering', userText);
+  } else {
+    renderBotResponse(intent, entity);
+    maybeAddFollowUp(intent);
+  }
 }
 
 /* ── Create Bot Ticket ── */
@@ -4342,13 +5122,11 @@ function renderReportCard() {
 
 const STANDUP_METRICS = [
   { name:'Total Leads',               key:'leads'             },
-  { name:'Total ISL',                 key:'isl_count'         },
+  { name:'ISL in 24 hrs',            key:'isl_24h',  tooltip:'Leads assigned → ISL done within 24 hrs' },
   { name:'ISL Pending',               key:'isl_pending'       },
   { name:'Total Lock In',             key:'lockins'           },
   { name:'Total F2F',                 key:'f2f'               },
   { name:'Total Walk In',             key:'walkin'            },
-  { name:'Total Q&A Shared',          key:'qa_shared'         },
-  { name:'Total College Finalisation',key:'college_fin'       },
   { name:'Total STI',                 key:'stis'              },
   { name:'Total Deposits',            key:'deposits'          },
   { name:'Total Visas',               key:'visas'             },
@@ -4358,11 +5136,13 @@ const STANDUP_METRICS = [
 function generateStandupData(filters) {
   const c = getCounselorData();
   // Base daily actuals — use real data where available, mock the rest
+  const leadsBase = 30;
+  // ISL in 24 hrs = ~72% of leads assigned get an ISL call within 24 hours
+  const isl24hBase = Math.round(leadsBase * 0.72);
   const base = {
-    leads: 30, isl_count: Math.round(c.isl * 5), isl_pending: 8,
+    leads: leadsBase, isl_24h: isl24hBase, isl_pending: Math.round(leadsBase * 0.28),
     lockins: c.lockins, f2f: c.f2f, walkin: 2,
-    qa_shared: 12, college_fin: 3, stis: c.stis,
-    deposits: c.deposits, visas: 1,
+    stis: c.stis, deposits: c.deposits, visas: 1,
     revenue_collected: c.revenueCollected,
   };
   // Apply lightweight filter noise for realism
@@ -4370,6 +5150,9 @@ function generateStandupData(filters) {
   const locMult     = filters.location   === 'online'  ? 0.7  : filters.location === 'branch' ? 0.85 : 1;
   const counselMult = filters.counsellor && filters.counsellor !== '' ? 0.5  : 1;
   const tlMult      = filters.tl         && filters.tl         !== '' ? 0.75 : 1;
+  // Servicing type filter — Master ≈ 40% of pipeline, UG ≈ 60%
+  const servMult    = filters.servicingType === 'master' ? 0.40
+                    : filters.servicingType === 'ug'     ? 0.60 : 1;
   // CA date filter — count students within range and scale
   let caDateMult = 1;
   if (filters.caDateFrom || filters.caDateTo) {
@@ -4384,7 +5167,7 @@ function generateStandupData(filters) {
   }
 
   return STANDUP_METRICS.map((m, i) => {
-    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult * caDateMult);
+    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult * caDateMult * servMult);
     const tYTD   = daily * 264;   // 264 working days
     const tMTD   = daily * 22;
     const aYTD   = Math.round(tYTD * [0.78,0.82,0.65,0.91,0.74,0.88,0.60,0.85,0.93,0.70,0.77][i % 11]);
@@ -4405,13 +5188,14 @@ function generateStandupData(filters) {
 
 function renderStandupTable(filterData) {
   const filters = filterData || {
-    intake:      document.getElementById('standupIntake')?.value            || '',
-    location:    document.getElementById('standupLocation')?.value          || '',
-    country:     document.getElementById('standupCountry')?.value           || '',
-    counsellor:  document.getElementById('standupCounsellorFilter')?.value  || '',
-    tl:          document.getElementById('standupTLFilter')?.value           || '',
-    caDateFrom:  document.getElementById('standupCADateFrom')?.value        || '',
-    caDateTo:    document.getElementById('standupCADateTo')?.value          || '',
+    intake:         document.getElementById('standupIntake')?.value            || '',
+    location:       document.getElementById('standupLocation')?.value          || '',
+    country:        document.getElementById('standupCountry')?.value           || '',
+    counsellor:     document.getElementById('standupCounsellorFilter')?.value  || '',
+    tl:             document.getElementById('standupTLFilter')?.value           || '',
+    caDateFrom:     document.getElementById('standupCADateFrom')?.value        || '',
+    caDateTo:       document.getElementById('standupCADateTo')?.value          || '',
+    servicingType:  document.getElementById('standupServicingType')?.value     || '',
   };
   const data = generateStandupData(filters);
   const tbody = document.getElementById('standupTableBody');
@@ -4426,24 +5210,85 @@ function renderStandupTable(filterData) {
   if (empty) empty.classList.add('hidden');
 
   const fmtCell = (val, row) => row.isCurrency ? fmt(val) : val;
-  const sdCell = (val, metricName, metricKey, extraCls='text-text-muted', isCurrency=false) =>
-    `<span class="standup-link cursor-pointer hover:text-accent hover:underline ${extraCls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${isCurrency ? fmt(val) : val}</span>`;
 
-  tbody.innerHTML = data.map((row, i) => `
-    <tr class="hover:bg-surface/50 transition-colors">
-      <td class="px-3 py-2 font-medium text-text-main sticky left-0 bg-white whitespace-nowrap cursor-pointer hover:text-accent" onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">${i+1}. ${row.name}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tYTD, row)}</td>
-      <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tMTD, row)}</td>
-      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aYTD, row.name, row.key, row.ytdCls, row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aMTD, row.name, row.key, row.mtdCls, row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y1, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.Y2, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W0, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.W01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
-      <td class="px-2 py-2 text-right font-mono">${sdCell(row.M01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
+  // Colored cell: green ≥80%, amber 50–79%, red <50%
+  function perfCell(val, metricName, metricKey, target, isCurrency) {
+    const fval = isCurrency ? fmt(val) : val;
+    const pct = target > 0 ? Math.round((val / target) * 100) : (val > 0 ? 100 : 0);
+    const cls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
+    const dot = pct >= 80 ? '●' : pct >= 50 ? '●' : '●';
+    const dotCls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
+    return `<span class="standup-link cursor-pointer hover:underline font-semibold ${cls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
+  }
+
+  function dayCell(val, metricName, metricKey, isCurrency) {
+    const fval = isCurrency ? fmt(val) : val;
+    return `<span class="standup-link cursor-pointer hover:text-accent hover:underline text-text-muted" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${fval}</span>`;
+  }
+
+  // Trend arrow comparing W0 to W01
+  function trendArrow(current, prev) {
+    if (current > prev) return `<span class="text-success text-[10px] ml-0.5">↑</span>`;
+    if (current < prev) return `<span class="text-danger text-[10px] ml-0.5">↓</span>`;
+    return `<span class="text-text-muted text-[10px] ml-0.5">→</span>`;
+  }
+
+  // MTD status dot
+  function statusDot(mtdPct) {
+    if (mtdPct >= 80) return `<span class="w-2 h-2 rounded-full bg-success inline-block mr-1.5 flex-shrink-0" title="On Track"></span>`;
+    if (mtdPct >= 50) return `<span class="w-2 h-2 rounded-full bg-accent inline-block mr-1.5 flex-shrink-0" title="At Risk"></span>`;
+    return `<span class="w-2 h-2 rounded-full bg-danger inline-block mr-1.5 flex-shrink-0" title="Behind"></span>`;
+  }
+
+  tbody.innerHTML = data.map((row, idx) => {
+    const tooltipAttr = row.tooltip ? ` title="${row.tooltip}"` : '';
+    const mtdNum = typeof row.aMTD === 'string' ? parseFloat(row.aMTD.replace(/[^0-9.]/g,'')) : row.aMTD;
+    const tMTDNum = typeof row.tMTD === 'string' ? parseFloat(row.tMTD.replace(/[^0-9.]/g,'')) : row.tMTD;
+    const mtdPct = tMTDNum > 0 ? Math.round((mtdNum / tMTDNum) * 100) : (mtdNum > 0 ? 100 : 0);
+    const rowBg = idx % 2 === 0 ? '' : 'bg-surface/30';
+    const nameHtml = row.tooltip
+      ? `${idx+1}. ${row.name} <span class="text-[9px] text-primary font-semibold ml-1 bg-primary/10 px-1.5 py-0.5 rounded-full">% of Leads</span>`
+      : `${idx+1}. ${row.name}`;
+    return `
+    <tr class="hover:bg-primary/5 transition-colors ${rowBg}">
+      <td class="px-3 py-2.5 font-medium text-text-main sticky left-0 ${rowBg || 'bg-white'} whitespace-nowrap cursor-pointer hover:text-primary"${tooltipAttr} onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">
+        <div class="flex items-center">${statusDot(mtdPct)}${nameHtml}</div>
+      </td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tYTD, row)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtCell(row.tMTD, row)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aYTD, row.name, row.key, row.tYTD || 1, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-emerald-50/40">${perfCell(row.aMTD, row.name, row.key, row.tMTD || 1, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y,   row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y1,  row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono">${dayCell(row.Y2,  row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W0, row.name, row.key, row.isCurrency)}${trendArrow(row.W0, row.W01)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.W01, row.name, row.key, row.isCurrency)}</td>
+      <td class="px-3 py-2.5 text-right font-mono bg-amber-50/40">${dayCell(row.M01, row.name, row.key, row.isCurrency)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+}
+
+function toggleStandupAdvancedFilter() {
+  const panel = document.getElementById('standupAdvancedFilter');
+  const btn   = document.getElementById('advFilterBtn');
+  if (!panel) return;
+  const isOpen = !panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', isOpen);
+  // Make sure the table section is open so filter makes sense
+  if (!isOpen) {
+    const body = document.getElementById('body-standup');
+    const chev = document.getElementById('chevron-standup');
+    if (body && body.classList.contains('hidden')) {
+      body.classList.remove('hidden');
+      if (chev) chev.style.transform = 'rotate(180deg)';
+    }
+  }
+  if (btn) {
+    btn.classList.toggle('bg-primary/10', !isOpen);
+    btn.classList.toggle('text-primary',  !isOpen);
+    btn.classList.toggle('border-primary/30', !isOpen);
+  }
 }
 
 function applyStandupFilters() {
@@ -4458,9 +5303,9 @@ function applyStandupFilters() {
 }
 
 function resetStandupFilters() {
-  const fields = ['standupIntake','standupLocation','standupCountry','standupCounsellorFilter','standupTLFilter','standupCADateFrom','standupCADateTo'];
+  const fields = ['standupIntake','standupLocation','standupCountry','standupCounsellorFilter','standupTLFilter','standupCADateFrom','standupCADateTo','standupServicingType'];
   fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', caDateFrom:'', caDateTo:'' });
+  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', caDateFrom:'', caDateTo:'', servicingType:'' });
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -4793,6 +5638,106 @@ function openGroupsDetail(mode) {
 
     openDrawer('Students Not in Groups', content, false);
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   WA GROUP DETAILS DRAWER  (4 accordion sub-cards)
+═══════════════════════════════════════════════════════ */
+
+function openWAGroupDetailsDrawer() {
+  const students = getViewingStudents();
+
+  // Build flat list of student-group pairs
+  const pairs = [];
+  students.forEach(s => {
+    s.whatsappGroups.forEach(g => {
+      pairs.push({ student: s, group: g });
+    });
+  });
+
+  // Categories
+  const activeGroups     = pairs.filter(p => p.group.counselorJoined && p.group.studentJoined);
+  const inactiveGroups   = pairs.filter(p => !p.group.counselorJoined);
+  const notJoinedGroups  = pairs.filter(p => !p.group.studentJoined);
+  const notRepliedStudents = getWANotRepliedStudents();
+
+  function waGroupRow(p, showWABtn = true) {
+    const waLink = `https://wa.me/?text=${encodeURIComponent('Hi ' + p.student.name + ', joining you on the group now!')}`;
+    return `
+      <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+        <div>
+          <p class="text-xs font-semibold text-text-main">${escHtml(p.student.name)}</p>
+          <p class="text-[10px] text-text-muted">${escHtml(p.group.groupName)}</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          ${showWABtn ? `<a href="${waLink}" target="_blank" class="flex items-center gap-1 text-[10px] px-2 py-1 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/30 rounded-lg font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.549 4.08 1.507 5.793L.057 23.25a.75.75 0 00.92.92l5.457-1.45A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.75 9.75 0 01-5.024-1.396l-.36-.215-3.735.99.99-3.735-.215-.36A9.75 9.75 0 1112 21.75z"/></svg>
+            Open WA Group
+          </a>` : ''}
+          <button onclick="openStudentDetail('${p.student.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
+        </div>
+      </div>`;
+  }
+
+  function waRepliedRow(s) {
+    const msgs = WA_UNANSWERED[s.id] || [];
+    const waLink = `https://wa.me/?text=${encodeURIComponent('Hi ' + s.name + ', following up on your question!')}`;
+    return `
+      <div class="flex items-start justify-between py-2 border-b border-border/50 last:border-0">
+        <div class="flex-1 min-w-0 mr-2">
+          <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
+          <p class="text-[10px] text-text-muted mb-1">${msgs.length} unanswered question${msgs.length !== 1 ? 's' : ''}</p>
+          ${msgs.map(m => `<p class="text-[10px] text-amber-700 italic truncate">"${escHtml(m.question)}"</p>`).join('')}
+        </div>
+        <div class="flex flex-col gap-1 flex-shrink-0">
+          <a href="${waLink}" target="_blank" class="flex items-center gap-1 text-[10px] px-2 py-1 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/30 rounded-lg font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.549 4.08 1.507 5.793L.057 23.25a.75.75 0 00.92.92l5.457-1.45A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.75 9.75 0 01-5.024-1.396l-.36-.215-3.735.99.99-3.735-.215-.36A9.75 9.75 0 1112 21.75z"/></svg>
+            Reply on WA
+          </a>
+          <button onclick="openStudentDetail('${s.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
+        </div>
+      </div>`;
+  }
+
+  function accordion(id, icon, title, count, colorCls, bgCls, borderCls, rows) {
+    const isEmpty = rows.length === 0;
+    return `
+      <div class="rounded-xl border ${borderCls} overflow-hidden mb-3">
+        <button onclick="toggleWACard('${id}')" class="w-full flex items-center justify-between px-4 py-3 ${bgCls} hover:opacity-90 transition-opacity cursor-pointer">
+          <div class="flex items-center gap-2">
+            <span class="text-base">${icon}</span>
+            <span class="text-sm font-semibold ${colorCls}">${title}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/60 ${colorCls} font-bold">${count}</span>
+          </div>
+          <svg id="chevron-wa-${id}" class="w-4 h-4 ${colorCls} transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="wa-body-${id}" class="hidden px-4 pb-3 pt-2 bg-white">
+          ${isEmpty
+            ? `<p class="text-xs text-text-muted italic text-center py-3">All good here! 🎉</p>`
+            : rows
+          }
+        </div>
+      </div>`;
+  }
+
+  const content = `
+    <p class="text-xs text-text-muted mb-4">Overview of all WhatsApp group activity across your students. Tap a section to expand.</p>
+    ${accordion('active',    '✅', 'Active Groups',                   activeGroups.length,    'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', activeGroups.map(p => waGroupRow(p, true)).join(''))}
+    ${accordion('inactive',  '⚠️', 'In-Active Groups',                inactiveGroups.length,  'text-amber-700',   'bg-amber-50',    'border-amber-200',   inactiveGroups.map(p => waGroupRow(p, true)).join(''))}
+    ${accordion('notjoined', '🚫', 'Students not joined Groups',      notJoinedGroups.length, 'text-orange-700',  'bg-orange-50',   'border-orange-200',  notJoinedGroups.map(p => waGroupRow(p, true)).join(''))}
+    ${accordion('replied',   '💬', 'Groups With Messages Not Replied', notRepliedStudents.length, 'text-red-700', 'bg-red-50',      'border-red-200',     notRepliedStudents.map(s => waRepliedRow(s)).join(''))}
+  `;
+
+  openDrawer('WA Group Details', content, false);
+}
+
+function toggleWACard(id) {
+  const body = document.getElementById(`wa-body-${id}`);
+  const chevron = document.getElementById(`chevron-wa-${id}`);
+  if (!body) return;
+  const isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
 }
 
 /* ═══════════════════════════════════════════════════════

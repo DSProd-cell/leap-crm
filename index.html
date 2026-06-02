@@ -186,7 +186,7 @@
   <div id="join10xBanner" class="hidden fixed top-[104px] left-0 right-0 z-30 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 text-white py-2.5 px-5 flex items-center justify-between shadow-md">
     <div class="flex items-center gap-3">
       <span class="text-base">🚀</span>
-      <p class="text-sm font-semibold">Your 10x session is live! Join now to stay on track with your team.</p>
+      <p class="text-sm font-semibold">Your 10x session is live! Join now to Get Leads.</p>
     </div>
     <button onclick="joinTenX()" class="px-4 py-1.5 bg-white text-indigo-700 font-bold text-sm rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors shadow-sm flex-shrink-0">
       Join 10x →
@@ -199,85 +199,34 @@
     <!-- ─────────────────────────────── TAB 1 ─────────────────────────────── -->
     <div id="tab1" class="tab-panel p-5 space-y-6 max-w-screen-xl mx-auto">
 
-      <!-- ① Use for Stand Up -->
-      <section class="bg-white rounded-xl border border-border p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 class="font-semibold text-text-main flex items-center gap-2">
-              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-              Use for Stand Up
-            </h2>
-            <p class="text-xs text-text-muted mt-0.5">Your metrics at a glance for daily stand-up</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <select id="standupCounsellorFilter" class="hidden text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
-              <option value="">All Counsellors</option>
-            </select>
-            <select id="standupTLFilter" class="hidden text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
-              <option value="">All TLs</option>
-            </select>
-            <select id="standupIntake" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
-              <option value="">All Intakes</option>
-              <option value="sep26">Sep 2026</option>
-              <option value="jan27">Jan 2027</option>
-            </select>
-            <select id="standupLocation" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
-              <option value="">All Locations</option>
-              <option value="branch">Branch</option>
-              <option value="online">Online</option>
-            </select>
-            <select id="standupCountry" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
-              <option value="">All Countries</option>
-              <option value="australia">Australia</option>
-              <option value="canada">Canada</option>
-              <option value="china">China</option>
-              <option value="germany">Germany</option>
-              <option value="ireland">Ireland</option>
-              <option value="middle-east">Middle Eastern Countries</option>
-              <option value="netherlands">Netherlands</option>
-              <option value="new-zealand">New Zealand</option>
-              <option value="open-any">Open To Any Country</option>
-              <option value="other">Other</option>
-              <option value="rest-europe">Rest Of Europe</option>
-              <option value="singapore">Singapore</option>
-              <option value="uk">UK</option>
-              <option value="usa">USA</option>
-            </select>
-            <div class="flex items-center gap-1.5 border border-border rounded-lg px-2 py-1 bg-white">
-              <svg class="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <span class="text-[10px] font-bold text-primary whitespace-nowrap">CA Date</span>
-              <input id="standupCADateFrom" type="date" class="text-xs border-0 outline-none bg-transparent text-text-main w-28 cursor-pointer" title="CA Date From" />
-              <span class="text-text-muted text-xs">→</span>
-              <input id="standupCADateTo" type="date" class="text-xs border-0 outline-none bg-transparent text-text-main w-28 cursor-pointer" title="CA Date To" />
-            </div>
-            <button onclick="applyStandupFilters()" class="text-xs px-3 py-1.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors cursor-pointer font-semibold">Apply</button>
-            <button onclick="resetStandupFilters()" class="text-xs px-3 py-1.5 border border-border text-text-muted rounded-lg hover:bg-surface transition-colors cursor-pointer">Reset</button>
-          </div>
+      <!-- ① Boost your Output (Action Required — moved to top) -->
+      <section>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1 h-5 rounded-full bg-gradient-to-b from-accent to-primary"></div>
+          <h2 class="text-sm font-bold text-text-main uppercase tracking-wide">🚀 Boost your Output</h2>
+          <span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-semibold">Action Required</span>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs min-w-[700px]">
-            <thead>
-              <tr class="bg-surface border-b border-border">
-                <th class="text-left px-3 py-2 font-semibold text-text-muted sticky left-0 bg-surface"># Metric</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Target YTD</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Target MTD</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Achv YTD</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted whitespace-nowrap">Achv MTD</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted">Y</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted">Y-1</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted">Y-2</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted">W0</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted">W0-1</th>
-                <th class="text-right px-2 py-2 font-semibold text-text-muted">M0-1</th>
-              </tr>
-            </thead>
-            <tbody id="standupTableBody" class="divide-y divide-border"></tbody>
-          </table>
-        </div>
-        <p id="standupEmpty" class="hidden text-center text-text-muted text-sm py-6">No data for selected filters. Try adjusting Intake, Country, or Location.</p>
+        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-5 gap-4 items-start"></div>
       </section>
 
-      <!-- ② Your Scorecard — Expandable -->
+      <!-- ② Boost Input (Volume + Quality Metrics merged) -->
+      <section>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1 h-5 rounded-full bg-gradient-to-b from-emerald-500 to-teal-600"></div>
+          <h2 class="text-sm font-bold text-text-main uppercase tracking-wide">📊 Boost Input</h2>
+          <span class="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-semibold border border-emerald-200">Volume + Quality</span>
+        </div>
+        <!-- Volume metrics row -->
+        <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4"></div>
+        <!-- Quality metrics row (merged here) -->
+        <div class="flex items-center gap-2 mb-3 mt-1">
+          <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Quality Metrics</span>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+        <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </section>
+
+      <!-- ③ Your Scorecard — Expandable -->
       <section id="reportCardSection" class="bg-white rounded-xl border border-border overflow-hidden">
         <button onclick="toggleSection('scorecard')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
           <div class="text-left">
@@ -310,28 +259,7 @@
         </div>
       </section>
 
-      <!-- ③ Action Required — Boost Tasks -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Action Required — Boost Tasks</h2>
-        <div id="boostCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 items-start"></div>
-      </section>
-
-      <!-- WhatsApp Group Coverage -->
-      <div id="whatsappCoverage" class="flex flex-wrap gap-3 text-sm"></div>
-
-      <!-- ④ Volume Metrics -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Volume Metrics</h2>
-        <div id="volumeMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-      </section>
-
-      <!-- ⑤ Quality Metrics -->
-      <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">Quality Metrics</h2>
-        <div id="qualityMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-      </section>
-
-      <!-- ⑥ Top Performers — Expandable -->
+      <!-- ④ Top Performers — Expandable -->
       <section class="bg-white rounded-xl border border-border overflow-hidden">
         <button onclick="toggleSection('topPerformers')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
           <h2 class="font-semibold text-text-main flex items-center gap-2">
@@ -347,6 +275,133 @@
             <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchLeader('year',this)">This Year</button>
           </div>
           <div id="leaderboardGrid" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- ⑤ Your Performance So Far (was "Use for Stand Up") — collapsible, collapsed by default -->
+      <section class="bg-white rounded-xl border border-border overflow-hidden">
+        <!-- Header row — uses div to avoid nested-button HTML-parsing issue -->
+        <div class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer" onclick="toggleSection('standup')">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <div class="text-left">
+              <h2 class="font-bold text-text-main text-sm">Your Performance So Far</h2>
+              <p class="text-xs text-text-muted mt-0.5">Targets vs actuals — use for daily stand-up</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button onclick="event.stopPropagation(); toggleStandupAdvancedFilter()"
+              id="advFilterBtn"
+              class="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-border rounded-lg bg-white text-text-muted hover:bg-surface hover:text-primary transition-colors font-medium">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+              Advanced Filter
+            </button>
+            <svg id="chevron-standup" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+
+        <!-- Advanced Filter panel -->
+        <div id="standupAdvancedFilter" class="hidden border-t border-border bg-surface/40 px-5 py-4">
+          <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Advanced Filters</p>
+          <div class="flex flex-wrap items-end gap-3">
+            <select id="standupCounsellorFilter" class="hidden text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+              <option value="">All Counsellors</option>
+            </select>
+            <select id="standupTLFilter" class="hidden text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+              <option value="">All TLs</option>
+            </select>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-semibold text-text-muted uppercase tracking-wide">Intake</label>
+              <select id="standupIntake" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+                <option value="">All Intakes</option>
+                <option value="sep26">Sep 2026</option>
+                <option value="jan27">Jan 2027</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-semibold text-text-muted uppercase tracking-wide">Location</label>
+              <select id="standupLocation" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+                <option value="">All Locations</option>
+                <option value="branch">Branch</option>
+                <option value="online">Online</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-semibold text-text-muted uppercase tracking-wide">Servicing Type</label>
+              <select id="standupServicingType" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+                <option value="">All Servicing Types</option>
+                <option value="master">Master</option>
+                <option value="ug">UG</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-semibold text-text-muted uppercase tracking-wide">Country</label>
+              <select id="standupCountry" class="text-xs px-3 py-1.5 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+                <option value="">All Countries</option>
+                <option value="australia">Australia</option>
+                <option value="canada">Canada</option>
+                <option value="china">China</option>
+                <option value="germany">Germany</option>
+                <option value="ireland">Ireland</option>
+                <option value="middle-east">Middle Eastern Countries</option>
+                <option value="netherlands">Netherlands</option>
+                <option value="new-zealand">New Zealand</option>
+                <option value="open-any">Open To Any Country</option>
+                <option value="other">Other</option>
+                <option value="rest-europe">Rest Of Europe</option>
+                <option value="singapore">Singapore</option>
+                <option value="uk">UK</option>
+                <option value="usa">USA</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-semibold text-text-muted uppercase tracking-wide">CA Date Range</label>
+              <div class="flex items-center gap-1.5 border border-border rounded-lg px-2 py-1.5 bg-white">
+                <svg class="w-3 h-3 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <input id="standupCADateFrom" type="date" class="text-xs border-0 outline-none bg-transparent text-text-main w-28 cursor-pointer" title="CA Date From" />
+                <span class="text-text-muted text-xs">→</span>
+                <input id="standupCADateTo" type="date" class="text-xs border-0 outline-none bg-transparent text-text-main w-28 cursor-pointer" title="CA Date To" />
+              </div>
+            </div>
+            <div class="flex gap-2 ml-auto">
+              <button onclick="applyStandupFilters()" class="text-xs px-4 py-1.5 bg-accent text-white rounded-lg hover:bg-accent-dark transition-colors cursor-pointer font-semibold">Apply</button>
+              <button onclick="resetStandupFilters()" class="text-xs px-3 py-1.5 border border-border text-text-muted rounded-lg hover:bg-surface transition-colors cursor-pointer">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table body — hidden by default (collapsed) -->
+        <div id="body-standup" class="hidden border-t border-border">
+          <!-- Legend strip -->
+          <div class="flex items-center gap-4 px-5 pt-4 pb-2">
+            <span class="text-[10px] text-text-muted font-semibold uppercase tracking-wide">Status:</span>
+            <span class="flex items-center gap-1 text-[10px] text-success font-medium"><span class="w-2 h-2 rounded-full bg-success inline-block"></span>On Track (≥80%)</span>
+            <span class="flex items-center gap-1 text-[10px] text-accent font-medium"><span class="w-2 h-2 rounded-full bg-accent inline-block"></span>At Risk (50–79%)</span>
+            <span class="flex items-center gap-1 text-[10px] text-danger font-medium"><span class="w-2 h-2 rounded-full bg-danger inline-block"></span>Behind (&lt;50%)</span>
+          </div>
+          <div class="overflow-x-auto px-5 pb-5">
+            <table class="w-full text-xs min-w-[760px] border-collapse">
+              <thead>
+                <tr>
+                  <th class="text-left px-3 py-2.5 font-semibold text-text-muted rounded-tl-lg bg-surface sticky left-0 border-b border-border"># Metric</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-blue-50/60 border-b border-border whitespace-nowrap">Target YTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-blue-50/60 border-b border-border whitespace-nowrap">Target MTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-emerald-50/60 border-b border-border whitespace-nowrap">Achv YTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-emerald-50/60 border-b border-border whitespace-nowrap">Achv MTD</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border" title="Yesterday">Y</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border" title="2 Days Ago">Y-1</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-surface border-b border-border" title="3 Days Ago">Y-2</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border" title="This Week">W0</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border" title="Last Week">W-1</th>
+                  <th class="text-right px-3 py-2.5 font-semibold text-text-muted bg-amber-50/60 border-b border-border rounded-tr-lg" title="Last Month">M-1</th>
+                </tr>
+              </thead>
+              <tbody id="standupTableBody" class="divide-y divide-border/50"></tbody>
+            </table>
+          </div>
+          <p id="standupEmpty" class="hidden text-center text-text-muted text-sm py-6 px-5">No data for selected filters. Try adjusting the Advanced Filters.</p>
         </div>
       </section>
 
@@ -1254,11 +1309,11 @@
 <!-- ═══════════════════════════════════════════════════
      CRM ASSISTANT BOT
 ═══════════════════════════════════════════════════ -->
-<!-- CRM Assistant Bubble — floating right-center (Chat with Business Team) -->
-<button id="botBubble" onclick="toggleBot()" aria-label="Open CRM Assistant"
+<!-- CRM Assistant Bubble — floating right-center (Ask me Anything) -->
+<button id="botBubble" onclick="toggleBot()" aria-label="Ask me Anything"
   class="fixed right-0 top-[42%] -translate-y-1/2 z-[90] w-12 h-[72px] bg-accent hover:bg-accent-dark text-white rounded-l-2xl shadow-xl flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors bot-bubble relative">
   <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z"/></svg>
-  <span class="text-[7.5px] font-bold leading-tight text-center px-0.5">Chat with<br>Business<br>Team</span>
+  <span class="text-[7.5px] font-bold leading-tight text-center px-0.5">Ask me<br>Anything</span>
   <span id="botUnreadBadge" class="hidden absolute -top-1 -left-1 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10"></span>
   <span class="bot-pulse-ring"></span>
 </button>
@@ -1276,7 +1331,7 @@
 </button>
 
 <!-- Internal Team Chat Panel -->
-<div id="internalChatPanel" class="hidden fixed right-[76px] bottom-16 z-[99] w-[360px] bg-white rounded-2xl flex flex-col border border-border overflow-hidden" style="height:min(500px,calc(100vh - 80px));box-shadow:0 24px 60px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06)">
+<div id="internalChatPanel" class="hidden fixed z-[99] bg-white rounded-2xl flex flex-col border border-border overflow-hidden" style="right:clamp(4px,76px,76px);bottom:4.5rem;width:min(360px,calc(100vw - 80px));height:min(500px,calc(100dvh - 120px));box-shadow:0 24px 60px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06)">
   <div class="flex items-center justify-between px-4 py-3 bg-emerald-700 flex-shrink-0">
     <div class="flex items-center gap-2">
       <div class="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -1307,7 +1362,7 @@
 </div>
 
 <!-- Bot Chat Panel -->
-<div id="botPanel" class="bot-panel hidden fixed right-14 top-1/2 -translate-y-1/2 z-[90] w-[380px] bg-white rounded-2xl shadow-2xl flex flex-col border border-border overflow-hidden" style="height:min(520px,calc(100vh - 120px))">
+<div id="botPanel" class="bot-panel hidden fixed z-[90] bg-white rounded-2xl shadow-2xl flex flex-col border border-border overflow-hidden" style="right:clamp(4px,56px,56px);bottom:4.5rem;width:min(400px,calc(100vw - 80px));height:min(560px,calc(100dvh - 110px))">
   <!-- Header -->
   <div class="flex items-center justify-between px-4 py-3 bg-sidebar flex-shrink-0">
     <div class="flex items-center gap-2">
@@ -1347,22 +1402,23 @@
     </div>
   </div>
   <!-- Messages -->
-  <div id="botMessages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-surface">
+  <div id="botMessages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-surface">
     <!-- Welcome message -->
     <div class="flex gap-2">
       <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-0.5">
         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
       </div>
       <div class="bot-msg-bubble">
-        <p class="text-sm">Hi! I'm your Leap CRM assistant. Ask me about your tasks, metrics, incentives, or any university in the Info Hub. 👋</p>
+        <p class="text-sm font-semibold text-text-main mb-1">👋 Welcome to Leap CRM Assistant!</p>
+        <p class="text-sm text-text-muted">Type <strong class="text-accent">Hi</strong> or <strong class="text-accent">Hello</strong> to get started.</p>
       </div>
     </div>
   </div>
   <!-- Action Items Tab Content -->
-  <div id="botActionItems" class="hidden flex-1 overflow-y-auto p-3 space-y-3 bg-surface"></div>
+  <div id="botActionItems" class="hidden flex-1 min-h-0 overflow-y-auto p-3 space-y-3 bg-surface"></div>
   <!-- Input -->
   <div class="flex items-center gap-2 px-3 py-3 border-t-2 border-border bg-surface flex-shrink-0">
-    <input id="botInput" type="text" placeholder="Type your message here…"
+    <input id="botInput" type="text" placeholder="Type &quot;Hi&quot; or &quot;Hello&quot; to Start the Chat"
       onkeydown="if(event.key==='Enter')sendBotMessage()"
       class="flex-1 px-3 py-2.5 border-2 border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent placeholder:text-slate-400" />
     <button onclick="sendBotMessage()" class="w-9 h-9 bg-accent hover:bg-accent-dark rounded-xl flex items-center justify-center cursor-pointer transition-colors flex-shrink-0" aria-label="Send">
