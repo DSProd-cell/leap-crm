@@ -1185,19 +1185,22 @@ function openBoostReferralsDrawer() {
     { key:'sti',     label:'STI Done',       icon:'🎯', tagCls:'bg-sky-100 text-sky-700 border-sky-200',           students: getReferralCohort('sti')     },
   ];
 
-  // Apply today filter when not acknowledged
+  // Apply today filter when not acknowledged (isPendingToday = followup today + subtasks not all done)
   const cohorts = allCohorts.map(c => ({
     ...c,
-    students: acked ? c.students : c.students.filter(s => s.followup === todayStr),
+    students: acked ? c.students : c.students.filter(s => isPendingToday(s, todayStr)),
     allStudents: c.students,
   }));
 
-  // Deduplicate for total count
+  // Deduplicate displayed students for count in header
   const displayStudents = cohorts.flatMap(c => c.students);
   const allUnique = [...new Map(displayStudents.map(s => [s.id, s])).values()];
 
-  // Check if all today's tasks done (for ack prompt)
-  const allTodayDone = !acked && allUnique.length > 0 && allUnique.every(s => s.subtasks.every(t => t.done));
+  // All students due today (regardless of done state) — to detect allDone
+  const allCohortStudents = [...new Map(allCohorts.flatMap(c => c.students).map(s => [s.id,s])).values()];
+  const allRefStudents    = allCohortStudents; // all referral students (for All Tasks section)
+  const todayDueRef = allCohortStudents.filter(s => s.followup === todayStr);
+  const allTodayDone = !acked && todayDueRef.length > 0 && todayDueRef.every(s => s.subtasks.every(t => t.done));
 
   let content = `
     ${!acked ? _renderBoostTodayHeader(allUnique.length) : _renderBoostAckHeader()}
@@ -1262,6 +1265,7 @@ function openBoostReferralsDrawer() {
 
   content += `</div>`;
   if (allTodayDone) content += _renderBoostAckPrompt('referrals');
+  content += _renderAllTasksSection(acked, allRefStudents, 'referrals');
   openDrawer('Boost Referrals', content, false);
 }
 
@@ -1359,7 +1363,7 @@ function _boostMetricCard(id, label, students, todayStr, onclickFn, todayOnly) {
       <div class="flex items-end gap-3">
         <div>
           <p class="text-2xl font-bold ${allDone ? 'text-green-500' : 'text-orange-500'} leading-none">${count}</p>
-          <p class="text-[11px] text-text-muted mt-1">${allDone ? 'All done today ✓' : 'Due Today'}</p>
+          <p class="text-[11px] text-text-muted mt-1">${allDone ? 'All done today ✓' : 'Pending Today'}</p>
         </div>
       </div>
     </div>`;
@@ -1435,6 +1439,60 @@ function _renderBoostAckPrompt(drawerType) {
     </div>`;
 }
 
+/* Returns true when a student has a follow-up today AND still has pending subtasks */
+function isPendingToday(s, todayStr) {
+  return s.followup === todayStr && !s.subtasks.every(t => t.done);
+}
+
+/* Toggle the collapsible "All Tasks" section inside boost drawers */
+function toggleAllTasksSection(sectionId) {
+  const body    = document.getElementById(`all-tasks-body-${sectionId}`);
+  const chevron = document.getElementById(`all-tasks-chev-${sectionId}`);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+/* Renders the "All Tasks" card at the bottom of every boost drawer.
+   Locked (🔒) when not yet acknowledged; collapsible green card when acknowledged. */
+function _renderAllTasksSection(acked, allStudents, sectionId) {
+  const total = allStudents.length;
+  if (!acked) {
+    return `
+      <div class="mt-4 flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-2xl">
+        <span class="text-xl flex-shrink-0">🔒</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-sm text-gray-500">All Tasks</p>
+          <p class="text-xs text-gray-400">Complete today's tasks to unlock</p>
+        </div>
+        <span class="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-full flex-shrink-0">${total} total</span>
+      </div>`;
+  }
+  return `
+    <div class="mt-4 border border-green-200 rounded-2xl overflow-hidden shadow-sm">
+      <button onclick="toggleAllTasksSection('${sectionId}')"
+        class="w-full flex items-center justify-between px-4 py-3 bg-green-50 hover:bg-green-100 transition-colors text-left">
+        <div class="flex items-center gap-2.5">
+          <span class="text-lg leading-none">✅</span>
+          <div>
+            <p class="font-semibold text-sm text-green-800">All Tasks</p>
+            <p class="text-xs text-green-600">${total} total lead${total !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        <svg id="all-tasks-chev-${sectionId}" class="w-4 h-4 text-green-600 transition-transform duration-200 flex-shrink-0"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      <div id="all-tasks-body-${sectionId}" class="hidden border-t border-green-200 p-3">
+        ${total === 0
+          ? `<p class="text-xs text-text-muted italic text-center py-4">No leads in this category.</p>`
+          : `<div class="space-y-2">${renderStudentList(allStudents)}</div>`}
+      </div>
+    </div>`;
+}
+
 function openBoostFunnelDrawer() {
   state.drawerMode     = 'boostFunnel';
   state.drawerPrevMode = null;
@@ -1447,17 +1505,24 @@ function openBoostFunnelDrawer() {
   const onHoldDrafts     = all.filter(s => s.stage === 'application' && ['Not Reachable','Callback Requested'].includes(s.lastCallOutcome));
   const f2fNotLocked     = all.filter(s => s.stage !== 'lockin' && ['Connected','Promise to Pay'].includes(s.lastCallOutcome));
 
+  /* All students (for the "All Tasks" section) */
+  const allFunnelStudents = [...new Map([...lockinStiNotDone,...onHoldDrafts,...f2fNotLocked].map(s => [s.id,s])).values()];
+
   let content;
   if (!acked) {
-    // Today-only view
-    const todayLockin = lockinStiNotDone.filter(s => s.followup === todayStr);
-    const todayDrafts = onHoldDrafts.filter(s => s.followup === todayStr);
-    const todayF2f    = f2fNotLocked.filter(s => s.followup === todayStr);
+    // Today-only view — only students who still have pending subtasks
+    const todayLockin = lockinStiNotDone.filter(s => isPendingToday(s, todayStr));
+    const todayDrafts = onHoldDrafts.filter(s => isPendingToday(s, todayStr));
+    const todayF2f    = f2fNotLocked.filter(s => isPendingToday(s, todayStr));
     const totalToday  = new Set([...todayLockin, ...todayDrafts, ...todayF2f].map(s => s.id)).size;
 
-    // Check if all today's tasks done (all subtasks done for every today student)
-    const allToday = [...new Map([...todayLockin,...todayDrafts,...todayF2f].map(s => [s.id,s])).values()];
-    const allDone  = allToday.length > 0 && allToday.every(s => s.subtasks.every(t => t.done));
+    // allDone: were there students due today, and are all their subtasks now complete?
+    const todayDueAll = [...new Map([
+      ...lockinStiNotDone.filter(s => s.followup === todayStr),
+      ...onHoldDrafts.filter(s => s.followup === todayStr),
+      ...f2fNotLocked.filter(s => s.followup === todayStr),
+    ].map(s => [s.id,s])).values()];
+    const allDone = todayDueAll.length > 0 && todayDueAll.every(s => s.subtasks.every(t => t.done));
 
     content = `
       <div class="space-y-3">
@@ -1467,6 +1532,7 @@ function openBoostFunnelDrawer() {
         ${_boostMetricCard('on-hold-drafts',      'On Hold Application Drafts',    todayDrafts, todayStr, null, true)}
         ${_boostMetricCard('f2f-not-locked',      'F2F Done but Not Locked In',    todayF2f,    todayStr, null, true)}
         ${allDone ? _renderBoostAckPrompt('funnel') : ''}
+        ${_renderAllTasksSection(false, allFunnelStudents, 'funnel')}
       </div>`;
   } else {
     // Full view after acknowledgement
@@ -1477,6 +1543,7 @@ function openBoostFunnelDrawer() {
         ${_boostMetricCard('lockin-sti-not-done', 'Lock-in Done and STI Not Done', lockinStiNotDone, todayStr)}
         ${_boostMetricCard('on-hold-drafts',      'On Hold Application Drafts',    onHoldDrafts,      todayStr)}
         ${_boostMetricCard('f2f-not-locked',      'F2F Done but Not Locked In',    f2fNotLocked,      todayStr)}
+        ${_renderAllTasksSection(true, allFunnelStudents, 'funnel')}
       </div>`;
   }
 
@@ -1534,12 +1601,12 @@ function openBoostSubCard(type) {
   state.drawerBoostSubType  = (cfg.prevMode === 'boostSubCard') ? 'f2f-not-locked' : null;
 
   let students = all.filter(cfg.filter);
-  if (!acked) students = students.filter(s => s.followup === todayStr);
+  if (!acked) students = students.filter(s => isPendingToday(s, todayStr));
 
   /* nested card shown inside F2F drawer — no student list when a nested card exists */
   if (cfg.nested) {
     let nestedStudents = all.filter(cfg.nested.filter);
-    if (!acked) nestedStudents = nestedStudents.filter(s => s.followup === todayStr);
+    if (!acked) nestedStudents = nestedStudents.filter(s => isPendingToday(s, todayStr));
     const nestedHTML = `
       <div class="space-y-3">
         ${!acked ? _renderBoostTodayHeader(nestedStudents.length) : _renderBoostAckHeader()}
@@ -1993,15 +2060,23 @@ function openBoostRevenueDrawer() {
   const primeEnrol   = all.filter(s => s.islRating >= 8 || s.hasFinalisedUniversity || s.hasDocs);
   const specServices = all.filter(s => s.specialServices && s.specialServices.length > 0);
 
+  /* All revenue students (for the "All Tasks" section) */
+  const allRevStudents = [...new Map([...nonPartner,...primeEnrol,...specServices].map(s => [s.id,s])).values()];
+
   let content;
   if (!acked) {
-    const todayNP  = nonPartner.filter(s => s.followup === todayStr);
-    const todayPE  = primeEnrol.filter(s => s.followup === todayStr);
-    const todaySS  = specServices.filter(s => s.followup === todayStr);
+    const todayNP  = nonPartner.filter(s => isPendingToday(s, todayStr));
+    const todayPE  = primeEnrol.filter(s => isPendingToday(s, todayStr));
+    const todaySS  = specServices.filter(s => isPendingToday(s, todayStr));
     const totalToday = new Set([...todayNP,...todayPE,...todaySS].map(s => s.id)).size;
 
-    const allToday = [...new Map([...todayNP,...todayPE,...todaySS].map(s => [s.id,s])).values()];
-    const allDone  = allToday.length > 0 && allToday.every(s => s.subtasks.every(t => t.done));
+    // allDone: any student due today has all subtasks done
+    const todayDueAll = [...new Map([
+      ...nonPartner.filter(s => s.followup === todayStr),
+      ...primeEnrol.filter(s => s.followup === todayStr),
+      ...specServices.filter(s => s.followup === todayStr),
+    ].map(s => [s.id,s])).values()];
+    const allDone = todayDueAll.length > 0 && todayDueAll.every(s => s.subtasks.every(t => t.done));
 
     content = `
       <div class="space-y-3">
@@ -2011,6 +2086,7 @@ function openBoostRevenueDrawer() {
         ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',     todayPE, todayStr, "openRevenueSubCard('prime-enrolments')",    true)}
         ${_boostMetricCard('specialised-services','Specialised Services',  todaySS, todayStr, "openRevenueSubCard('specialised-services')", true)}
         ${allDone ? _renderBoostAckPrompt('revenue') : ''}
+        ${_renderAllTasksSection(false, allRevStudents, 'revenue')}
       </div>`;
   } else {
     content = `
@@ -2020,6 +2096,7 @@ function openBoostRevenueDrawer() {
         ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue', nonPartner, todayStr, "openRevenueSubCard('non-partner-revenue')")}
         ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',   primeEnrol,  todayStr, "openRevenueSubCard('prime-enrolments')")}
         ${_boostMetricCard('specialised-services','Specialised Services',specServices,todayStr, "openRevenueSubCard('specialised-services')")}
+        ${_renderAllTasksSection(true, allRevStudents, 'revenue')}
       </div>`;
   }
 
@@ -2063,7 +2140,7 @@ function openRevenueSubCard(type) {
 
   const acked    = _boostIsAcknowledged('revenue');
   let students   = all.filter(cfg.filter);
-  if (!acked) students = students.filter(s => s.followup === todayStr);
+  if (!acked) students = students.filter(s => isPendingToday(s, todayStr));
 
   const headerHtml = !acked ? `<div class="mb-3">${_renderBoostTodayHeader(students.length)}</div>` : `<div class="mb-3">${_renderBoostAckHeader()}</div>`;
 
@@ -3038,30 +3115,28 @@ function openBoostDrawer(type) {
 
   let content;
   if (!acked) {
-    const todayStudents = all.filter(s => s.followup === todayStr);
-    const allDone = todayStudents.length > 0 && todayStudents.every(s => s.subtasks.every(t => t.done));
-    const title = `${labels[type] || type} — Today (${todayStudents.length})`;
+    // Students with followup today AND still pending (at least one subtask not done)
+    const pendingToday  = all.filter(s => isPendingToday(s, todayStr));
+    // Students due today (regardless of subtask completion) — to detect allDone state
+    const dueToday      = all.filter(s => s.followup === todayStr);
+    const allDone       = dueToday.length > 0 && dueToday.every(s => s.subtasks.every(t => t.done));
+    const title = `${labels[type] || type} — Today (${pendingToday.length})`;
 
-    if (allDone) {
-      content = `
-        ${_renderBoostTodayHeader(todayStudents.length)}
-        ${_renderBoostAckPrompt(type)}`;
-    } else {
-      content = `
-        ${_renderBoostTodayHeader(todayStudents.length)}
-        ${todayStudents.length === 0 ? `
-          <div class="flex flex-col items-center justify-center py-10 text-center">
-            <div class="text-4xl mb-3">✅</div>
-            <p class="font-semibold text-text-main mb-1">No tasks due today!</p>
-            <p class="text-xs text-text-muted">All caught up — no students have a follow-up today.</p>
-          </div>` : `
-          <div class="mb-3">
-            <input type="text" placeholder="Search by name or ID…" oninput="filterStudentList(this.value, '${type}')"
-              class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-          </div>
-          <div id="studentListInner" class="space-y-3">${renderStudentList(todayStudents)}</div>`}
-      `;
-    }
+    content = `
+      ${_renderBoostTodayHeader(pendingToday.length)}
+      ${allDone ? _renderBoostAckPrompt(type) : pendingToday.length === 0 ? `
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <div class="text-4xl mb-3">✅</div>
+          <p class="font-semibold text-text-main mb-1">No tasks due today!</p>
+          <p class="text-xs text-text-muted">All caught up — no students have a follow-up today.</p>
+        </div>` : `
+        <div class="mb-3">
+          <input type="text" placeholder="Search by name or ID…" oninput="filterStudentList(this.value, '${type}')"
+            class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+        </div>
+        <div id="studentListInner" class="space-y-3">${renderStudentList(pendingToday)}</div>`}
+      ${_renderAllTasksSection(false, all, type)}
+    `;
     openDrawer(title, content, false);
   } else {
     const title = `${labels[type] || type} — All Tasks (${all.length})`;
@@ -3072,6 +3147,7 @@ function openBoostDrawer(type) {
           class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
       </div>
       <div id="studentListInner" class="space-y-3">${renderStudentList(all)}</div>
+      ${_renderAllTasksSection(true, all, type)}
     `;
     openDrawer(title, content, false);
   }
@@ -3081,7 +3157,7 @@ function filterStudentList(q, type) {
   const todayStr = new Date().toISOString().split('T')[0];
   const acked    = _boostIsAcknowledged(type);
   let students   = getViewingStudents().filter(s => s.stage === type);
-  if (!acked) students = students.filter(s => s.followup === todayStr);
+  if (!acked) students = students.filter(s => isPendingToday(s, todayStr));
   students = students.filter(s =>
     s.name.toLowerCase().includes(q.toLowerCase()) || s.id.toLowerCase().includes(q.toLowerCase())
   );
