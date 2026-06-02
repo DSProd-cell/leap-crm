@@ -5056,13 +5056,11 @@ function renderReportCard() {
 
 const STANDUP_METRICS = [
   { name:'Total Leads',               key:'leads'             },
-  { name:'Total ISL',                 key:'isl_count'         },
+  { name:'ISL in 24 hrs',            key:'isl_24h',  tooltip:'Leads assigned → ISL done within 24 hrs' },
   { name:'ISL Pending',               key:'isl_pending'       },
   { name:'Total Lock In',             key:'lockins'           },
   { name:'Total F2F',                 key:'f2f'               },
   { name:'Total Walk In',             key:'walkin'            },
-  { name:'Total Q&A Shared',          key:'qa_shared'         },
-  { name:'Total College Finalisation',key:'college_fin'       },
   { name:'Total STI',                 key:'stis'              },
   { name:'Total Deposits',            key:'deposits'          },
   { name:'Total Visas',               key:'visas'             },
@@ -5072,11 +5070,13 @@ const STANDUP_METRICS = [
 function generateStandupData(filters) {
   const c = getCounselorData();
   // Base daily actuals — use real data where available, mock the rest
+  const leadsBase = 30;
+  // ISL in 24 hrs = ~72% of leads assigned get an ISL call within 24 hours
+  const isl24hBase = Math.round(leadsBase * 0.72);
   const base = {
-    leads: 30, isl_count: Math.round(c.isl * 5), isl_pending: 8,
+    leads: leadsBase, isl_24h: isl24hBase, isl_pending: Math.round(leadsBase * 0.28),
     lockins: c.lockins, f2f: c.f2f, walkin: 2,
-    qa_shared: 12, college_fin: 3, stis: c.stis,
-    deposits: c.deposits, visas: 1,
+    stis: c.stis, deposits: c.deposits, visas: 1,
     revenue_collected: c.revenueCollected,
   };
   // Apply lightweight filter noise for realism
@@ -5147,9 +5147,14 @@ function renderStandupTable(filterData) {
   const sdCell = (val, metricName, metricKey, extraCls='text-text-muted', isCurrency=false) =>
     `<span class="standup-link cursor-pointer hover:text-accent hover:underline ${extraCls}" onclick="openStandupDrillDown('${metricName.replace(/'/g,"\\'")}','${metricKey}')">${isCurrency ? fmt(val) : val}</span>`;
 
-  tbody.innerHTML = data.map((row, i) => `
+  tbody.innerHTML = data.map((row, i) => {
+    const tooltipAttr = row.tooltip ? ` title="${row.tooltip}"` : '';
+    const nameHtml = row.tooltip
+      ? `${i+1}. ${row.name} <span class="text-[9px] text-primary font-semibold ml-1 bg-primary/10 px-1.5 py-0.5 rounded-full">% of Leads</span>`
+      : `${i+1}. ${row.name}`;
+    return `
     <tr class="hover:bg-surface/50 transition-colors">
-      <td class="px-3 py-2 font-medium text-text-main sticky left-0 bg-white whitespace-nowrap cursor-pointer hover:text-accent" onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">${i+1}. ${row.name}</td>
+      <td class="px-3 py-2 font-medium text-text-main sticky left-0 bg-white whitespace-nowrap cursor-pointer hover:text-accent"${tooltipAttr} onclick="openStandupDrillDown('${row.name.replace(/'/g,"\\'")}','${row.key}')">${nameHtml}</td>
       <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tYTD, row)}</td>
       <td class="px-2 py-2 text-right font-mono text-text-muted">${fmtCell(row.tMTD, row)}</td>
       <td class="px-2 py-2 text-right font-mono font-semibold">${sdCell(row.aYTD, row.name, row.key, row.ytdCls, row.isCurrency)}</td>
@@ -5161,7 +5166,30 @@ function renderStandupTable(filterData) {
       <td class="px-2 py-2 text-right font-mono">${sdCell(row.W01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
       <td class="px-2 py-2 text-right font-mono">${sdCell(row.M01, row.name, row.key, 'text-text-muted', row.isCurrency)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+}
+
+function toggleStandupAdvancedFilter() {
+  const panel = document.getElementById('standupAdvancedFilter');
+  const btn   = document.getElementById('advFilterBtn');
+  if (!panel) return;
+  const isOpen = !panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', isOpen);
+  // Make sure the table section is open so filter makes sense
+  if (!isOpen) {
+    const body = document.getElementById('body-standup');
+    const chev = document.getElementById('chevron-standup');
+    if (body && body.classList.contains('hidden')) {
+      body.classList.remove('hidden');
+      if (chev) chev.style.transform = 'rotate(180deg)';
+    }
+  }
+  if (btn) {
+    btn.classList.toggle('bg-primary/10', !isOpen);
+    btn.classList.toggle('text-primary',  !isOpen);
+    btn.classList.toggle('border-primary/30', !isOpen);
+  }
 }
 
 function applyStandupFilters() {
