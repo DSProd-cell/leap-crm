@@ -1135,9 +1135,8 @@ function renderBoostCards() {
   const students = getViewingStudents();
   const stiCount      = students.filter(s => s.stage === 'sti').length;
   const depCount      = students.filter(s => s.stage === 'deposit').length;
-  const revCount      = students.filter(s => s.isQlPremium || (s.specialServices && s.specialServices.length > 0)).length;
-  const ownCount      = state.ownTasks.filter(t => !t.done).length;
-  const deferralCount = getDeferralOpportunityStudents().length;
+  const revCount = students.filter(s => s.isQlPremium || (s.specialServices && s.specialServices.length > 0)).length;
+  const ownCount = state.ownTasks.filter(t => !t.done).length;
   const grid = document.getElementById('boostCardsGrid');
 
   const refCount = [...new Map(
@@ -1152,28 +1151,12 @@ function renderBoostCards() {
       <div class="boost-sub">${stiCount === 1 ? '1 student needs attention' : stiCount + ' students need attention'}</div>
       <span class="boost-cta">View Pipeline →</span>
     </div>
-
-    <!-- Boost Deposit + Deferrals Opportunity stacked in one column -->
-    <div class="flex flex-col gap-3">
-      <div class="boost-card deposit" onclick="openBoostDrawer('deposit')">
-        <div class="boost-label">Boost Deposit</div>
-        <div class="boost-count">${depCount}</div>
-        <div class="boost-sub">${depCount === 1 ? '1 student needs attention' : depCount + ' students need attention'}</div>
-        <span class="boost-cta">View Students →</span>
-      </div>
-      <div class="rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow"
-        style="background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);border-color:#c4b5fd;"
-        onclick="openVolumeMetricDrawer('deferrals')">
-        <p class="text-xs font-semibold uppercase tracking-wide mb-1 text-violet-600">Deferrals Opportunity</p>
-        <p class="font-mono text-2xl font-bold text-violet-700 leading-none">${deferralCount}</p>
-        <p class="text-xs mt-1 text-violet-500">Admit received / Deposit paid</p>
-        <div class="mt-2 flex items-center gap-1 text-xs font-semibold text-violet-600">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-          View list →
-        </div>
-      </div>
+    <div class="boost-card deposit" onclick="openBoostDrawer('deposit')">
+      <div class="boost-label">Boost Deposit</div>
+      <div class="boost-count">${depCount}</div>
+      <div class="boost-sub">${depCount === 1 ? '1 student needs attention' : depCount + ' students need attention'}</div>
+      <span class="boost-cta">View Students →</span>
     </div>
-
     <div class="boost-card sti" onclick="openBoostRevenueDrawer()">
       <div class="boost-label">Boost Revenue</div>
       <div class="boost-count">${revCount}</div>
@@ -1814,8 +1797,6 @@ function renderMetricCards() {
   const bestQ1       = getBestPerformer('q1score');
 
   const volumeMetrics = [
-    { label:'Unhappy Cohort',            value:unhappyCount,      target:allStudents.length, extra:'ISL < 8 / 10 or Escalation', unit:'', key:'unhappy', isNegative:true },
-    { label:'Deferrals Opportunity',     value:deferralCount,     target:0,                  extra:'Admit received / Deposit paid', unit:'', key:'deferrals', isOpportunity:true },
     { label:'Own Tasks',                 value:ownCount,          target:TARGETS.tasks,      extra:`${ownCount === 1 ? '1 pending reminder' : ownCount + ' pending reminders'}`, unit:'', key:'ownTasks' },
   ];
 
@@ -1842,7 +1823,7 @@ function renderMetricGrid(elId, metrics) {
           style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
           onclick="openWAGroupDetailsDrawer()">
           <div class="metric-deco"></div>
-          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">📡 User Communication Summary <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
+          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">⭐ User Experience <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
           <div class="grid grid-cols-2 gap-1.5 mt-1">
             <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
               <p class="font-bold text-sm text-emerald-700">${ws.active}</p>
@@ -3134,11 +3115,20 @@ function openBoostDrawer(type) {
   const labels   = { sti:'Boost STI', application:'Boost Application', deposit:'Boost Deposit', lockin:'Boost Lock-in' };
   const acked    = _boostIsAcknowledged(type);
 
+  /* ── Deferrals sub-card shown only inside Boost Deposit ── */
+  const deferralSubCard = type === 'deposit' ? (() => {
+    const defCount = getDeferralOpportunityStudents().length;
+    return `
+      <div class="mt-4">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted mb-2">Related Opportunity</p>
+        ${_boostMetricCard('deferrals-opp', 'Deferrals Opportunity', getDeferralOpportunityStudents(), todayStr,
+          "openVolumeMetricDrawer('deferrals')")}
+      </div>`;
+  })() : '';
+
   let content;
   if (!acked) {
-    // Students with followup today AND still pending (at least one subtask not done)
     const pendingToday  = all.filter(s => isPendingToday(s, todayStr));
-    // Students due today (regardless of subtask completion) — to detect allDone state
     const dueToday      = all.filter(s => s.followup === todayStr);
     const allDone       = dueToday.length > 0 && dueToday.every(s => s.subtasks.every(t => t.done));
     const title = `${labels[type] || type} — Today (${pendingToday.length})`;
@@ -3157,6 +3147,7 @@ function openBoostDrawer(type) {
         </div>
         <div id="studentListInner" class="space-y-3">${renderStudentList(pendingToday)}</div>`}
       ${_renderAllTasksSection(false, all, type)}
+      ${deferralSubCard}
     `;
     openDrawer(title, content, false);
   } else {
@@ -3169,6 +3160,7 @@ function openBoostDrawer(type) {
       </div>
       <div id="studentListInner" class="space-y-3">${renderStudentList(all)}</div>
       ${_renderAllTasksSection(true, all, type)}
+      ${deferralSubCard}
     `;
     openDrawer(title, content, false);
   }
@@ -6260,14 +6252,34 @@ function openWAGroupDetailsDrawer() {
     ${accordion('escalations', '🚨', 'Escalation Through Support Ticket', escalationStudents.length, 'text-purple-700', 'bg-purple-50', 'border-purple-200',
       escalationStudents.map(s => voiceRow(s, { label: 'Escalation Raised', cls: 'bg-purple-100 text-purple-700' })).join(''))}`;
 
+  /* ── Unhappy Cohort sub-card ── */
+  const unhappyStudents = students.filter(s => s.islRating < 8 || s.hasEscalation);
+  const unhappyInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Students with low ISL rating or open escalations.</p>
+    ${unhappyStudents.length === 0
+      ? `<p class="text-xs text-text-muted italic text-center py-4">No unhappy cases right now 🎉</p>`
+      : unhappyStudents.map(s => `
+          <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+            <div>
+              <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
+              <p class="text-[10px] text-text-muted">${s.id} · ${s.course}</p>
+              <div class="flex gap-1.5 mt-0.5">
+                ${s.islRating < 8 ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">ISL ${s.islRating}/10</span>` : ''}
+                ${s.hasEscalation ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Escalation</span>` : ''}
+              </div>
+            </div>
+            <button onclick="openStudentDetail('${s.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
+          </div>`).join('')}`;
+
   const content = `
-    <p class="text-xs text-text-muted mb-4">Overview of voice & non-voice communication activity across your students.</p>
-    ${channelCard('non-voice', '💬', 'Non Voice Channel Summary', 'WA Group', 'border-emerald-200', 'bg-emerald-50', 'text-emerald-800', nonVoiceInner)}
-    ${channelCard('voice',     '📞', 'Voice Channel Summary',     'Jerry Call', 'border-blue-200',  'bg-blue-50',    'text-blue-800',    voiceInner)}
+    <p class="text-xs text-text-muted mb-4">Overview of user experience, voice & non-voice communication across your students.</p>
+    ${channelCard('unhappy',   '😟', 'Unhappy Cohort',            `ISL < 8 or Escalation · ${unhappyStudents.length} students`, 'border-red-200',     'bg-red-50',     'text-red-800',     unhappyInner)}
+    ${channelCard('non-voice', '💬', 'Non Voice Channel Summary', 'WA Group',                                                    'border-emerald-200', 'bg-emerald-50', 'text-emerald-800', nonVoiceInner)}
+    ${channelCard('voice',     '📞', 'Voice Channel Summary',     'Jerry Call',                                                  'border-blue-200',    'bg-blue-50',    'text-blue-800',    voiceInner)}
   `;
 
   state.drawerMode = 'waGroup';
-  openDrawer('User Communication Summary', content, false);
+  openDrawer('User Experience', content, false);
 }
 
 function toggleWACard(id) {
