@@ -1133,10 +1133,11 @@ function getMyBadges() {
 
 function renderBoostCards() {
   const students = getViewingStudents();
-  const stiCount = students.filter(s => s.stage === 'sti').length;
-  const depCount = students.filter(s => s.stage === 'deposit').length;
-  const revCount = students.filter(s => s.isQlPremium || (s.specialServices && s.specialServices.length > 0)).length;
-  const ownCount = state.ownTasks.filter(t => !t.done).length;
+  const stiCount      = students.filter(s => s.stage === 'sti').length;
+  const depCount      = students.filter(s => s.stage === 'deposit').length;
+  const revCount      = students.filter(s => s.isQlPremium || (s.specialServices && s.specialServices.length > 0)).length;
+  const ownCount      = state.ownTasks.filter(t => !t.done).length;
+  const deferralCount = getDeferralOpportunityStudents().length;
   const grid = document.getElementById('boostCardsGrid');
 
   const refCount = [...new Map(
@@ -1151,12 +1152,28 @@ function renderBoostCards() {
       <div class="boost-sub">${stiCount === 1 ? '1 student needs attention' : stiCount + ' students need attention'}</div>
       <span class="boost-cta">View Pipeline →</span>
     </div>
-    <div class="boost-card deposit" onclick="openBoostDrawer('deposit')">
-      <div class="boost-label">Boost Deposit</div>
-      <div class="boost-count">${depCount}</div>
-      <div class="boost-sub">${depCount === 1 ? '1 student needs attention' : depCount + ' students need attention'}</div>
-      <span class="boost-cta">View Students →</span>
+
+    <!-- Boost Deposit + Deferrals Opportunity stacked in one column -->
+    <div class="flex flex-col gap-3">
+      <div class="boost-card deposit" onclick="openBoostDrawer('deposit')">
+        <div class="boost-label">Boost Deposit</div>
+        <div class="boost-count">${depCount}</div>
+        <div class="boost-sub">${depCount === 1 ? '1 student needs attention' : depCount + ' students need attention'}</div>
+        <span class="boost-cta">View Students →</span>
+      </div>
+      <div class="rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow"
+        style="background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%);border-color:#c4b5fd;"
+        onclick="openVolumeMetricDrawer('deferrals')">
+        <p class="text-xs font-semibold uppercase tracking-wide mb-1 text-violet-600">Deferrals Opportunity</p>
+        <p class="font-mono text-2xl font-bold text-violet-700 leading-none">${deferralCount}</p>
+        <p class="text-xs mt-1 text-violet-500">Admit received / Deposit paid</p>
+        <div class="mt-2 flex items-center gap-1 text-xs font-semibold text-violet-600">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          View list →
+        </div>
+      </div>
     </div>
+
     <div class="boost-card sti" onclick="openBoostRevenueDrawer()">
       <div class="boost-label">Boost Revenue</div>
       <div class="boost-count">${revCount}</div>
