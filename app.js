@@ -169,14 +169,14 @@ const STUDENTS = [
 
 /* Revenue & services data per student */
 const STUDENT_REVENUE_DATA = {
-  U1001: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: true,  specialServices: [],            hasPaidPremium: false, amountPaid: 0       },
-  U1002: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP'],        hasPaidPremium: false, amountPaid: 0       },
-  U1003: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 85000   },
-  U1004: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['Visa'],       hasPaidPremium: false, amountPaid: 0       },
-  U1005: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 120000  },
-  U1006: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP','Visa'], hasPaidPremium: false, amountPaid: 0       },
-  U1007: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: false, amountPaid: 0       },
-  U1008: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: true,  amountPaid: 60000   },
+  U1001: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: true,  specialServices: [],            hasPaidPremium: false, amountPaid: 0,      servicingType: 'partner',     nonPartnerSubType: null                    },
+  U1002: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP'],        hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'specialised-services'  },
+  U1003: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 85000,  servicingType: 'partner',     nonPartnerSubType: null                    },
+  U1004: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['Visa'],       hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'specialised-services'  },
+  U1005: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 120000, servicingType: 'partner',     nonPartnerSubType: null                    },
+  U1006: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP','Visa'], hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'premium-universities'  },
+  U1007: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: false, amountPaid: 0,      servicingType: null,          nonPartnerSubType: null                    },
+  U1008: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: true,  amountPaid: 60000,  servicingType: 'partner',     nonPartnerSubType: null                    },
 };
 STUDENTS.forEach(s => Object.assign(s, STUDENT_REVENUE_DATA[s.id] || { isQlPremium:false, hasFinalisedUniversity:false, hasDocs:false, specialServices:[], hasPaidPremium:false }));
 
@@ -1135,7 +1135,7 @@ function renderBoostCards() {
   const students = getViewingStudents();
   const stiCount      = students.filter(s => s.stage === 'sti').length;
   const depCount      = students.filter(s => s.stage === 'deposit').length;
-  const revCount = students.filter(s => s.isQlPremium || (s.specialServices && s.specialServices.length > 0)).length;
+  const revCount = students.filter(s => s.servicingType === 'partner' || s.servicingType === 'non-partner').length;
   const ownCount = state.ownTasks.filter(t => !t.done).length;
   const grid = document.getElementById('boostCardsGrid');
 
@@ -1441,6 +1441,25 @@ function _renderBoostAckPrompt(drawerType) {
         ✓ Mark Acknowledged &amp; View All Tasks
       </button>
     </div>`;
+}
+
+/* ── Servicing Type helpers ── */
+function updateServicingType(studentId) {
+  const s = STUDENTS.find(x => x.id === studentId);
+  if (!s) return;
+  const val = document.getElementById(`st-type-${studentId}`)?.value || null;
+  s.servicingType = val;
+  if (val !== 'non-partner') s.nonPartnerSubType = null;
+  const subDiv = document.getElementById(`st-sub-${studentId}`);
+  if (subDiv) subDiv.classList.toggle('hidden', val !== 'non-partner');
+  renderBoostCards();
+}
+
+function updateServicingSubType(studentId) {
+  const s = STUDENTS.find(x => x.id === studentId);
+  if (!s) return;
+  s.nonPartnerSubType = document.getElementById(`st-subtype-${studentId}`)?.value || null;
+  renderBoostCards();
 }
 
 /* Returns true when a student has a follow-up today AND still has pending subtasks */
@@ -2058,9 +2077,9 @@ function openBoostRevenueDrawer() {
   const todayStr = new Date().toISOString().split('T')[0];
   const acked    = _boostIsAcknowledged('revenue');
 
-  const nonPartner   = all.filter(s => s.isQlPremium);
-  const primeEnrol   = all.filter(s => s.islRating >= 8 || s.hasFinalisedUniversity || s.hasDocs);
-  const specServices = all.filter(s => s.specialServices && s.specialServices.length > 0);
+  const nonPartner   = all.filter(s => s.servicingType === 'non-partner');
+  const primeEnrol   = all.filter(s => s.servicingType === 'partner');
+  const specServices = all.filter(s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services');
 
   /* All revenue students (for the "All Tasks" section) */
   const allRevStudents = [...new Map([...nonPartner,...primeEnrol,...specServices].map(s => [s.id,s])).values()];
@@ -2112,24 +2131,18 @@ function openRevenueSubCard(type) {
   const configs = {
     'non-partner-revenue': {
       title:   'Non Partner Revenue',
-      filter:  s => s.isQlPremium,
-      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">QL Premium</span>`,
+      filter:  s => s.servicingType === 'non-partner',
+      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Non Partner</span>${s.nonPartnerSubType === 'specialised-services' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">Specialised</span>` : s.nonPartnerSubType === 'premium-universities' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 ml-1">Premium Uni</span>` : ''}`,
     },
     'prime-enrolments': {
       title:   'Prime Enrolments',
-      filter:  s => s.islRating >= 8 || s.hasFinalisedUniversity || s.hasDocs,
-      badge:   s => [
-        s.islRating >= 8        ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">ISL ${s.islRating}/10</span>` : '',
-        s.hasFinalisedUniversity ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Uni Finalised</span>` : '',
-        s.hasDocs                ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Docs Submitted</span>` : '',
-      ].filter(Boolean).join(' '),
+      filter:  s => s.servicingType === 'partner',
+      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Partner Servicing</span>`,
     },
     'specialised-services': {
       title:   'Specialised Services',
-      filter:  s => s.specialServices && s.specialServices.length > 0,
-      badge:   s => s.specialServices.map(sv =>
-        `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">${sv}</span>`
-      ).join(' '),
+      filter:  s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services',
+      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Specialised Services</span>`,
     },
   };
 
@@ -3204,7 +3217,7 @@ function openStudentDetail(studentId) {
   // Only update prevMode when navigating INTO student detail for the first time.
   // Do NOT overwrite it when re-rendering from saveSubtask / toggleSubtask (already 'student').
   if (state.drawerMode !== 'student') {
-    state.drawerPrevMode = state.drawerMode || 'boost';
+    state.drawerPrevMode = state.drawerMode || null;
   }
   state.drawerMode = 'student';
   state.drawerOfferId = state.drawerOfferId || null;
@@ -3254,14 +3267,15 @@ function openStudentDetail(studentId) {
       </div>
     </div>
     <div id="stform-${s.id}-${idx}" class="subtask-form hidden">
-      <textarea placeholder="Notes…" rows="2" class="w-full text-xs px-2 py-1.5 border border-border rounded-lg mb-2 resize-none focus:outline-none"></textarea>
-      <div class="flex gap-2">
-        <select class="flex-1 text-xs px-2 py-1.5 border border-border rounded-lg bg-white focus:outline-none">
+      <textarea id="stnotes-${s.id}-${idx}" placeholder="Notes… (required)" rows="2" class="w-full text-xs px-2 py-1.5 border border-border rounded-lg mb-2 resize-none focus:outline-none"></textarea>
+      <div class="flex gap-2 mb-2">
+        <select id="stoutcome-${s.id}-${idx}" class="flex-1 text-xs px-2 py-1.5 border border-border rounded-lg bg-white focus:outline-none">
           <option>Connected</option><option>Not Reachable</option><option>Callback Requested</option><option>Promise to Pay</option><option>Closed</option>
         </select>
-        <input type="date" class="text-xs px-2 py-1.5 border border-border rounded-lg focus:outline-none" />
+        <input id="stdate-${s.id}-${idx}" type="date" placeholder="Follow-up date (required)" class="text-xs px-2 py-1.5 border border-border rounded-lg focus:outline-none" />
       </div>
-      <button onclick="saveSubtask('${s.id}',${idx})" class="mt-2 px-3 py-1 bg-accent text-white text-xs font-semibold rounded-lg cursor-pointer">Save</button>
+      <p class="text-[10px] text-red-500 mb-1">* Notes and Follow-up Date are required</p>
+      <button onclick="saveSubtask('${s.id}',${idx})" class="mt-1 px-3 py-1 bg-accent text-white text-xs font-semibold rounded-lg cursor-pointer">Save</button>
     </div>
   `).join('');
 
@@ -3290,6 +3304,31 @@ function openStudentDetail(studentId) {
     <div class="mb-4">
       <p class="text-xs text-text-muted mb-1 font-semibold uppercase tracking-wide">WhatsApp Groups</p>
       <div class="bg-surface rounded-lg p-2">${waRows}</div>
+    </div>
+
+    <!-- Servicing Type -->
+    <div class="mb-4">
+      <p class="text-xs text-text-muted mb-2 font-semibold uppercase tracking-wide">Servicing Type</p>
+      <div class="bg-surface rounded-xl p-3 space-y-2">
+        <div>
+          <label class="text-[11px] text-text-muted font-medium">Type <span class="text-red-500">*</span></label>
+          <select id="st-type-${s.id}" onchange="updateServicingType('${s.id}')"
+            class="w-full mt-1 text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="">-- Select Servicing Type --</option>
+            <option value="partner"     ${s.servicingType === 'partner'     ? 'selected' : ''}>Partner Servicing</option>
+            <option value="non-partner" ${s.servicingType === 'non-partner' ? 'selected' : ''}>Non Partner Servicing</option>
+          </select>
+        </div>
+        <div id="st-sub-${s.id}" class="${s.servicingType === 'non-partner' ? '' : 'hidden'}">
+          <label class="text-[11px] text-text-muted font-medium">Sub Type <span class="text-red-500">*</span></label>
+          <select id="st-subtype-${s.id}" onchange="updateServicingSubType('${s.id}')"
+            class="w-full mt-1 text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="">-- Select Sub Type --</option>
+            <option value="premium-universities"  ${s.nonPartnerSubType === 'premium-universities'  ? 'selected' : ''}>Premium Universities</option>
+            <option value="specialised-services"  ${s.nonPartnerSubType === 'specialised-services'  ? 'selected' : ''}>Specialised Services</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- Subtask Checklist -->
@@ -3323,12 +3362,40 @@ function toggleSubtask(studentId, idx) {
 }
 
 function saveSubtask(studentId, idx) {
+  const notes   = document.getElementById(`stnotes-${studentId}-${idx}`)?.value.trim();
+  const date    = document.getElementById(`stdate-${studentId}-${idx}`)?.value;
+  const outcome = document.getElementById(`stoutcome-${studentId}-${idx}`)?.value || '';
+
+  // Validation — both notes and follow-up date are mandatory
+  if (!notes && !date) {
+    showToast('⚠️ Mark Follow Up Date and Fill the Notes', 'warning');
+    document.getElementById(`stnotes-${studentId}-${idx}`)?.classList.add('border-red-400');
+    document.getElementById(`stdate-${studentId}-${idx}`)?.classList.add('border-red-400');
+    return;
+  }
+  if (!notes) {
+    showToast('⚠️ Please fill in the Notes before saving.', 'warning');
+    document.getElementById(`stnotes-${studentId}-${idx}`)?.classList.add('border-red-400');
+    return;
+  }
+  if (!date) {
+    showToast('⚠️ Please mark a Follow Up Date before saving.', 'warning');
+    document.getElementById(`stdate-${studentId}-${idx}`)?.classList.add('border-red-400');
+    return;
+  }
+
   const s = STUDENTS.find(x => x.id === studentId);
   if (!s) return;
-  s.subtasks[idx].done = true;
-  s.subtasks[idx].timestamp = '23 May 4:00 PM';
-  s.subtasks[idx].notes = 'Task completed';
-  s.activity.unshift({ type:s.subtasks[idx].label, time:'23 May 4:00 PM', notes:'Task completed' });
+  const now = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
+  s.subtasks[idx].done      = true;
+  s.subtasks[idx].timestamp = now;
+  s.subtasks[idx].notes     = notes;
+  s.subtasks[idx].outcome   = outcome;
+  s.followup                = date;       // update lead follow-up date
+  s.lastCallOutcome         = outcome;
+  s.activity.unshift({ type: s.subtasks[idx].label, time: now, notes });
+
   showToast('Subtask saved!', 'success');
   openStudentDetail(studentId);
 }
@@ -5491,9 +5558,9 @@ function generateStandupData(filters) {
   const locMult     = filters.location   === 'online'  ? 0.7  : filters.location === 'branch' ? 0.85 : 1;
   const counselMult = filters.counsellor && filters.counsellor !== '' ? 0.5  : 1;
   const tlMult      = filters.tl         && filters.tl         !== '' ? 0.75 : 1;
-  // Servicing type filter — Master ≈ 40% of pipeline, UG ≈ 60%
-  const servMult    = filters.servicingType === 'master' ? 0.40
-                    : filters.servicingType === 'ug'     ? 0.60 : 1;
+  // Servicing type filter — Partner ≈ 55% of pipeline, Non-Partner ≈ 45%
+  const servMult    = filters.servicingType === 'partner'     ? 0.55
+                    : filters.servicingType === 'non-partner' ? 0.45 : 1;
   // CA date filter — count students within range and scale
   let caDateMult = 1;
   if (filters.caDateFrom || filters.caDateTo) {
@@ -5870,7 +5937,7 @@ function openStudentDetail(studentId) {
   // Only update prevMode when navigating INTO student detail for the first time.
   // Do NOT overwrite it when re-rendering from saveSubtask / toggleSubtask (already 'student').
   if (state.drawerMode !== 'student') {
-    state.drawerPrevMode = state.drawerMode || 'boost';
+    state.drawerPrevMode = state.drawerMode || null;
   }
   state.drawerMode = 'student';
   state.drawerOfferId = state.drawerOfferId || null;
@@ -5920,14 +5987,15 @@ function openStudentDetail(studentId) {
       </div>
     </div>
     <div id="stform-${s.id}-${idx}" class="subtask-form hidden">
-      <textarea placeholder="Notes…" rows="2" class="w-full text-xs px-2 py-1.5 border border-border rounded-lg mb-2 resize-none focus:outline-none"></textarea>
-      <div class="flex gap-2">
-        <select class="flex-1 text-xs px-2 py-1.5 border border-border rounded-lg bg-white focus:outline-none">
+      <textarea id="stnotes-${s.id}-${idx}" placeholder="Notes… (required)" rows="2" class="w-full text-xs px-2 py-1.5 border border-border rounded-lg mb-2 resize-none focus:outline-none"></textarea>
+      <div class="flex gap-2 mb-2">
+        <select id="stoutcome-${s.id}-${idx}" class="flex-1 text-xs px-2 py-1.5 border border-border rounded-lg bg-white focus:outline-none">
           <option>Connected</option><option>Not Reachable</option><option>Callback Requested</option><option>Promise to Pay</option><option>Closed</option>
         </select>
-        <input type="date" class="text-xs px-2 py-1.5 border border-border rounded-lg focus:outline-none" />
+        <input id="stdate-${s.id}-${idx}" type="date" placeholder="Follow-up date (required)" class="text-xs px-2 py-1.5 border border-border rounded-lg focus:outline-none" />
       </div>
-      <button onclick="saveSubtask('${s.id}',${idx})" class="mt-2 px-3 py-1 bg-accent text-white text-xs font-semibold rounded-lg cursor-pointer">Save</button>
+      <p class="text-[10px] text-red-500 mb-1">* Notes and Follow-up Date are required</p>
+      <button onclick="saveSubtask('${s.id}',${idx})" class="mt-1 px-3 py-1 bg-accent text-white text-xs font-semibold rounded-lg cursor-pointer">Save</button>
     </div>
   `).join('');
 
@@ -5988,6 +6056,31 @@ function openStudentDetail(studentId) {
       <div id="waHistory-${s.id}" class="hidden">${waHistoryHtml}</div>
     </div>
 
+    <!-- Servicing Type -->
+    <div class="mb-4">
+      <p class="text-xs text-text-muted mb-2 font-semibold uppercase tracking-wide">Servicing Type</p>
+      <div class="bg-surface rounded-xl p-3 space-y-2">
+        <div>
+          <label class="text-[11px] text-text-muted font-medium">Type <span class="text-red-500">*</span></label>
+          <select id="st-type-${s.id}" onchange="updateServicingType('${s.id}')"
+            class="w-full mt-1 text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="">-- Select Servicing Type --</option>
+            <option value="partner"     ${s.servicingType === 'partner'     ? 'selected' : ''}>Partner Servicing</option>
+            <option value="non-partner" ${s.servicingType === 'non-partner' ? 'selected' : ''}>Non Partner Servicing</option>
+          </select>
+        </div>
+        <div id="st-sub-${s.id}" class="${s.servicingType === 'non-partner' ? '' : 'hidden'}">
+          <label class="text-[11px] text-text-muted font-medium">Sub Type <span class="text-red-500">*</span></label>
+          <select id="st-subtype-${s.id}" onchange="updateServicingSubType('${s.id}')"
+            class="w-full mt-1 text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="">-- Select Sub Type --</option>
+            <option value="premium-universities"  ${s.nonPartnerSubType === 'premium-universities'  ? 'selected' : ''}>Premium Universities</option>
+            <option value="specialised-services"  ${s.nonPartnerSubType === 'specialised-services'  ? 'selected' : ''}>Specialised Services</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- Subtask Checklist -->
     <div class="mb-4">
       <p class="text-xs text-text-muted mb-2 font-semibold uppercase tracking-wide">Subtasks</p>
@@ -6026,18 +6119,26 @@ function closeStudentDetailPage() {
   } else if (prev === 'boostFunnel') {
     openBoostFunnelDrawer();
   } else if (prev === 'boost') {
-    openBoostDrawer(state.drawerBoostType);
+    // Guard: only reopen if drawerBoostType is valid (avoid "null — Today(0)")
+    if (state.drawerBoostType) {
+      openBoostDrawer(state.drawerBoostType);
+    }
   } else if (prev === 'volumeMetric') {
     openVolumeMetricDrawer(state.drawerVolumeMetricKey);
   } else if (prev === 'revenueSubCardView') {
     openRevenueSubCard(state.drawerRevenueSubCardId);
   } else if (prev === 'boostRevenue') {
     openBoostRevenueDrawer();
+  } else if (prev === 'boostReferrals') {
+    openBoostReferralsDrawer();
+  } else if (prev === 'waGroup') {
+    openWAGroupDetailsDrawer();
   } else if (prev === 'offer') {
     openOfferDrawer(state.drawerOfferId);
   } else if (prev === 'opportunity') {
     openOpportunityDrawer();
   }
+  // If prev is null/unknown (e.g. opened from main screen), just close the page — no drawer to restore
 }
 
 /* ═══════════════════════════════════════════════════════
