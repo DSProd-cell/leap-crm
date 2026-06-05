@@ -1808,8 +1808,8 @@ function renderMetricCards() {
     { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats },
   ];
 
-  renderMetricGrid('volumeMetrics', volumeMetrics);
-  renderMetricGrid('qualityMetrics', qualityMetrics);
+  // Render all 4 cards in one unified row
+  renderMetricGrid('volumeMetrics', [...volumeMetrics, ...qualityMetrics]);
 }
 
 function renderMetricGrid(elId, metrics) {
@@ -1819,7 +1819,7 @@ function renderMetricGrid(elId, metrics) {
     if (m.isWAGroups) {
       const ws = m.waStats;
       return `
-        <div class="metric-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow col-span-2 lg:col-span-1"
+        <div class="metric-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow"
           style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
           onclick="openWAGroupDetailsDrawer()">
           <div class="metric-deco"></div>
