@@ -1825,7 +1825,7 @@ function renderMetricGrid(elId, metrics) {
           style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
           onclick="openWAGroupDetailsDrawer()">
           <div class="metric-deco"></div>
-          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">💬 WA Group Details</p>
+          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">📡 User Communication Summary <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
           <div class="grid grid-cols-2 gap-1.5 mt-1">
             <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
               <p class="font-bold text-sm text-emerald-700">${ws.active}</p>
@@ -6124,13 +6124,18 @@ function openWAGroupDetailsDrawer() {
     });
   });
 
-  // Categories
-  const activeGroups     = pairs.filter(p => p.group.counselorJoined && p.group.studentJoined);
-  const inactiveGroups   = pairs.filter(p => !p.group.counselorJoined);
-  const notJoinedGroups  = pairs.filter(p => !p.group.studentJoined);
+  // WA Group categories
+  const activeGroups       = pairs.filter(p => p.group.counselorJoined && p.group.studentJoined);
+  const inactiveGroups     = pairs.filter(p => !p.group.counselorJoined);
+  const notJoinedGroups    = pairs.filter(p => !p.group.studentJoined);
   const notRepliedStudents = getWANotRepliedStudents();
 
-  function waGroupRow(p, showWABtn = true) {
+  // Voice channel categories
+  const missedCallStudents     = students.filter(s => ['Not Reachable', 'Callback Requested'].includes(s.lastCallOutcome));
+  const escalationStudents     = students.filter(s => s.hasEscalation);
+
+  /* ── row renderers ── */
+  function waGroupRow(p) {
     const waLink = `https://wa.me/?text=${encodeURIComponent('Hi ' + p.student.name + ', joining you on the group now!')}`;
     return `
       <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
@@ -6139,10 +6144,10 @@ function openWAGroupDetailsDrawer() {
           <p class="text-[10px] text-text-muted">${escHtml(p.group.groupName)}</p>
         </div>
         <div class="flex items-center gap-1.5">
-          ${showWABtn ? `<a href="${waLink}" target="_blank" class="flex items-center gap-1 text-[10px] px-2 py-1 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/30 rounded-lg font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer">
+          <a href="${waLink}" target="_blank" class="flex items-center gap-1 text-[10px] px-2 py-1 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/30 rounded-lg font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer">
             <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.549 4.08 1.507 5.793L.057 23.25a.75.75 0 00.92.92l5.457-1.45A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.75 9.75 0 01-5.024-1.396l-.36-.215-3.735.99.99-3.735-.215-.36A9.75 9.75 0 1112 21.75z"/></svg>
             Open WA Group
-          </a>` : ''}
+          </a>
           <button onclick="openStudentDetail('${p.student.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
         </div>
       </div>`;
@@ -6168,42 +6173,98 @@ function openWAGroupDetailsDrawer() {
       </div>`;
   }
 
-  function accordion(id, icon, title, count, colorCls, bgCls, borderCls, rows) {
-    const isEmpty = rows.length === 0;
+  function voiceRow(s, badge) {
     return `
-      <div class="rounded-xl border ${borderCls} overflow-hidden mb-3">
-        <button onclick="toggleWACard('${id}')" class="w-full flex items-center justify-between px-4 py-3 ${bgCls} hover:opacity-90 transition-opacity cursor-pointer">
-          <div class="flex items-center gap-2">
-            <span class="text-base">${icon}</span>
-            <span class="text-sm font-semibold ${colorCls}">${title}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/60 ${colorCls} font-bold">${count}</span>
-          </div>
-          <svg id="chevron-wa-${id}" class="w-4 h-4 ${colorCls} transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div id="wa-body-${id}" class="hidden px-4 pb-3 pt-2 bg-white">
-          ${isEmpty
-            ? `<p class="text-xs text-text-muted italic text-center py-3">All good here! 🎉</p>`
-            : rows
-          }
+      <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+        <div>
+          <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
+          <p class="text-[10px] text-text-muted">${s.id} · ${s.course}</p>
+          <span class="inline-block mt-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${badge.cls}">${badge.label}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="openStudentDetail('${s.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
         </div>
       </div>`;
   }
 
+  /* ── generic inner accordion (WA sub-items & voice sub-items) ── */
+  function accordion(id, icon, title, count, colorCls, bgCls, borderCls, rows) {
+    return `
+      <div class="rounded-xl border ${borderCls} overflow-hidden mb-2">
+        <button onclick="toggleWACard('${id}')" class="w-full flex items-center justify-between px-3 py-2.5 ${bgCls} hover:opacity-90 transition-opacity cursor-pointer">
+          <div class="flex items-center gap-2">
+            <span class="text-sm">${icon}</span>
+            <span class="text-xs font-semibold ${colorCls}">${title}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-white/60 ${colorCls} font-bold">${count}</span>
+          </div>
+          <svg id="chevron-wa-${id}" class="w-3.5 h-3.5 ${colorCls} transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="wa-body-${id}" class="hidden px-3 pb-3 pt-1 bg-white">
+          ${rows.length === 0
+            ? `<p class="text-xs text-text-muted italic text-center py-3">All good here! 🎉</p>`
+            : rows}
+        </div>
+      </div>`;
+  }
+
+  /* ── two top-level channel cards (collapsed by default) ── */
+  function channelCard(id, icon, title, badge, borderCls, bgCls, headerColor, innerContent) {
+    return `
+      <div class="rounded-xl border ${borderCls} overflow-hidden mb-3 shadow-sm">
+        <button onclick="toggleCommCard('${id}')" class="w-full flex items-center justify-between px-4 py-3.5 ${bgCls} hover:opacity-90 transition-opacity cursor-pointer text-left">
+          <div class="flex items-center gap-2.5">
+            <span class="text-lg leading-none">${icon}</span>
+            <div>
+              <p class="text-sm font-bold ${headerColor}">${title}</p>
+              <p class="text-[10px] ${headerColor} opacity-70 font-medium">${badge}</p>
+            </div>
+          </div>
+          <svg id="chevron-comm-${id}" class="w-4 h-4 ${headerColor} transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="comm-body-${id}" class="hidden border-t ${borderCls} px-3 pb-3 pt-3 bg-white/60">
+          ${innerContent}
+        </div>
+      </div>`;
+  }
+
+  /* ── Non Voice: WA Group inner content ── */
+  const nonVoiceInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">WhatsApp group activity across your student cohort.</p>
+    ${accordion('active',    '✅', 'Active Groups',                    activeGroups.length,       'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', activeGroups.map(p => waGroupRow(p)).join(''))}
+    ${accordion('inactive',  '⚠️', 'Inactive Groups',                  inactiveGroups.length,     'text-amber-700',   'bg-amber-50',    'border-amber-200',   inactiveGroups.map(p => waGroupRow(p)).join(''))}
+    ${accordion('notjoined', '🚫', 'Students Not Joined Groups',       notJoinedGroups.length,    'text-orange-700',  'bg-orange-50',   'border-orange-200',  notJoinedGroups.map(p => waGroupRow(p)).join(''))}
+    ${accordion('replied',   '💬', 'Messages Not Replied',             notRepliedStudents.length, 'text-red-700',     'bg-red-50',      'border-red-200',     notRepliedStudents.map(s => waRepliedRow(s)).join(''))}`;
+
+  /* ── Voice: Jerry Call inner content ── */
+  const voiceInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Call activity requiring follow-up action.</p>
+    ${accordion('missed-calls', '📵', 'Missed Call Details', missedCallStudents.length, 'text-rose-700', 'bg-rose-50', 'border-rose-200',
+      missedCallStudents.map(s => voiceRow(s, { label: s.lastCallOutcome, cls: 'bg-rose-100 text-rose-700' })).join(''))}
+    ${accordion('escalations', '🚨', 'Escalation Through Support Ticket', escalationStudents.length, 'text-purple-700', 'bg-purple-50', 'border-purple-200',
+      escalationStudents.map(s => voiceRow(s, { label: 'Escalation Raised', cls: 'bg-purple-100 text-purple-700' })).join(''))}`;
+
   const content = `
-    <p class="text-xs text-text-muted mb-4">Overview of all WhatsApp group activity across your students. Tap a section to expand.</p>
-    ${accordion('active',    '✅', 'Active Groups',                   activeGroups.length,    'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', activeGroups.map(p => waGroupRow(p, true)).join(''))}
-    ${accordion('inactive',  '⚠️', 'In-Active Groups',                inactiveGroups.length,  'text-amber-700',   'bg-amber-50',    'border-amber-200',   inactiveGroups.map(p => waGroupRow(p, true)).join(''))}
-    ${accordion('notjoined', '🚫', 'Students not joined Groups',      notJoinedGroups.length, 'text-orange-700',  'bg-orange-50',   'border-orange-200',  notJoinedGroups.map(p => waGroupRow(p, true)).join(''))}
-    ${accordion('replied',   '💬', 'Groups With Messages Not Replied', notRepliedStudents.length, 'text-red-700', 'bg-red-50',      'border-red-200',     notRepliedStudents.map(s => waRepliedRow(s)).join(''))}
+    <p class="text-xs text-text-muted mb-4">Overview of voice & non-voice communication activity across your students.</p>
+    ${channelCard('non-voice', '💬', 'Non Voice Channel Summary', 'WA Group', 'border-emerald-200', 'bg-emerald-50', 'text-emerald-800', nonVoiceInner)}
+    ${channelCard('voice',     '📞', 'Voice Channel Summary',     'Jerry Call', 'border-blue-200',  'bg-blue-50',    'text-blue-800',    voiceInner)}
   `;
 
   state.drawerMode = 'waGroup';
-  openDrawer('WA Group Details', content, false);
+  openDrawer('User Communication Summary', content, false);
 }
 
 function toggleWACard(id) {
   const body = document.getElementById(`wa-body-${id}`);
   const chevron = document.getElementById(`chevron-wa-${id}`);
+  if (!body) return;
+  const isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+}
+
+function toggleCommCard(id) {
+  const body    = document.getElementById(`comm-body-${id}`);
+  const chevron = document.getElementById(`chevron-comm-${id}`);
   if (!body) return;
   const isHidden = body.classList.contains('hidden');
   body.classList.toggle('hidden', !isHidden);
