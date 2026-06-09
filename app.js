@@ -6240,6 +6240,20 @@ function openWAGroupDetailsDrawer() {
   const notJoinedGroups    = pairs.filter(p => !p.group.studentJoined);
   const notRepliedStudents = getWANotRepliedStudents();
 
+  // Group Not Created / Counsellors Not Joined:
+  // Students with NO whatsapp groups at all + students in groups where counselor hasn't joined
+  const noGroupStudents   = students.filter(s => s.whatsappGroups.length === 0);
+  const counselorNotJoined = inactiveGroups; // reuse: pairs where counselor hasn't joined
+  // Build unique student list combining both
+  const groupNotCreatedMap = new Map();
+  noGroupStudents.forEach(s => groupNotCreatedMap.set(s.id, { student: s, reason: 'No group created', group: null }));
+  counselorNotJoined.forEach(p => {
+    if (!groupNotCreatedMap.has(p.student.id)) {
+      groupNotCreatedMap.set(p.student.id, { student: p.student, reason: 'Counsellor not joined', group: p.group });
+    }
+  });
+  const groupNotCreatedList = [...groupNotCreatedMap.values()];
+
   // Voice channel categories
   const missedCallStudents     = students.filter(s => ['Not Reachable', 'Callback Requested'].includes(s.lastCallOutcome));
   const escalationStudents     = students.filter(s => s.hasEscalation);
@@ -6337,13 +6351,38 @@ function openWAGroupDetailsDrawer() {
       </div>`;
   }
 
+  /* ── Group Not Created / Counsellors Not Joined rows ── */
+  const groupNotCreatedRows = groupNotCreatedList.map(item => {
+    const s = item.student;
+    const waLink = item.group
+      ? `https://wa.me/?text=${encodeURIComponent('Hi ' + s.name + ', joining your group now!')}`
+      : `https://wa.me/?text=${encodeURIComponent('Hi ' + s.name + ', please create a WhatsApp group!')}`;
+    return `
+      <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+        <div class="flex-1 min-w-0 mr-2">
+          <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
+          <p class="text-[10px] text-text-muted">${s.id} · ${s.course}</p>
+          ${item.group ? `<p class="text-[10px] text-text-muted">${escHtml(item.group.groupName)}</p>` : ''}
+          <span class="inline-block mt-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-200 text-red-800">${item.reason}</span>
+        </div>
+        <div class="flex flex-col gap-1 flex-shrink-0">
+          <a href="${waLink}" target="_blank" class="flex items-center gap-1 text-[10px] px-2 py-1 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366]/30 rounded-lg font-semibold hover:bg-[#25D366]/20 transition-colors cursor-pointer">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.549 4.08 1.507 5.793L.057 23.25a.75.75 0 00.92.92l5.457-1.45A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.75 9.75 0 01-5.024-1.396l-.36-.215-3.735.99.99-3.735-.215-.36A9.75 9.75 0 1112 21.75z"/></svg>
+            ${item.group ? 'Open WA' : 'Message'}
+          </a>
+          <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='waGroup';" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
+        </div>
+      </div>`;
+  }).join('');
+
   /* ── Non Voice: WA Group inner content ── */
   const nonVoiceInner = `
     <p class="text-[11px] text-text-muted mb-2.5">WhatsApp group activity across your student cohort.</p>
     ${accordion('active',    '✅', 'Active Groups',                    activeGroups.length,       'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', activeGroups.map(p => waGroupRow(p)).join(''))}
     ${accordion('inactive',  '⚠️', 'Inactive Groups',                  inactiveGroups.length,     'text-amber-700',   'bg-amber-50',    'border-amber-200',   inactiveGroups.map(p => waGroupRow(p)).join(''))}
     ${accordion('notjoined', '🚫', 'Students Not Joined Groups',       notJoinedGroups.length,    'text-orange-700',  'bg-orange-50',   'border-orange-200',  notJoinedGroups.map(p => waGroupRow(p)).join(''))}
-    ${accordion('replied',   '💬', 'Messages Not Replied',             notRepliedStudents.length, 'text-red-700',     'bg-red-50',      'border-red-200',     notRepliedStudents.map(s => waRepliedRow(s)).join(''))}`;
+    ${accordion('replied',         '💬', 'Messages Not Replied',                   notRepliedStudents.length,    'text-red-700', 'bg-red-50',  'border-red-200', notRepliedStudents.map(s => waRepliedRow(s)).join(''))}
+    ${accordion('group-not-created','🚨', 'Group Not Created / Counsellors Not Joined', groupNotCreatedList.length, 'text-red-800', 'bg-red-100', 'border-red-400', groupNotCreatedRows)}`;
 
   /* ── Voice: Jerry Call inner content ── */
   const voiceInner = `
