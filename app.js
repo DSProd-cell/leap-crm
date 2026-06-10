@@ -1368,6 +1368,116 @@ function toggleBoostRefCard(key) {
   if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
+/* ── Boost Referrals Drawer ── */
+function openBoostReferralsDrawer() {
+  state.drawerMode = 'boostReferrals';
+  state.drawerPrevMode = null;
+
+  const todayStr    = new Date().toISOString().split('T')[0];
+  const acked       = _boostIsAcknowledged('referrals');
+  const countryFlag = { UK:'🇬🇧', Canada:'🇨🇦', Australia:'🇦🇺', USA:'🇺🇸', Germany:'🇩🇪', Ireland:'🇮🇪', Singapore:'🇸🇬', 'New Zealand':'🇳🇿' };
+  const stageLabelMap = { sti:'STI', application:'Application', deposit:'Deposit', lockin:'Lock-in' };
+  const stageClsMap   = { sti:'bg-orange-100 text-orange-700', application:'bg-blue-100 text-blue-700', deposit:'bg-green-100 text-green-700', lockin:'bg-purple-100 text-purple-700' };
+
+  const allCohorts = [
+    { key:'visa',    label:'Visa Approved',  icon:'✅', tagCls:'bg-emerald-100 text-emerald-700 border-emerald-200', students: getReferralCohort('visa')    },
+    { key:'premium', label:'Premium Paid',   icon:'⭐', tagCls:'bg-amber-100 text-amber-700 border-amber-200',     students: getReferralCohort('premium') },
+    { key:'sti',     label:'STI Done',       icon:'🎯', tagCls:'bg-sky-100 text-sky-700 border-sky-200',           students: getReferralCohort('sti')     },
+  ];
+
+  // Apply today filter when not acknowledged (isPendingToday = followup today + subtasks not all done)
+  const cohorts = allCohorts.map(c => ({
+    ...c,
+    students: acked ? c.students : c.students.filter(s => isPendingToday(s, todayStr)),
+    allStudents: c.students,
+  }));
+
+  // Deduplicate displayed students for count in header
+  const displayStudents = cohorts.flatMap(c => c.students);
+  const allUnique = [...new Map(displayStudents.map(s => [s.id, s])).values()];
+
+  // All students due today (regardless of done state) — to detect allDone
+  const allCohortStudents = [...new Map(allCohorts.flatMap(c => c.students).map(s => [s.id,s])).values()];
+  const allRefStudents    = allCohortStudents; // all referral students (for All Tasks section)
+  const todayDueRef = allCohortStudents.filter(s => s.followup === todayStr);
+  const allTodayDone = !acked && todayDueRef.length > 0 && todayDueRef.every(s => s.subtasks.every(t => t.done));
+
+  let content = `
+    ${!acked ? _renderBoostTodayHeader(allUnique.length) : _renderBoostAckHeader()}
+    <div class="mb-4 p-3.5 bg-purple-50 border border-purple-200 rounded-xl">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-lg">🤝</span>
+        <p class="font-bold text-sm text-purple-800">Referral Boost Pipeline</p>
+      </div>
+      <p class="text-xs text-purple-600">${allUnique.length} student${allUnique.length !== 1 ? 's' : ''} ${acked ? 'identified as high-potential referrers' : 'due today across all cohorts'}</p>
+    </div>
+    <div class="space-y-2.5">
+  `;
+
+  cohorts.forEach(({ key, label, icon, tagCls, students }) => {
+    content += `
+      <div class="border border-border rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleBoostRefCard('${key}')" class="w-full flex items-center justify-between p-3.5 bg-white hover:bg-surface transition-colors text-left">
+          <div class="flex items-center gap-3">
+            <span class="text-xl leading-none">${icon}</span>
+            <div>
+              <p class="font-semibold text-sm text-text-main">${label}</p>
+              <p class="text-xs text-text-muted">${students.length} student${students.length !== 1 ? 's' : ''}${!acked ? ' due today' : ''}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${tagCls}">${label}</span>
+            <svg id="bref-chev-${key}" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </button>
+        <div id="bref-body-${key}" class="hidden border-t border-border">
+          ${students.length === 0
+            ? `<p class="text-xs text-text-muted text-center py-5">No students due today in this cohort</p>`
+            : `<div class="divide-y divide-border/40">${students.map(s => {
+                const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2);
+                const flag = countryFlag[s.country] || '🌍';
+                return `
+                  <div class="px-3.5 py-3 hover:bg-surface/60 transition-colors">
+                    <div class="flex items-center gap-3 mb-2.5">
+                      <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-bold text-[11px] flex items-center justify-center flex-shrink-0">${initials}</div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-text-main">${s.name} <span class="text-sm">${flag}</span></p>
+                        <p class="text-[11px] text-text-muted">${s.course}</p>
+                      </div>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${stageClsMap[s.stage] || 'bg-gray-100 text-gray-600'}">${stageLabelMap[s.stage] || s.stage}</span>
+                    </div>
+                    <div class="flex gap-2">
+                      <button onclick="openReferralWAMessage('${s.id}')" class="flex-1 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                        <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.118.555 4.107 1.523 5.832L0 24l6.335-1.524A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 11.999 0zM12 22c-1.943 0-3.779-.517-5.376-1.428l-.387-.226-3.993.96.994-3.866-.253-.4A9.975 9.975 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                        Ask for Referral
+                      </button>
+                      <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='boostReferrals';" class="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">Take to Task →</button>
+                    </div>
+                  </div>`;
+              }).join('')}</div>`
+          }
+        </div>
+      </div>
+    `;
+  });
+
+  content += `</div>`;
+  if (allTodayDone) content += _renderBoostAckPrompt('referrals');
+  content += _renderAllTasksSection(acked, allRefStudents, 'referrals');
+  openDrawer('Boost Referrals', content, false);
+}
+
+function toggleBoostRefCard(key) {
+  const body    = document.getElementById(`bref-body-${key}`);
+  const chevron = document.getElementById(`bref-chev-${key}`);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
 function openOwnTaskDrawer() {
   state.drawerMode = 'ownTasks';
   const tasks = state.ownTasks;
