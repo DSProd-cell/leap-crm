@@ -6414,14 +6414,37 @@ function openWAGroupDetailsDrawer() {
       </div>`;
   }).join('');
 
+  /* ── Info + Closure banners for each WA card ── */
+  function waBanner(defText, closureText, defColor, closureColor) {
+    return `
+      <div class="mb-2.5 rounded-lg overflow-hidden border border-gray-100">
+        <div class="px-2.5 py-2 bg-blue-50 border-b border-gray-100">
+          <p class="text-[10px] font-bold text-blue-700 mb-0.5">ℹ️ Definition</p>
+          <p class="text-[10px] text-blue-600 leading-relaxed">${defText}</p>
+        </div>
+        ${closureText ? `
+        <div class="px-2.5 py-2 bg-green-50">
+          <p class="text-[10px] font-bold text-green-700 mb-0.5">✅ Task Closure</p>
+          <p class="text-[10px] text-green-600 leading-relaxed">${closureText}</p>
+        </div>` : ''}
+      </div>`;
+  }
+
+  const bannerActive     = waBanner('Counsellor/TL and student are both in the group and actively discussing every 4–5 days. Student is responsive and counsellor is also active.', null);
+  const bannerInactive   = waBanner('No one has been responsive for a minimum of 4–5 days, or the student hasn\'t joined yet — excluding leads marked as Lead Drop off.', 'Counsellor sends a message in the group, OR marks the Lead Status as <strong>Permanent Drop off</strong>.');
+  const bannerNotJoined  = waBanner('The group has been created but the student hasn\'t joined yet.', 'When the student joins the group.');
+  const bannerReplied    = waBanner('Student sent a message in the group but neither the counsellor nor the TL/Manager replied within <strong>1 hour</strong>.', 'When either the counsellor or Manager replies to the student\'s query.');
+  const bannerGroupNC    = waBanner('Counsellor is assigned for a lead but the counsellor hasn\'t joined the WhatsApp group yet, or no group has been created.', 'Group is created and the Counsellor has joined.');
+
   /* ── Non Voice: WA Group inner content ── */
   const nonVoiceInner = `
     <p class="text-[11px] text-text-muted mb-2.5">WhatsApp group activity across your student cohort.</p>
-    ${accordion('active',    '✅', 'Active Groups',                    activeGroups.length,       'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', activeGroups.map(p => waGroupRow(p)).join(''))}
-    ${accordion('inactive',  '⚠️', 'Inactive Groups',                  inactiveGroups.length,     'text-amber-700',   'bg-amber-50',    'border-amber-200',   inactiveGroups.map(p => waGroupRow(p)).join(''))}
-    ${accordion('notjoined', '🚫', 'Students Not Joined Groups',       notJoinedGroups.length,    'text-orange-700',  'bg-orange-50',   'border-orange-200',  notJoinedGroups.map(p => waGroupRow(p)).join(''))}
-    ${accordion('replied',         '💬', 'Messages Not Replied',                   notRepliedStudents.length,    'text-red-700', 'bg-red-50',  'border-red-200', notRepliedStudents.map(s => waRepliedRow(s)).join(''))}
-    ${accordion('group-not-created','🚨', 'Group Not Created / Counsellors Not Joined', groupNotCreatedList.length, 'text-red-800', 'bg-red-100', 'border-red-400', groupNotCreatedRows)}`;
+    ${accordion('active',    '✅', 'Active Groups',                         activeGroups.length,        'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', bannerActive  + (activeGroups.length      ? activeGroups.map(p => waGroupRow(p)).join('')      : '<p class="text-xs text-text-muted italic text-center py-2">No active groups yet.</p>'))}
+    ${accordion('inactive',  '⚠️', 'Inactive Groups',                       inactiveGroups.length,      'text-amber-700',   'bg-amber-50',    'border-amber-200',   bannerInactive + (inactiveGroups.length    ? inactiveGroups.map(p => waGroupRow(p)).join('')    : '<p class="text-xs text-text-muted italic text-center py-2">All groups are active! 🎉</p>'))}
+    ${accordion('notjoined', '🚫', 'Students Not Joined Groups',            notJoinedGroups.length,     'text-orange-700',  'bg-orange-50',   'border-orange-200',  bannerNotJoined + (notJoinedGroups.length  ? notJoinedGroups.map(p => waGroupRow(p)).join('')  : '<p class="text-xs text-text-muted italic text-center py-2">All students have joined! 🎉</p>'))}
+    ${accordion('replied',   '💬', 'Messages Not Replied',                  notRepliedStudents.length,  'text-red-700',     'bg-red-50',      'border-red-200',     bannerReplied   + (notRepliedStudents.length ? notRepliedStudents.map(s => waRepliedRow(s)).join('') : '<p class="text-xs text-text-muted italic text-center py-2">All messages replied! 🎉</p>'))}
+    ${accordion('group-not-created', '🚨', 'Group Not Created / Counsellors Not Joined', groupNotCreatedList.length, 'text-red-800', 'bg-red-100', 'border-red-400', bannerGroupNC + (groupNotCreatedList.length ? groupNotCreatedRows : '<p class="text-xs text-text-muted italic text-center py-2">All counsellors have joined! 🎉</p>'))}`;
+
 
   /* ── Voice: Jerry Call inner content ── */
   const voiceInner = `
