@@ -2175,6 +2175,8 @@ function openVolumeMetricDrawer(key) {
 
   state.drawerMode = 'volumeMetric';
   state.drawerVolumeMetricKey = key;
+  // Set prevMode so back button knows where to return
+  state.drawerPrevMode = key === 'deferrals' ? 'boost-deposit' : null;
 
   const students = all.filter(cfg.filter);
 
@@ -2302,7 +2304,7 @@ function openVolumeMetricDrawer(key) {
       : `<p class="text-xs text-text-muted italic text-center py-6">No students match this criteria right now.</p>`;
   }
 
-  openDrawer(cfg.title, listHTML, false);
+  openDrawer(cfg.title, listHTML, state.drawerPrevMode !== null);
 }
 
 /* ═══════════════ BOOST REVENUE ═══════════════ */
