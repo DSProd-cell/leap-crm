@@ -5995,19 +5995,29 @@ function renderStandupTable(filterData) {
   const allData = generateStandupData(filters);
 
   // ── SECTION 1: VOLUME METRICS ──────────────────────────────
-  const VOLUME_MAP   = { leads:'Leads', isl_24h:'ISL Shared', f2f:'F2F Done', stis:'STI', deposits:'Deposits', visas:'Visa', revenue_collected:'Revenue Generated' };
-  const VOLUME_ORDER = ['leads','isl_24h','f2f','stis','deposits','visas','revenue_collected'];
+  // New order: Leads → ISL 24h → F2F → Lock In → STI → Admits → Deposits → Visa → Revenue → Pre ISL Drop → Total Drop
+  const VOLUME_MAP = {
+    leads:             'Leads',
+    isl_24h:           'ISL Shared within 24 Hours',
+    f2f:               'F2F Done',
+    lockins:           'Lock In Done',
+    stis:              'STI Done',
+    deposits:          'Deposits',
+    visas:             'Visa Approved',
+    revenue_collected: 'Revenue Generated',
+  };
+  const VOLUME_ORDER = ['leads','isl_24h','f2f','lockins','stis','deposits','visas','revenue_collected'];
 
   const volumeRows = VOLUME_ORDER.map(key => {
     const row = allData.find(r => r.key === key);
     return row ? { ...row, name: VOLUME_MAP[key] } : null;
   }).filter(Boolean);
 
-  // Insert "Admits" after STI (position 3)
+  // Insert "Admits" after STI Done (now at index 4 → splice at 5)
   const admitsBase = Math.max(1, Math.round((c.lockins || 2) * 0.4));
   const admitsMTD  = admitsBase * 22;
   const admitsYTD  = admitsBase * 264;
-  volumeRows.splice(3, 0, {
+  volumeRows.splice(5, 0, {
     name:'Admits', key:'admits', isCurrency:false, isPct:false,
     tYTD: admitsYTD,                         tMTD: admitsMTD,
     aYTD: Math.round(admitsYTD * 0.82),      aMTD: Math.round(admitsMTD * 0.82),
@@ -6015,7 +6025,7 @@ function renderStandupTable(filterData) {
     W0: admitsBase * 5, W01: admitsBase * 4, M01: Math.round(admitsMTD * 0.88),
   });
 
-  // Add Pre ISL Drop and Post ISL Drop at end of Volume Metrics
+  // Add Pre ISL Drop and Total Drop at end of Volume Metrics
   volumeRows.push({
     name:'Pre ISL Drop', key:'pre_isl_drop', isCurrency:false, isPct:false, isDropRate:true,
     tYTD:10, tMTD:10,
@@ -6024,7 +6034,7 @@ function renderStandupTable(filterData) {
     W0:8, W01:9, M01:7,
   });
   volumeRows.push({
-    name:'Post ISL Drop', key:'post_isl_drop', isCurrency:false, isPct:false, isDropRate:true,
+    name:'Total Drop', key:'post_isl_drop', isCurrency:false, isPct:false, isDropRate:true,
     tYTD:25, tMTD:25,
     aYTD:22, aMTD:20,
     Y:22, Y1:24, Y2:21,
@@ -6037,6 +6047,7 @@ function renderStandupTable(filterData) {
     { name:'CA to ISL',                           target:80,  actual:65, offsets:[3,5,4,4,6,5] },
     { name:'CA to STI — 14 Days',                target:30,  actual:18, offsets:[2,4,3,3,5,4] },
     { name:'CA to F2F — 14 Days',                target:25,  actual:22, offsets:[0,2,1,1,3,2] },
+    { name:'CA to Lock In Done — 14 Days',       target:20,  actual:15, offsets:[1,2,1,1,2,1] },
     { name:'STI to Admits — 30 Days',            target:40,  actual:35, offsets:[2,3,2,3,4,3] },
     { name:'Admit to Deposits — 14 Days',        target:50,  actual:28, offsets:[4,6,5,5,7,6] },
     { name:'CA to Visa',                          target:20,  actual:12, offsets:[1,2,1,2,3,2] },
