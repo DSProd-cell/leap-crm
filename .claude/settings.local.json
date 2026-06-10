@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 /Users/debasish/.claude/skills/ui-ux-pro-max/scripts/search.py \"edtech CRM counselor dashboard SaaS professional\" --design-system -p \"Leap CRM\" -f markdown)"
+    ]
+  }
+}

@@ -1,717 +1,909 @@
-# Leap CRM — Product Requirements Document (v0)
+# Leap CRM — Product Requirements Document (PRD)
+
+**Document Version:** 1.0
+**Date:** 31 May 2026
+**Prepared by:** Business Team
+**Intended Audience:** Product Team
 
 ---
 
-## Objective
+## 1. Product Overview
 
-Leap CRM is a sales intelligence and performance management platform built for education counsellors and their managers. It replaces disconnected tools — WhatsApp groups, Excel trackers, email chains — with a single, real-time view of every student in the pipeline, every counsellor's performance, and every task that needs to happen today. The product is used daily by counsellors to manage their student pipeline and by managers to run stand-ups and track team performance.
+Leap CRM is a web application for the internal counselling and sales team of an EdTech organisation. It gives each user — Counsellor, Team Lead, Ops Admin, or Business Head — a personalised view of performance data, student pipeline health, incentive earnings, and learning resources, all in one place.
 
----
+The product is role-aware: what a user sees and can do is determined entirely by their assigned role. The same URL serves all roles; the interface adjusts automatically based on who is logged in.
 
-## The Problem
+The platform is organised around four main tabs accessible from the top navigation bar:
+1. **Tasks & Performance** — Daily metrics, standup table, student pipeline health
+2. **Incentives & Earnings** — Earning visibility, live offers, incentive drives
+3. **Learning & Development** — Info Hub, training, newsletter, quick links
+4. **Admin Panel** — Configuration and management (Ops Admin only)
 
-Education counsellors managing international study abroad pipelines typically juggle:
-
-- WhatsApp for student communication and follow-up reminders
-- Excel sheets or CRMs not built for education sales to track pipeline stages
-- Verbal or manual stand-up updates that have no data backing
-- No single place to see which students are stuck, which deadlines are approaching, and what each counsellor has done today
-
-The result: students fall through the cracks between key milestones (STI → Application → Deposit → Lock-in), targets are missed without early warning, and managers have no real-time visibility until the damage is done.
-
----
-
-## Who Uses This
-
-### 1. Counsellor
-The primary user. Manages a personal portfolio of students through the study abroad pipeline. Logs tasks daily, tracks pipeline health, views their own performance metrics, attends stand-ups, and earns incentives based on conversions. Uses the product throughout the working day.
-
-### 2. Manager
-Views the performance of their entire counsellor team in one place. Uses the stand-up table to run daily team meetings. Can switch between individual counsellors' dashboards to understand blockers. Does not manage individual students directly.
-
-### 3. Admin
-Manages the operational configuration of the platform: adding/removing users, uploading training content, creating offers and promotions, managing badges and achievements, configuring the CRM assistant bot, and managing the university information hub. Has access to all counsellor and manager views as well.
-
-### 4. Business Head
-Senior leadership contact accessible through the CRM assistant bot for escalation. Not an active product user — their name, contact, and designation are configured by the admin and surfaced when a counsellor asks the bot to escalate.
+Two floating communication features are accessible from every page regardless of which tab is active:
+- **Chat with Business Team** (Bot assistant)
+- **Chat in Internal Team** (Live team chat)
 
 ---
 
-## High-Level Flow
+## 2. User Roles
 
-1. Counsellor logs in → lands on the Tasks & Performance dashboard
-2. Dashboard shows a prioritised view of which students need attention today (Boost cards), current pipeline health, WhatsApp group coverage, and key metrics
-3. Counsellor opens a student's detail page to see their stage, task checklist, call history, and WhatsApp group status
-4. Counsellor completes tasks (calls, follow-ups, document shares) and logs them in the Log Task section
-5. Metrics update in real time to reflect logged activity
-6. At stand-up, the counsellor (or manager) refers to the Stand-Up Table for an at-a-glance breakdown of targets vs. actuals
-7. Manager can switch between counsellors to view any individual's dashboard
-8. At the end of the day, counsellors can view their Scorecard (yesterday's performance reviewed against targets)
-9. Incentives and earnings are tracked under a separate tab with slab-based calculation
-10. Training content and development resources are available under a third tab
+| Role | Login | What they see | Admin Panel |
+|---|---|---|---|
+| Counsellor | Personal login | Own data only | No |
+| Team Lead | Personal login | Own data + their team's data | No |
+| Ops Admin | Personal login | All teams, all counsellors, all data | Yes |
+| Business Head | Personal login | All teams, all counsellors, all data | No |
+
+Role is assigned at the time of account creation by Ops Admin. A user cannot change their own role.
 
 ---
 
-## Features
-
-### Feature 1 — Login and Role-Based Access
-
-Users log in with their email address, password, and role selection (Counsellor, Manager, or Admin). Each role sees a different version of the product:
-
-- Counsellors see only their own data and students
-- Managers see a team-wide view and can switch between individual counsellors
-- Admins see everything, plus an Admin Panel tab
-- A session persists until the user explicitly logs out
-- There is a maximum login attempt limit; accounts are temporarily locked after repeated failures
-- A "Forgot Password" link is present on the login screen (no functional reset in v0 — placeholder only)
-
----
-
-### Feature 2 — Student Pipeline Stages
-
-Every student in the system sits in exactly one of four pipeline stages at any given time:
-
-| Stage | What it means |
-|-------|---------------|
-| STI (Study in India) | Student has been identified and is being counselled |
-| Application | Student has submitted an application to a university |
-| Deposit | Student has paid or committed to paying a deposit |
-| Lock-in | Student is fully committed and the conversion is confirmed |
-
-A student moves forward through these stages manually — the counsellor updates the stage from the student's detail page. Stages do not move backwards in v0.
-
----
-
-### Feature 3 — Boost Task Cards
-
-The first section of the Tasks & Performance tab shows two priority action cards. These are not reporting widgets — they are action prompts telling the counsellor who needs attention right now.
-
-**Boost STI card:** Displays the count of students currently in the STI stage. Clicking it opens the Boost Pipeline Drawer, which shows all three eligible stages (STI, Application, Lock-in) as a funnel, each with the list of students in that stage.
-
-**Boost Deposit card:** Displays the count of students in the Deposit stage. Clicking it opens a drawer showing those students and their details.
-
-Both cards display:
-- Stage label
-- Total count of students in that stage
-- A CTA button to open the relevant drawer
-
----
-
-### Feature 4 — Boost Pipeline Drawer
-
-Opened when the counsellor clicks the Boost STI card. Shows three sections stacked vertically as a funnel:
-
-1. Boost STI — students in the STI stage
-2. Boost Application — students in the Application stage
-3. Boost Lock-in — students in the Lock-in stage
-
-Each section shows the student count and a list of student cards. Each student card is tappable and opens that student's full detail page. If a stage has zero students, that section displays a "No students at this stage" message rather than being hidden.
-
----
-
-### Feature 5 — WhatsApp Group Coverage
-
-Displayed as two clickable chips beneath the Boost cards:
-
-**Groups counsellor joined:** Shows the number of WhatsApp groups the counsellor has joined out of the total groups associated with their students (e.g. "10/11"). Clicking opens a drawer listing every group, its name, and whether the counsellor has joined it.
-
-**Students NOT in group:** Shows the count of students who are not yet in their assigned WhatsApp groups. Clicking opens a drawer listing each such student and which groups they are missing from.
-
-This gives the counsellor an instant view of WhatsApp coverage gaps without needing to manually check each group.
-
----
-
-### Feature 6 — Volume and Quality Metrics
-
-Two sets of metric cards displayed after the WhatsApp coverage chips.
-
-**Volume Metrics** track activity counts:
-- STIs Submitted
-- Applications Submitted
-- Deposits Collected
-- Lock-ins Achieved
-- Calls Made
-
-**Quality Metrics** track conversion efficiency:
-- 1st Call Quality Score
-- 2nd Call Quality Score
-- CA to ISL (Initial Student Lead conversion within 48 hours)
-- CA to F2F (Face-to-face meeting conversion within 15 days)
-- LinkedIn activity (last 2 days)
-- CA to STI (conversion within 15 days)
-- Admit to Deposit rate (within 30 days)
-- Deposit via LeapPay rate
-
-Each card shows: metric name, current value, percentage of target achieved, and a progress bar. Cards are colour-coded: green when on or above target, red when below.
-
----
-
-### Feature 7 — Team Chat
-
-A chat panel embedded within the Tasks & Performance tab. Allows the counsellor to send messages to their team. Messages show sender name, avatar initials, and timestamp. The counsellor's own messages appear on the right; others appear on the left. The manager's messages are visually differentiated. Messages are sent by typing and pressing Enter or clicking the Send button.
-
----
-
-### Feature 8 — Log Task
-
-A simple form on the Tasks & Performance tab for the counsellor to manually record activity. The counsellor selects the task type from a dropdown, adds optional notes, and clicks Log. Logged tasks update the relevant metric cards in real time.
-
-Task types available:
-- Call Made
-- Lead Contacted
-- Enrolment Closed
-- Revenue Collected
-- Follow-up Done
-- STI Submitted
-- Application Submitted
-- Deposit Collected
-- Lock-in Achieved
-
----
-
-### Feature 9 — Stand-Up Table
-
-A data table designed specifically for use during daily team stand-up meetings. Each row is a metric. Each column is a time period comparison.
-
-**Columns:**
-- Metric name (clickable — opens a student drill-down for that metric)
-- Target YTD (Year to Date)
-- Target MTD (Month to Date)
-- Achieved YTD
-- Achieved MTD
-- Yesterday (Y)
-- Day before yesterday (Y-1)
-- Two days prior (Y-2)
-- This week (W0)
-- Last week (W0-1)
-- Last month (M0-1)
-
-**Filters available above the table:**
-- Intake (All / Sep 2026 / Jan 2027)
-- Location (All / Branch / Online)
-- Country (All / India / Canada / UK / Australia / USA)
-
-Every number in the table is clickable. Clicking any number opens a drawer showing the list of students that make up that count, with their names, stages, and last activity.
-
-Every metric name in the first column is also clickable, opening the same student drill-down for that metric.
-
----
-
-### Feature 10 — Leaderboard
-
-A ranked list of top-performing counsellors shown on the Tasks & Performance tab. Three time-period views: Today, This Month, This Year. Displays counsellor name, rank, and performance score for the selected period.
-
----
-
-### Feature 11 — Daily Scorecard
-
-A read-only summary of the counsellor's performance from the previous working day. Displayed at the bottom of the Tasks & Performance tab.
-
-Includes:
-- A headline summary (e.g. "3 metrics in the red zone — focus here first")
-- Three score tiles: Working Well, Improving, Needs Focus
-- A metric-by-metric table showing Target vs. Actual for each metric with a status indicator
-- A "Recommended Next Steps" section listing the top 3 metrics to focus on, with a reason why each matters and a specific recommended action
-- A "Top Performers" section showing the org-wide and cluster-level leaders for the previous day
-
-The scorecard is labelled Read-only and cannot be edited.
-
----
-
-### Feature 12 — Student Detail Page
-
-Opens as a full-screen page (not a side drawer) when any student's name is tapped from anywhere in the product. Contains:
-
-**Header:**
-- Student name
-- Back button to return to the previous screen
-- Call button (initiates a call directly from the page)
-
-**Body:**
-- Current pipeline stage with a status badge
-- Follow-up date
-- Last call date and call outcome
-- Quality score
-- App download status (yes/no)
-- Last connected timestamp
-
-**Task Checklist:** A list of pending and completed subtasks for this student. Each task shows its label, completion status, completion timestamp (if done), any notes logged, and the outcome. Tasks can be marked as done from this page.
-
-**WhatsApp Groups:** Lists all WhatsApp groups this student should be in, with indicators for whether the counsellor has joined each group and whether the student has joined.
-
-The page is scrollable and replaces the drawer pattern for student detail — the full screen is used to give counsellors a complete view without a cramped side panel.
-
----
-
-### Feature 13 — CRM Assistant Bot
-
-A floating orange chat bubble visible at all times, fixed to the bottom-right corner of the screen on every page. Clicking it opens the CRM Assistant panel, which has three tabs:
-
-**Chat tab:**
-The counsellor can type natural language questions or requests. The bot understands and responds to intents including:
-- Checking pipeline status ("how many students are in STI?")
-- Finding a student ("show me Aarav Mehta")
-- Checking today's targets
-- Logging motivation or notes
-- Asking about incentive slabs
-- Requesting escalation to the Business Head
-- Asking about training or course content
-
-The bot guides users through multi-step flows using quick-reply buttons (e.g. selecting a student from a list, confirming an action). Responses appear as chat bubbles. The conversation history persists during the session.
-
-**Action Items tab:**
-Displays a prioritised list of actions the bot recommends for the day, based on the counsellor's current pipeline — for example, "Call 3 students with overdue follow-ups" or "2 students haven't joined their WhatsApp group."
-
-**Info Hub tab (within the bot panel):**
-A searchable directory of universities the counsellor can look up. Each university entry includes country, city, type, intake dates, deposit amount (INR and foreign currency), deposit deadline, refund policy, and payment notes. The counsellor can also filter by country or intake.
-
-The bot panel slides up from the bubble. It can be dismissed by clicking the X button or clicking the bubble again.
-
-The Admin can clear the chat history from within the bot panel. An unread message badge appears on the bubble when the bot has new recommended actions.
-
----
-
-### Feature 14 — Incentives & Earnings Tab
-
-A dedicated tab showing the counsellor's current earnings picture.
-
-**Earnings Summary:** Three cards showing Total Incentive Earned, Amount Collected, and Pipeline Value.
-
-**Incentive Slab Table:** Shows the counsellor's current slab tier, target for each metric, achievement so far, and the incentive amount unlocked at each slab. Colour-coded to show which slabs have been reached.
-
-**Earnings Chart:** A bar chart comparing the counsellor's month-wise incentive earnings over the current year.
-
-**Top Earners Leaderboard:** A split view showing the org-wide top earner and the cluster-level top earner for the current period.
-
-**Offers & Promotions:** A scrollable row of active promotional offers (e.g. "Earn ₹5,000 extra for 3 deposits this week"). Each offer card shows the offer name, reward, deadline, and a "View Details" button.
-
----
-
-### Feature 15 — Learning & Development Tab
-
-A dedicated tab for counsellor upskilling.
-
-**Course Updates:** Cards showing recently added or updated course content with the date added and a short description.
-
-**Training Modules:** A list of training modules the counsellor can access. Each module shows a title, a short description, and a duration. Clicking opens a lesson view with the content.
-
-**Quick Links:** A row of shortcut buttons for frequently needed resources — for example, LeapPay link, university portal, application tracker, and other external tools relevant to the counsellor's workflow.
-
----
-
-### Feature 16 — Profile Page
-
-Accessible by clicking the counsellor's avatar in the top navigation bar. Displays:
-- Counsellor name, role, and branch
-- Contact details
-- Performance summary for the current period
-- Badge collection: all badges earned, with name, description, and date awarded
-- A button to raise a support ticket
-
----
-
-### Feature 17 — Badge and Achievement System
-
-Counsellors earn badges for hitting milestones (e.g. "First STI", "10 Lock-ins", "Top Performer — May 2026"). Badges are displayed on the profile page and as a strip in the top navigation bar showing recently earned badges with icons and count.
-
-The Admin panel allows admins to define badge types and manually award badges to specific counsellors.
-
----
-
-### Feature 18 — Notification Bell
-
-An alert icon in the top navigation bar with an unread count badge. Clicking it opens a drawer listing recent system notifications and alerts — for example, a student's follow-up date passed without a call logged, or a new offer is live.
-
----
-
-### Feature 19 — Admin Panel
-
-Accessible only to users with the Admin role. A dedicated tab in the navigation bar. Contains the following management sections:
-
-**Users:** A table of all registered counsellors and managers. Admins can add new users (name, email, role, branch) and see the list of existing users. Editing and deletion of users is not in v0 — managed through direct data updates.
-
-**Training Content:** Admins can add, edit, and remove training modules and course updates visible on the Learning & Development tab.
-
-**CSV Import:** Admins can upload a CSV file to bulk-import student data or performance records. A preview of the uploaded data is shown before confirming.
-
-**Support Tickets:** A table of all support tickets raised by counsellors from their profile pages. Shows ticket subject, submitter name, date, and status.
-
-**Offers Management:** Admins can create, edit, and remove promotional offers visible on the Incentives & Earnings tab. Each offer has a name, description, reward amount, and expiry date.
-
-**Badges Management:** Admins can define badge types and award specific badges to specific counsellors. A modal allows them to select the badge type and recipient.
-
-**Info Hub Management:** Admins can add, edit, and remove university entries in the information hub used by the CRM assistant bot.
-
-**Bot & FAQ Settings:** Admins can configure the CRM assistant bot — toggle it on/off for all users, set the Business Head's name, designation, and contact details, and manage the FAQ entries the bot uses to answer common questions. Each FAQ entry has a keyword list, an answer, and an optional navigation target (screen the bot should direct the user to).
-
----
-
-## Screens
-
-### Screen 1 — Login Screen
-
-**Purpose:** Authenticate the user and direct them to the correct role-based view.
+## 3. Login Screen
 
 **What the user sees:**
-- Leap CRM logo and product name
-- "Sales Intelligence Platform" tagline
-- Email input field
-- Password input field with a show/hide toggle
-- Role dropdown (Counsellor / Manager / Admin)
-- Log In button
-- Forgot Password link (non-functional in v0 — placeholder only)
+- The Leap CRM logo and product name
+- An email input field
+- A password input field with a show/hide toggle
+- A role selector dropdown (Counsellor / Team Lead / Ops Admin)
+- A "Log In" button
+- A "Forgot password?" link (shows a placeholder message — not functional in this version)
 
 **What the user can do:**
-- Enter credentials and select a role
-- Click Log In to authenticate
+- Enter credentials and log in
 - Toggle password visibility
 
-**Empty state:** All fields blank on first load.
-**Error state:** Inline error message below the form: "Incorrect email, password, or role. Please try again." After multiple failed attempts: "Too many failed attempts. Please try again in a few minutes."
+**On successful login:** User is taken directly to the Tasks & Performance tab.
+**On incorrect credentials:** An inline error message appears below the form: "Incorrect email or password. Please try again."
+**Empty fields on submit:** Inline error under each empty field. Form does not submit.
 
 ---
 
-### Screen 2 — Tasks & Performance Tab
+## 4. Global Navigation (Visible on All Screens After Login)
 
-**Purpose:** The primary daily workspace for the counsellor. Shows everything they need to act on today.
+**Top bar — always visible:**
+- Leap CRM logo and name (top left)
+- Tab navigation: Tasks & Performance | Incentives & Earnings | Learning & Development | Admin Panel (Ops Admin only)
+- Trophy and Star icons showing the user's badge count (clicking opens a badge summary)
+- Notification bell with an unread count badge (red circle)
+- Logged-in user's avatar and name (top right) — clicking opens a dropdown
+
+**Avatar dropdown options:**
+- "View Profile" — opens the Profile Page
+- "Log Out" — ends the session and returns to the Login Screen
+
+**10x Session Banner:**
+A full-width purple banner below the tab bar reading: "Your 10x session is live! Join now to stay on track with your team." with a "Join 10x →" button. This banner is shown whenever a 10x session is live (URL configured by Ops Admin). Clicking the button opens the session URL in a new tab.
+
+---
+
+## 5. Tab 1 — Tasks & Performance
+
+The default landing tab after login. The primary daily-use screen.
+
+---
+
+### 5.1 Stand Up Table
+
+**Who sees it:** Team Leads (their own team only), Ops Admin (all teams), Business Head (all teams).
+Counsellors do NOT see the standup table.
+
+**Purpose:** A single scannable table showing every counsellor's daily and monthly performance against targets — used to run the team standup meeting without any external sheets.
 
 **What the user sees:**
-- Navigation bar at the top with the Leap CRM logo, badge strip, notification bell, and profile avatar
-- Tab bar below the navigation: Tasks & Performance (active), Incentives & Earnings, Learning & Development, Admin (admin only)
-- Boost Task Cards section (two cards: Boost STI, Boost Deposit)
-- WhatsApp Coverage chips
-- Volume Metrics grid
-- Quality Metrics grid
-- Team Chat section
-- Log Task section
-- Stand-Up Table section with filters
-- Leaderboard section
-- Daily Scorecard section
 
-**What the user can do:**
-- Click a Boost card to open the relevant drawer or funnel view
-- Click a WhatsApp chip to open a group coverage breakdown
-- Click any number in the Stand-Up Table to drill down into the student list
-- Log a task using the Log Task form
-- Send a message in Team Chat
-- Switch leaderboard periods (Today / Month / Year)
-- Apply filters to the Stand-Up Table
+A filter row above the table containing:
+- **Location** — dropdown selector
+- **Team Lead** — dropdown selector
+- **Counsellor** — dropdown selector
+- **CA Date (Counsellor Assigned Date)** — two date fields: "From" and "To" with a calendar icon label
+- **Apply** button and **Reset** button
 
-**Empty state:** If no students are assigned, Boost cards show "0 students" and the Stand-Up Table shows "No data for selected filters."
-**Error state:** If data fails to load, each section shows a muted "Unable to load — try refreshing" message in place of its content.
+A data table:
+- One row per counsellor
+- Columns: Counsellor Name, Calls, Leads, Enrolments, Revenue, Follow-ups, STIs, Applications, Deposits, Lock-ins, F2F Meetings, ISL Rating, Referral %, Quality Score, Revenue Collected
+- Each metric cell shows three stacked values: Daily Actual / MTD Actual / YTD Actual
+
+**Achievement colour logic (for MTD and YTD values):**
+- Achievement ≥ 100% of target → cell shown in **Green**
+- Achievement < 100% of target → cell shown in **Red**
+- There is no amber or yellow middle state. Only Green or Red.
+
+**Filter behaviour:**
+- Filters narrow which counsellors appear and scale the displayed values proportionally to the filtered student set
+- CA Date filter: shows only counsellors whose students were assigned to them within the chosen date range
+- "Apply" refreshes the table with filters active
+- "Reset" clears all filters and restores the full unfiltered table
+
+**Empty state (filters return no results):** "No counsellors match the selected filters." shown in the table body.
 
 ---
 
-### Screen 3 — Incentives & Earnings Tab
+### 5.2 Individual Scorecard (Your Standup)
 
-**Purpose:** Shows the counsellor how much they have earned and what they need to do to unlock the next incentive tier.
+**Who sees it:** All roles. Each user sees only their own scorecard.
+
+**Purpose:** A personal summary of the logged-in user's performance from the previous day.
 
 **What the user sees:**
-- Earnings summary (three tiles: Total Earned, Collected, Pipeline)
-- Slab table with tier progress
-- Earnings chart (monthly bar chart)
-- Top earners leaderboard (org-wide + cluster)
-- Offers and promotions row
-
-**What the user can do:**
-- View their incentive breakdown
-- Browse active offers
-- Click an offer to see its full details in a drawer
-
-**Empty state:** "No earnings data for this period yet."
+- Section header: "Your Standup — Yesterday, [Date]"
+- Subheading: "Counsellor at [Location] · [Team Lead name]'s Team"
+- A chevron toggle button in the top-right — clicking collapses or expands the section
+- When expanded: a row of metric tiles for yesterday's values — Calls, Leads, Enrolments, Revenue, STIs, Applications, Deposits, Lock-ins, Referral %, Quality Score
 
 ---
 
-### Screen 4 — Learning & Development Tab
+### 5.3 Action Required — Boost Cards
 
-**Purpose:** Central place for counsellors to access training and upskilling content.
+**Who sees it:** All roles.
+
+**Purpose:** Two high-priority action cards prompting the user to take immediate revenue or task-related actions.
 
 **What the user sees:**
-- Course Updates section (recent content additions)
-- Training Modules list (with title, description, duration)
-- Quick Links row
+Two cards displayed side by side, labelled "ACTION REQUIRED — BOOST TASKS":
 
-**What the user can do:**
-- Click a training module to open the lesson view
-- Click a quick link to open the relevant external tool or resource
+**Card 1 — Boost Revenue (orange)**
+- Shows total revenue collected this month vs. monthly target
+- Count of revenue-generating opportunities available
+- Description: "Revenue-generating opportunities"
+- "View Pipeline" button
 
-**Empty state:** "No training content available yet." shown in each empty section.
+**Card 2 — Own Tasks (blue)**
+- Count of pending tasks the user has logged for themselves
+- Description: "Tasks you need to complete"
+- "View Tasks" button
+
+**On clicking "View Pipeline":** A right-side drawer opens listing students who represent revenue opportunities. Each student card shows: name, ID, course, country, stage, and follow-up date. Clicking a student opens their Student Detail Page.
+
+**On clicking "View Tasks":** A right-side drawer opens listing all pending tasks. Each task shows: student name, task type, and due date. Clicking a student opens their Student Detail Page.
 
 ---
 
-### Screen 5 — Admin Panel Tab
+### 5.4 Volume Metrics
 
-**Purpose:** Back-office configuration for admins only.
+**Who sees it:** All roles. Data is scoped to the logged-in user's own portfolio for Counsellors; Team Leads and above see aggregated team-level totals.
+
+**Purpose:** Three metrics showing operational volume and pipeline health.
+
+**Metrics:**
+
+**1. Tasks Completed**
+- Count of tasks marked complete today
+- Shown in Green when at or above target; Red when below target
+
+**2. Unhappy Cohort**
+- Count of students with a low ISL rating (below the defined threshold)
+- Always shown in Red — this is a negative quality metric
+
+**3. Deferrals Opportunity**
+- Count of students who are a deferral opportunity
+- Shown in a distinct "opportunity" style (purple-tinted) — this is neither a failure nor a success; it is an actionable pipeline item
+
+A student qualifies as a Deferrals Opportunity if either condition is true:
+- They have an admit from a previous intake AND have not yet paid their deposit
+- They have paid their deposit AND have not yet completed their visa process
+
+**Clicking any metric card:** Opens a right-side drawer with the list of students driving that metric. Each student card shows: name, ID, course, country, stage, and follow-up date. Clicking a student opens their Student Detail Page.
+
+---
+
+### 5.5 Quality Metrics
+
+**Who sees it:** All roles.
+
+**Purpose:** Four metrics showing the quality of the counsellor's engagement with students.
+
+**Metrics:**
+
+**1. ISL Rating**
+- Average ISL score across the counsellor's active students
+- Higher is better. Green if above target; Red if below.
+
+**2. Referral %**
+- Percentage of students who have referred another student
+- Higher is better. Green if above target; Red if below.
+
+**3. Quality Score**
+- An overall quality score
+- Higher is better. Green if above target; Red if below.
+
+**4. WA Not Replied**
+- Count of students who asked a question in a WhatsApp group that has not been answered
+- **Always shown in Red when count is greater than 0.** Target for this metric is zero — any positive count is a problem.
+- Shown in Green only when count equals 0.
+
+**WA Not Replied drill-down drawer:** When clicked, shows for each student:
+- Student name and lead status
+- The question they asked
+- The date the question was asked
+
+---
+
+### 5.6 Top Performers Leaderboard
+
+**Who sees it:** All roles.
+
+**Purpose:** A ranked list of top-performing counsellors for recognition and benchmarking.
 
 **What the user sees:**
-- A sub-navigation bar with sections: Users, Training, CSV Import, Tickets, Offers, Badges, Info Hub, Bot Settings
-- The active section's content below
-
-**What the user can do:**
-- Switch between admin sections using the sub-nav
-- Perform CRUD operations on each section (details under Forms section below)
-
-**Access control:** This tab is only visible when the user is logged in with the Admin role. All other roles see no Admin tab.
+- Section header: "Top Performers"
+- Three tab buttons: Today | This Month | This Year — clicking each switches the leaderboard data
+- A ranked list with: rank number or medal (🥇 🥈 🥉 for top 3), avatar initials, full name, and a relative progress bar
+- The section is collapsible via a chevron toggle
 
 ---
 
-### Screen 6 — Student Detail Page (Full-Screen Overlay)
+### 5.7 Reminder & Task Logger
 
-**Purpose:** Complete view of a single student's profile, pipeline status, and tasks.
+**Who sees it:** Counsellors and Team Leads only.
+
+**Purpose:** Allows a user to log a task or reminder linked to a specific student.
 
 **What the user sees:**
-- Back button and student name in the header
-- Call button to initiate a call
-- Pipeline stage badge
-- Student information: follow-up date, last call date, last call outcome, quality score, app download status, last connected timestamp
-- Task checklist: each task with its label, done/pending status, timestamp and notes (if done)
-- WhatsApp groups list with counsellor-joined and student-joined indicators
+- Section header: "Add a Reminder for Yourself"
+- A chevron toggle to collapse/expand the section
+- When expanded: four task type buttons — Call | Send Message | Payment Follow Up | Custom Task
+- Selecting a task type reveals the input form below
 
-**What the user can do:**
-- Tap the back button to return to the previous screen
-- Click the Call button to call the student
-- Mark a task as done by clicking on it
-- View WhatsApp group coverage at the student level
-
-**Empty state (tasks):** "No tasks assigned for this student yet."
-
----
-
-### Screen 7 — Bot Panel (Overlay)
-
-**Purpose:** AI assistant for on-demand help, pipeline queries, and information lookup.
-
-**What the user sees:**
-- Bot header with name ("Leap CRM Assistant") and close button
-- Three tabs: Chat, Action Items, Info Hub
-- Chat: message thread with user and bot bubbles, quick-reply buttons, input field
-- Action Items: numbered list of today's recommended actions
-- Info Hub: searchable list of universities with filter chips by country and intake
-
-**What the user can do:**
-- Type a message and receive a bot response
-- Tap quick-reply buttons to continue a guided flow
-- Switch between the three tabs
-- Search the Info Hub by university name
-- Filter Info Hub by country or intake period
-- Clear the chat history (admin users only)
-
----
-
-### Screen 8 — Profile Page
-
-**Purpose:** Personal profile and badge showcase for the counsellor.
-
-**What the user sees:**
-- Name, role, branch, and contact details
-- Performance summary for the current period
-- Badge grid showing all earned badges with icons, names, and award dates
-- Raise a Ticket button
-
-**What the user can do:**
-- View their earned badges
-- Click Raise a Ticket to open the ticket submission form
-
----
-
-## Forms
-
-### Form 1 — Log Task
+**Form fields:**
 
 | Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| Task Type | Dropdown | Yes | Call Made, Lead Contacted, Enrolment Closed, Revenue Collected, Follow-up Done, STI Submitted, Application Submitted, Deposit Collected, Lock-in Achieved |
-| Notes | Text | No | Optional free-text field |
+|---|---|---|---|
+| Task Type | Pre-selected from button | Yes | Auto-filled when user clicks task type button |
+| Student Name / ID | Text input | Yes | |
+| Task Name | Text input | Yes (Custom Task only) | Only visible when Custom Task is selected |
+| Due Date & Time | Date and time picker | Yes | |
 
-**On submit:** The relevant metric card on the dashboard updates immediately. A success toast notification appears ("Task logged successfully").
-**Validation:** Task type must be selected. If no type is selected, the Log button does nothing.
+**On save:** Task is logged and appears in the Own Tasks section of the Action Required boost card.
+**Validation:** If Student Name is empty, an inline error appears beneath the field: "Please enter a student name." Form does not save until corrected.
 
 ---
 
-### Form 2 — Add User (Admin)
+### 5.8 Student Detail Page
+
+**Who sees it:** All roles. Accessed by clicking any student name from any list within the platform.
+
+**Purpose:** The full profile and activity record for a single student.
+
+**What the user sees:**
+- A "← Back" button in the top-left, returning to whichever screen the user came from
+- Student's full name as the page title
+- A "📞 Call" button in the top-right
+
+**Current Stage indicator:**
+A horizontal progress bar showing the four pipeline stages in sequence: STI → Application → Deposit → Lock-in. The current stage is highlighted in orange. Earlier stages are shown as completed (green). Later stages are greyed out.
+
+**Student information fields:**
+- User ID
+- Course
+- Country
+- Last Call (date and outcome note, e.g. "21 May 2026 — Promise to Pay")
+- Follow-up Date (shown in red/orange if the date is overdue)
+- App Status (Downloaded / Not Downloaded — shown as a green badge if downloaded)
+- Quality Score (shown as a number out of 100)
+- Last Connected Date
+
+**WhatsApp Groups section:**
+- Lists all WhatsApp groups the student is part of
+- For each group: whether the counsellor (You) is in the group ✅ or ❌, and whether the student is in the group ✅ or ❌
+
+**WhatsApp Messages section:**
+- A collapsible section showing "WhatsApp Messages ([count])"
+- When expanded: each message shows the question asked and the date
+
+**Subtasks section:**
+- Lists all tasks logged for this student
+- Each task shows: task type, date, completion status (completed tasks shown with strikethrough text and a checkbox checked)
+
+---
+
+## 6. Tab 2 — Incentives & Earnings
+
+A dedicated tab giving counsellors and Team Leads full transparency into their incentive earnings, active drives, and what to do to earn more.
+
+---
+
+### 6.1 Earnings Summary Banner
+
+**What the user sees:**
+Three metric cards displayed horizontally at the top of the tab:
+
+**Card 1 — Earned So Far**
+- Total incentive amount earned in the current month
+- White card on dark background
+
+**Card 2 — Projected at 100%**
+- The amount the user would earn if they hit 100% of all their targets for the current month
+- Blue card
+
+**Card 3 — Opportunity Size**
+- The total pipeline value across students who could still convert this month
+- Orange card with a clickable arrow — clicking opens a right-side drawer with the list of students making up this pipeline value
+
+---
+
+### 6.2 Live Offers for Students
+
+**Purpose:** Promotional campaigns that counsellors pitch to students to drive conversions. Created and published by Ops Admin.
+
+**What the user sees:**
+- Section header: "Live Offers for Students"
+- A horizontally scrollable row of offer cards (scroll left/right if more than 3 offers)
+- Each offer card (orange/warm coloured) shows:
+  - Category badge (e.g. "🔒 Boost Lock-in", "📋 Boost STI")
+  - Offer title (bold)
+  - Offer description
+  - Expiry date (highlighted in yellow if expiry is within 3 days)
+  - A "See Students →" button
+
+**On clicking "See Students →":** A right-side drawer opens with the list of students eligible for that offer. Each student card shows: name, ID, course, stage, follow-up date, and ISL rating. Clicking a student opens their Student Detail Page.
+
+**Empty state:** "No live offers for students right now. Check back soon."
+
+---
+
+### 6.3 Live for Counsellors
+
+**Who sees it:** Counsellors and Team Leads only. Ops Admin does NOT see this section — it is hidden entirely when an Ops Admin is logged in.
+
+**Purpose:** Performance-based incentive campaigns that counsellors can personally earn from. Created and published by Ops Admin.
+
+**What the user sees:**
+- Section header: "Live for Counsellors" with a "For You" orange badge
+- A horizontally scrollable row of offer cards
+- All cards use a **blue colour scheme** (no orange, no other colours)
+- Each card shows:
+  - A small category badge in the top-left (e.g. "Performance Sprint", "Revenue Challenge", "Referral Boost")
+  - A small chevron arrow (›) in the top-right corner indicating the entire card is clickable
+  - Offer title (bold)
+  - Offer description
+  - Expiry date (urgency styling if within 3 days)
+  - Reward description with a gift icon (e.g. "🎁 ₹3,000 Gift Voucher")
+  - A "View Details →" label at the bottom right
+
+**Clicking anywhere on the card** (not just the "View Details" label — the entire card is interactive) opens a right-side drawer.
+
+**Counsellor Offer Drawer — what the user sees:**
+
+*Section 1 — Incentive Structure*
+- A table with two columns: Milestone | Reward
+- Lists each earning threshold and its corresponding reward
+- Example rows: "1st Place → ₹3,000 Gift Voucher + 🏅 Profile Badge", "2nd Place → ₹1,500 Gift Voucher"
+
+*Section 2 — Students to Target*
+- A brief italicised description explaining which students to focus on for this offer
+- A list of specific students from the counsellor's portfolio who match the offer's target criteria
+- Each student card shows: name, ID, course, country, stage badge (orange pill), follow-up date, ISL rating, and an "Open profile →" link
+- Clicking any student card opens the Student Detail Page
+
+**Empty state (no matching students):** "No matching students for this offer right now."
+
+---
+
+### 6.4 Incentive Breakdown
+
+**Purpose:** A structured view of all active incentive components showing the rules, the drive period, current achievement status, money earned, and which counsellors have earned.
+
+**What the user sees:**
+- Section header: "Incentive Breakdown" (the entire header is a collapsible toggle — clicking collapses or expands the section)
+- A chevron icon in the top-right of the header rotates to indicate the state (pointing up = expanded, pointing down = collapsed)
+- A hint text in the header: "Click any row to see earners ▾"
+
+**When expanded — a table with four columns:**
+- **Component & Drive Period** — Component name (e.g. STI, Deposits, Non Partner Revenue, Lock In) with the drive date range below (e.g. "📅 01 May – 31 May 2026")
+- **Rule** — The earning rule in plain text (e.g. "₹2,500 per STI converted")
+- **Status** — A badge showing achievement (e.g. "7 STIs (100%)" in orange, "3 deposits (75%)" in blue, overachievement in green)
+- **Earned** — The rupee amount earned in bold, with a note showing how many counsellors earned from this component (e.g. "👥 5 earned ▾")
+
+**Components always shown (in this order):**
+1. STI
+2. Deposits
+3. Non Partner Revenue
+4. Lock In
+
+**Clicking a row** expands an inline sub-section directly below that row:
+- Sub-section header: "Counsellors who earned — [Drive Period]"
+- A list of counsellors sorted by amount earned descending
+- Top 3 are shown with 🥇 🥈 🥉 medals
+- Each entry shows: counsellor name, how many units they converted (e.g. "12 STIs"), and the amount they earned
+- Clicking the same row again collapses the sub-section
+- Multiple rows can be expanded simultaneously
+
+**Footer row:** "Total" label in the left cell and the combined earned amount across all components in the right cell.
+
+---
+
+### 6.5 Top Earners Leaderboard
+
+**Purpose:** Recognition and visibility for the highest-earning counsellors.
+
+**What the user sees:**
+- Section header: "Top Earners"
+- Two columns side by side: "This Month" | "All Time"
+- Each column shows a ranked list with: rank medal or number, avatar initials circle (coloured by rank — gold for 1st, silver for 2nd, bronze for 3rd, orange for others), counsellor name, and a progress bar showing relative earnings
+
+---
+
+### 6.6 Monthly Earnings Chart
+
+**Purpose:** A bar chart showing the logged-in user's incentive earnings month by month for the current Financial Year.
+
+**What the user sees:**
+- Section header: "Monthly Earnings — FY 2026–27" (collapsible — clicking the header toggles open/closed, chevron rotates)
+- When expanded: a vertical bar chart with 12 bars, one per month from April to March
+- Month labels on the X-axis: Apr 26, May 26, Jun 26, Jul 26, Aug 26, Sep 26, Oct 26, Nov 26, Dec 26, Jan 27, Feb 27, Mar 27
+
+**Bar colour logic:**
+- Months before the current month (already passed) → **Blue** bars
+- The current month → **Green** bar
+- Months after the current month (no data yet) → **Light grey** placeholder bars
+
+**On hover over a bar:** A tooltip shows the exact rupee amount for that month.
+**Future month bars:** No tooltip amount shown (no data exists).
+
+---
+
+## 7. Tab 3 — Learning & Development
+
+A centralised resource hub for all counselling team members. Replaces scattered information previously shared via WhatsApp, email, and Google Drive.
+
+---
+
+### 7.1 Quick Links (Top of L&D Tab)
+
+Three action cards displayed horizontally at the top of the tab:
+
+**Card 1 — Join 10x**
+- Rocket icon, label "Join 10x →"
+- Clicking opens the 10x session URL (configured by Ops Admin) in a new tab
+- If no URL is configured: clicking shows a toast message: "No session link configured. Please contact Ops."
+
+**Card 2 — Templates Sheet**
+- Spreadsheet icon, label "Open Templates"
+- Clicking opens the Templates Google Sheet URL (configured by Ops Admin) in a new tab
+
+**Card 3 — Support**
+- Support icon, label "Raise a Request"
+- Clicking opens the Support Ticket modal
+
+**Support Ticket Modal:**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| Subject | Text | Yes | Max 200 characters |
+| Description | Textarea | No | Optional detail |
+
+On submit: Ticket is created and appears in Admin Panel → Tickets. A confirmation toast shows: "Your request has been submitted. The Ops team will get back to you."
+On submit with empty Subject: Inline error below the field: "Please enter a subject." Modal does not submit.
+
+---
+
+### 7.2 Info Hub Sub-tab
+
+**Navigation:** A horizontal sub-tab bar with five section buttons:
+Key Deadlines | Scholarship Finder | University News | Training & Guidelines | Partnered Institutes
+
+Clicking each button switches the content area below. The active section is highlighted.
+
+---
+
+#### Key Deadlines
+
+**What the user sees:**
+- Three filter tabs: Today | Tomorrow | Upcoming Deadlines
+- A list of deadline cards, each showing: university name, deadline type (Application / Deposit / Visa), and deadline date
+- Each card can be clicked to see the full university profile
+
+**Empty state:** "No deadlines for [Today / Tomorrow / Upcoming]. Check back later."
+
+---
+
+#### Scholarship Finder
+
+**What the user sees:**
+- A search bar — typing filters the list by university name or scholarship name in real time
+- A list of scholarship cards, each showing: university name, scholarship name, eligibility criteria, scholarship amount, and application deadline
+
+**Empty state (no search results):** "No scholarships found for '[search term]'."
+
+---
+
+#### University News
+
+**What the user sees:**
+- A list of news cards, each showing: university name, news headline, date published, and a brief summary excerpt
+
+---
+
+#### Training & Guidelines
+
+**What the user sees:**
+- A list of training modules, each as a collapsible card
+- Each module header shows: module name and lesson count (e.g. "Sales Fundamentals — 3 lessons")
+- Clicking a module header expands it to show the list of items within
+- Each item shows: item title, brief description, and a type badge (Video / Document / Link)
+- Clicking an item opens the associated content
+
+---
+
+#### Partnered Institutes
+
+**What the user sees:**
+- A list of university cards showing: university name, country flag emoji, city, and type (Public / Private)
+- Clicking a university card opens a full detail panel
+
+**University detail panel shows:**
+- University name and country
+- Description
+- Website link (opens in new tab)
+- Available intake dates
+- Deposit amount in INR and local currency
+- Deposit deadline
+- Refund policy
+- Payment notes
+- Available courses — a list with: course name, duration, fee per year, and entry requirements
+- Required documents — a bulleted list
+- Scholarship details: scholarship name, eligibility, amount, and deadline
+- Last updated by [name] on [date]
+
+---
+
+### 7.3 Newsletter Sub-tab
+
+**What the user sees:**
+- A filter bar with: Category (dropdown), Date From, Date To, Tags (multi-select)
+- A "Reset Filters" button
+- A feed of newsletter entries, each as a card with: headline, date, category badge, and a brief excerpt
+- Clicking a card expands it to show the full newsletter content inline
+
+**Empty state:** "No newsletters match the selected filters."
+
+---
+
+## 8. Admin Panel
+
+Accessible only to Ops Admin. The tab is not visible to any other role. If a non-Ops Admin user navigates to the Admin Panel URL directly, they are redirected to the Tasks & Performance tab without an error message.
+
+**Sub-section navigation:** A horizontal row of tabs within the Admin Panel:
+Users | Corrections | Incentive Slabs | Quick Links | Training | Tickets | Offers | Badges | Bot Settings | Info Hub
+
+---
+
+### 8.1 Users
+
+**What the user sees:**
+- A table of all users with columns: Name, Email, Role, Team, Designation, Joining Date, Manager
+- An "Add User" button in the top-right
+
+**Add User form:**
 
 | Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| Full Name | Text | Yes | — |
-| Email Address | Email | Yes | Must be a valid email format |
-| Role | Dropdown | Yes | Counsellor, Manager, Admin |
-| Branch | Text | No | — |
+|---|---|---|---|
+| Full Name | Text | Yes | |
+| Email | Email | Yes | Must be valid email format |
+| Role | Dropdown | Yes | Counsellor / Team Lead / Ops Admin |
+| Team | Text | No | |
+| Designation | Text | No | |
 
-**On submit:** User is added to the users table. A success toast appears. The modal closes.
-**Validation:** Name, email, and role are required. If email format is invalid, an inline error appears.
+On submit: User is added to the system. Confirmation toast: "User added successfully."
+On submit with empty required field: Inline error below the empty field. Form does not submit.
 
 ---
 
-### Form 3 — Create Offer (Admin)
+### 8.2 Data Corrections
+
+**Purpose:** Manually correct a metric value for a specific counsellor on a specific date, to fix data source errors.
+
+**What the user sees:**
+- A form at the top to submit a new correction
+- A log of all past corrections below the form
+
+**Correction form:**
 
 | Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| Offer Name | Text | Yes | Max 60 characters |
-| Description | Textarea | Yes | — |
-| Reward Amount | Number | Yes | In INR |
-| Expiry Date | Date picker | Yes | Must be a future date |
+|---|---|---|---|
+| Counsellor | Dropdown | Yes | All counsellors listed |
+| Date | Date picker | Yes | |
+| Metric | Dropdown | Yes | Calls / Leads / Enrolments / Revenue / STIs / Applications / Deposits / Lock-ins |
+| Corrected Value | Number | Yes | The new correct number |
 
-**On submit:** Offer is added to the offers row on the Incentives tab. Modal closes. Success toast shown.
-**Validation:** All fields required. Expiry date must be today or future.
+On submit: Correction is logged and the corrected value immediately updates the affected counsellor's dashboard and the standup table. Confirmation toast: "Correction submitted successfully."
+
+**Past corrections log columns:** Date Submitted, Counsellor, Metric, Corrected Value, Submitted By.
 
 ---
 
-### Form 4 — Add FAQ Entry (Admin)
+### 8.3 Incentive Slabs
+
+**What the user sees:**
+- A table showing all incentive components: Component Name, Rule, Drive Period, Status, Earned Amount
+- Each row is editable — Ops Admin can update the rule, status, and earned amount
+- A "Save" button per row applies changes immediately
+
+---
+
+### 8.4 Quick Links
+
+**What the user sees:**
+- Two URL input fields: "Join 10x Session URL" and "Templates Sheet URL"
+- A "Save Links" button
+
+On save: The URLs go live immediately in the Quick Links section of Tab 3. Confirmation toast: "Links saved."
+
+---
+
+### 8.5 Training
+
+**What the user sees:**
+- A list of all training modules with their items (same structure as the counsellor-facing view)
+- An "Add Module" button to create a new module
+- Within each module: an "Add Item" button and a remove option per item
+- Module names are editable inline
+
+---
+
+### 8.6 Support Tickets
+
+**What the user sees:**
+- A table of all support tickets raised by users, with columns: Subject, Raised By (user name), Date Submitted, Status
+- Clicking a row expands it inline to show the full description of the ticket
+
+---
+
+### 8.7 Offers
+
+**What the user sees:**
+- A list of all published offers (both Student and Counsellor offers) with: title, offer type, expiry date, and active status
+- A "Create Offer" button in the top-right
+
+**Create Offer form:**
 
 | Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| Keywords | Text | Yes | Comma-separated trigger words |
-| Answer | Textarea | Yes | The bot's response text |
-| Navigation Target | Text | No | Optional screen or section to link to |
+|---|---|---|---|
+| Offer Title | Text | Yes | |
+| Description | Textarea | Yes | |
+| Offer Type | Dropdown | Yes | For Students / For Counsellors |
+| Reward Description | Text | Yes | e.g. "₹3,000 Gift Voucher" |
+| Expiry Date | Date picker | Yes | |
 
-**On submit:** FAQ entry is saved and the bot will use it for matching future queries. List updates immediately.
-
----
-
-### Form 5 — Raise a Ticket (Counsellor)
-
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| Subject | Text | Yes | Max 100 characters |
-| Description | Textarea | Yes | — |
-| Priority | Dropdown | No | Low, Medium, High |
-
-**On submit:** Ticket is submitted and appears in the Admin panel's Tickets section. A success message is shown. Modal closes.
+On submit: Offer is published immediately and appears in the relevant section for the correct audience. Confirmation toast: "Offer published successfully."
 
 ---
 
-### Form 6 — Award Badge (Admin)
+### 8.8 Badges
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| Badge Type | Dropdown | Yes | All configured badge types |
-| Recipient | Dropdown | Yes | All registered counsellors |
-
-**On submit:** Badge is awarded to the selected counsellor. It appears on their profile and in the badge strip. Success toast shown.
+**What the user sees:**
+- A list of all available badge types with their names and icons
+- An "Award Badge" button that opens a small form to select a user and a badge type
+- A log of all previously awarded badges with: badge name, awarded to, awarded by, and date awarded
 
 ---
 
-## Logic and Rules
+### 8.9 Bot Settings
 
-**Pipeline Stage Movement**
-- A student's stage can be updated by the counsellor from the Student Detail Page
-- Stages move forward only: STI → Application → Deposit → Lock-in
-- Stage changes are manual — no automatic triggers
-- Once a stage is updated, it cannot be reversed in v0
+**What the user sees:**
+- An on/off toggle to enable or disable the Business Team Bot
+- Text fields: Bot Name, Greeting Message
+- A FAQ knowledge base section listing all question-answer pairs
+- A "+ Add FAQ Entry" button to add a new question and answer pair
+- Each existing FAQ entry can be deleted
+- A "Save Settings" button
 
-**Role-Based Tab Visibility**
-- Counsellor: sees Tasks & Performance, Incentives & Earnings, Learning & Development
-- Manager: sees same tabs as Counsellor, plus a Counsellor Selector dropdown in the header to switch views
-- Admin: sees all tabs including Admin Panel
-
-**Counsellor Selector (Manager and Admin only)**
-- A dropdown appears in the top navigation bar when a Manager or Admin is logged in
-- Selecting a different counsellor loads that counsellor's full dashboard view across all tabs
-- The selected counsellor's name is shown in the header to make it clear whose data is being viewed
-
-**Boost Card Counts**
-- Boost STI count = number of students in the STI stage for the currently viewed counsellor
-- Boost Deposit count = number of students in the Deposit stage
-
-**Stand-Up Table Filters**
-- Filters are applied independently — Intake, Location, and Country can each be set or left as "All"
-- Clicking Apply runs the filter; clicking Reset restores all filters to "All"
-- If filtered results return zero rows, an empty message is shown instead of a blank table
-
-**Bot Escalation to Business Head**
-- If the counsellor asks to speak to the Business Head, the bot surfaces the Business Head's name, designation, and contact details (as configured by the admin)
-- No live connection or transfer occurs — the bot simply displays the contact information
-
-**Login Attempt Lockout**
-- After 5 failed login attempts, the account is temporarily locked
-- A message informs the user of the lockout and asks them to try again after a set period
-
-**WhatsApp Group Coverage Calculation**
-- Counsellor coverage = (groups the counsellor has joined) / (total groups across all their students)
-- Student gap count = total instances where a student is not in a group they should be in
+On save: Settings go live immediately. The bot's name and greeting message update for all users. Confirmation toast: "Bot settings saved."
 
 ---
 
-## Edge Cases
+### 8.10 Info Hub Management
 
-| Situation | What the app does |
-|-----------|-------------------|
-| Stand-Up Table filtered to show no matching rows | Shows message: "No data for selected filters. Try adjusting Intake, Country, or Location." |
-| Counsellor tries to log a task without selecting a type | Log button does nothing; dropdown border highlights to draw attention |
-| Student has no tasks assigned | Student Detail Page shows "No tasks assigned for this student yet." |
-| Bot receives a query it does not recognise | Bot responds: "I didn't quite get that. You can ask about your pipeline, today's targets, or your students." |
-| Admin opens the Counsellor Selector with only one counsellor in the system | Dropdown shows that single counsellor as the default; selector is still visible |
-| Offer expiry date is set in the past | Admin form shows inline error: "Expiry date must be today or a future date." |
-| A student is in no WhatsApp groups | The WhatsApp Coverage chip shows 0/0 for groups and the student does not appear in the "Students NOT in group" drawer |
-| Badge is awarded to the same counsellor twice for the same badge type | No deduplication in v0 — the badge appears twice in their collection |
-| User opens the app on a mobile browser | The layout is single-column and all interactions remain accessible. The fixed bottom-right bot bubble remains visible. |
-| Login credentials are correct but role selected does not match the user's actual role | Login fails with the standard error message: "Incorrect email, password, or role." |
+**What the user sees:**
+- An "Add University" button
+- A form to add a new university with all fields (name, country, city, type, description, website, intakes, deposit info, courses, documents required, scholarship details)
+- Existing university entries listed below with the ability to edit or remove them
 
 ---
 
-## Admin and Settings
+## 9. Global Features
 
-The Admin Panel is a dedicated tab visible only to Admin-role users. It is divided into the following sections, navigated via a sub-tab bar:
+### 9.1 Chat with Business Team (Bot)
 
-**Users** — View all registered users in a table. Add new users via a modal form (Name, Email, Role, Branch).
+**What it is:** A floating assistant available on every page of the platform.
 
-**Training** — Add and manage training modules and course update cards shown on the Learning & Development tab.
+**Trigger button:** Fixed to the right edge of every page, vertically positioned at approximately 42% from the top. Orange colour. Labelled "Chat with Business Team" in vertical text. Styled distinctly from the Internal Team Chat button. Does not move during scroll — it stays in place.
 
-**CSV Import** — Upload a CSV file to bulk-import data. A preview table is shown before confirming the import.
+**On click:** A chat panel opens, anchored to the right side of the screen.
 
-**Tickets** — View all support tickets raised by counsellors. Shows submitter name, subject, date, and priority.
+**Panel contents:**
+- Panel header: "Chat with Business Team" and a close (×) button
+- Two tabs: **Chat** | **Action Items**
 
-**Offers** — Create and manage promotional offers shown on the Incentives tab. Each offer has a name, description, reward, and expiry date.
+**Chat tab:**
+- A scrollable message history area showing past exchanges
+- The bot's messages appear on the left, the user's messages on the right
+- A text input field at the bottom — pressing Enter or clicking Send posts the message
+- Bot responds to messages based on the FAQ knowledge base configured in Admin Panel → Bot Settings
+- A "Clear chat" option (with a confirmation step before clearing)
 
-**Badges** — Define badge types and manually award them to counsellors. View all badge types configured in the system.
+**Action Items tab:**
+- The same list of pending tasks shown in the Own Tasks boost card
+- Shows task type, student name, and due date for each pending task
 
-**Info Hub** — Add and manage university entries used by the CRM assistant bot's Info Hub tab. Each entry includes university name, country, city, type, intake dates, deposit amount, deposit deadline, refund policy, and payment notes.
+**Closing the panel:** Clicking the × button in the panel header closes it. The trigger button remains visible.
 
-**Bot & FAQ Settings** — Configure the bot: toggle it on or off for all users, set the Business Head's contact details, and manage FAQ entries the bot uses for answering counsellor questions.
-
----
-
-## FAQs
-
-**What happens when a manager wants to see a specific counsellor's performance?**
-The manager uses the Counsellor Selector dropdown in the top navigation bar to switch to that counsellor's view. All tabs — Tasks & Performance, Incentives & Earnings, and Learning & Development — then reflect that counsellor's data.
-
-**Can a counsellor see another counsellor's data?**
-No. Counsellors only see their own data. Only Managers and Admins have the Counsellor Selector to switch between views.
-
-**What happens when the admin toggles the bot off?**
-The floating orange chat bubble is hidden for all users immediately. Turning it back on makes the bubble reappear.
-
-**How does the Stand-Up Table know which students make up each number?**
-Each clickable number in the table is linked to a specific metric. Clicking opens a drawer that filters the student list based on the relevant pipeline stage or activity type for that metric.
-
-**What if a counsellor's follow-up date passes without any action logged?**
-The notification bell in the top navigation bar will show an alert for overdue follow-ups. The bot's Action Items tab will also surface this as a recommended action.
-
-**How are incentive slabs calculated?**
-Slab tiers are pre-configured in the system. The counsellor's logged activity (STIs, Applications, Deposits, Lock-ins) is compared against the thresholds for each slab, and the highest tier reached determines the incentive amount displayed.
-
-**Can a counsellor edit a task after marking it done?**
-Not in v0. Tasks are marked as done with a timestamp and notes. There is no edit or undo action.
+**Unread badge:** A red circle badge on the trigger button shows the count of unread bot messages. Resets to zero when the panel is opened.
 
 ---
 
-## What v0 Does Not Include
+### 9.2 Chat in Internal Team
 
-- **Real-time data sync across devices** — Data reflects the session state. Multi-device live sync is a v1 consideration once a backend is integrated.
-- **Automated notifications (SMS or email)** — The notification bell and bot action items are in-app only. No emails or SMS are sent in v0.
-- **Password reset functionality** — The Forgot Password link is a placeholder. Password management requires a backend auth system not included in v0.
-- **Bulk student import by counsellors** — Counsellors cannot upload their own student lists. Only admins can import data via the CSV import tool.
-- **Two-way WhatsApp integration** — WhatsApp group status is tracked within the app but there is no direct connection to WhatsApp's API. Group membership must be updated manually or via import.
-- **Mobile native app (iOS / Android)** — v0 is a web application that works on all devices including mobile browsers. A native app is not in scope for v0.
-- **Revenue analytics and org-wide reporting dashboards** — Reporting in v0 is per-counsellor and per-team via the stand-up table. Org-wide trend dashboards are a future addition.
-- **Student-facing portal** — v0 is entirely internal. Students do not have login access or a self-service view.
+**What it is:** A floating live team chat panel available on every page of the platform.
+
+**Trigger button:** Fixed to the right edge of every page, at the bottom-right corner. Green colour (distinct from the orange Business Team bot). Labelled "Chat in Internal Team" in vertical text. Stays in position during scroll. Stays in position when the user navigates between tabs.
+
+**Unread badge:** A red circle badge shows the count of unread messages from team members. Resets to zero when the panel is opened.
+
+**On click:** A chat panel opens to the left of the trigger button.
+
+**Panel contents:**
+- Panel header: "Chat in Internal Team" and a green online count indicator (e.g. "● 3 online")
+- A close (×) button in the header
+- A scrollable message history area with team messages showing: sender avatar initials, sender name, message text, and timestamp
+- A text input at the bottom — pressing Enter or clicking "Send" posts the message
+- A "Clear chat" button (requires confirmation before clearing history)
+
+**On opening the panel:** Unread count badge resets to zero and hides.
+
+**State persistence:** If the panel is open and the user navigates to a different tab, the panel remains open and chat history is preserved. If the panel is open and the user opens a student detail page, the panel remains visible.
+
+**Panel with a pulse animation on the trigger button:** The green trigger button has a subtle pulsing ring animation to draw attention when there are unread messages.
 
 ---
 
-## How You'll Know It's Working
+### 9.3 Notification Bell
 
-- Counsellors stop using WhatsApp threads and Excel sheets to track which students need follow-up today — the Boost cards and student detail page replace that entirely
-- Managers can run a daily stand-up without asking counsellors to verbally report their numbers — the Stand-Up Table provides the full picture in one screen
-- No student falls out of the funnel between STI and Lock-in without the counsellor being prompted — the Boost cards and overdue follow-up alerts surface gaps before they become misses
-- Admins can configure the entire product — user access, content, offers, bot responses — without touching code
+**Trigger:** Bell icon in the top navigation bar with a red unread count badge.
+**On click:** A dropdown appears below the bell listing recent notifications with notification text and timestamp.
+
+---
+
+### 9.4 Profile Page
+
+**Accessed via:** Top-right avatar dropdown → "View Profile"
+
+**What the user sees:**
+- Full name and avatar initials circle
+- Designation
+- Team name and Manager name
+- Joining date
+- Email address
+- A "← Back" button to return to the previous page
+
+---
+
+## 10. Logic and Rules
+
+**Standup Table — Achievement Colour Logic**
+- MTD or YTD achievement ≥ 100% of target → Green
+- MTD or YTD achievement < 100% of target → Red
+- No amber/yellow state exists anywhere in the standup table
+
+**WA Not Replied — Always Red When Non-Zero**
+- Count = 0 → Green card (no problem)
+- Count > 0 → Red card, always, regardless of any percentage target calculation
+- The target for this metric is always zero — any unanswered message is a failure state
+
+**Deferrals Opportunity — Two-Condition Qualification**
+- Condition A: Student has an admit from a prior intake AND deposit not paid → qualifies
+- Condition B: Student has paid deposit AND visa not completed → qualifies
+- If neither condition is true → student does not appear in this metric
+- A student meeting either condition is included in the count and in the drill-down drawer
+
+**Live for Counsellors — Role Visibility**
+- Role = Ops Admin → Section is hidden entirely (not just greyed out — not rendered)
+- Role = Counsellor or Team Lead → Section is visible
+
+**Counsellor Offer Card — Entire Card Is Clickable**
+- Clicking anywhere on the card (background, title, description, reward text, or the "View Details →" label) opens the offer detail drawer
+- There is no separate action for just clicking the button vs. the card — the whole card is one clickable unit
+
+**Standup CA Date Filter**
+- Applying a CA Date range shows only counsellors whose students were assigned to them between the selected From and To dates
+- Data values are scaled proportionally to the filtered student subset
+- If the date range returns no matching counsellors: "No counsellors match the selected filters."
+- Clicking Reset removes the date filter and restores all counsellors and their original values
+
+**Monthly Earnings Chart — Colour Assignment**
+- Months with a completed month index below the current month index → Blue
+- Month matching the current month index → Green
+- Months with a month index after the current month → Light grey (no value, no tooltip)
+- Financial Year runs April (month 1) to March (month 12). Current FY: April 2026 to March 2027.
+
+**Incentive Breakdown — Row Expansion**
+- Clicking a row expands the earner sub-section below it
+- Clicking the same row again collapses it
+- Multiple rows can be expanded at the same time
+- Expanding/collapsing a row does not affect other expanded rows
+
+**Admin Panel — Access Restriction**
+- If role ≠ Ops Admin → Admin Panel tab is not rendered in the navigation bar
+- If a non-Ops Admin user navigates to the Admin Panel URL directly → they are silently redirected to Tasks & Performance
+
+---
+
+## 11. Edge Cases
+
+| Situation | What the platform does |
+|---|---|
+| Counsellor has no students in their portfolio | All metric cards show 0. Drill-down drawers show: "No students to display." No error states. |
+| WA Not Replied count is 0 | Card is shown in Green. |
+| Standup filter returns no matching counsellors | "No counsellors match the selected filters." shown in the table body. Reset button is visible. |
+| No active Live Offers for Students | Row shows: "No live offers for students right now. Check back soon." |
+| No active Live for Counsellors offers | Row shows: "No live offers for counsellors right now." |
+| Counsellor offer has no matching target students | Drawer shows: "No matching students for this offer right now." |
+| A counsellor's CA date is not set | That counsellor is excluded from CA Date filtered results silently — no error shown |
+| Task Logger submitted without a student name | Inline error under the student name field: "Please enter a student name." Form does not save. |
+| An offer is created with an already-past expiry date | Offer is published as-is. No validation block. The offer will appear as expired immediately in the counsellor view. Ops Admin is responsible for date accuracy. |
+| Non-Ops Admin navigates to Admin Panel URL directly | Silently redirected to Tasks & Performance. No error message shown. |
+| Internal Team Chat panel is open while user navigates tabs | Panel remains open. Chat state (message history, scroll position) is preserved. |
+| Support ticket submitted without a description | Ticket is submitted successfully with subject only. Description is optional. |
+| Ops Admin visits Incentives & Earnings tab | "Live for Counsellors" section is not shown. All other sections are visible (Earned So Far, Live Offers for Students, Incentive Breakdown, Top Earners, Monthly Earnings). |
+| Future month bar in Monthly Earnings chart | Bar is light grey. No tooltip. No rupee value shown. |
+| Search in Scholarship Finder returns no results | Shows: "No scholarships found for '[search term]'." |
+| Key Deadlines section has no deadlines for selected day | Shows: "No deadlines for [Today / Tomorrow / the selected period]." |
+
+---
+
+## 12. Complete Screen Inventory
+
+| Screen / Panel | Accessible To |
+|---|---|
+| Login Screen | All (unauthenticated) |
+| Tasks & Performance — Stand Up Table | Team Lead, Ops Admin, Business Head |
+| Tasks & Performance — Individual Scorecard | All roles |
+| Tasks & Performance — Action Required (Boost Cards) | All roles |
+| Tasks & Performance — Volume Metrics | All roles |
+| Tasks & Performance — Quality Metrics | All roles |
+| Tasks & Performance — Top Performers Leaderboard | All roles |
+| Tasks & Performance — Reminder & Task Logger | Counsellor, Team Lead |
+| Student Detail Page | All roles |
+| Metric Drill-Down Drawer | All roles |
+| Incentives & Earnings — Earnings Summary Banner | All roles |
+| Incentives & Earnings — Live Offers for Students | All roles |
+| Incentives & Earnings — Live for Counsellors | Counsellor, Team Lead only |
+| Counsellor Offer Detail Drawer | Counsellor, Team Lead only |
+| Incentives & Earnings — Incentive Breakdown | All roles |
+| Incentives & Earnings — Top Earners | All roles |
+| Incentives & Earnings — Monthly Earnings Chart | All roles |
+| L&D — Quick Links | All roles |
+| L&D — Info Hub — Key Deadlines | All roles |
+| L&D — Info Hub — Scholarship Finder | All roles |
+| L&D — Info Hub — University News | All roles |
+| L&D — Info Hub — Training & Guidelines | All roles |
+| L&D — Info Hub — Partnered Institutes | All roles |
+| L&D — Info Hub — University Detail View | All roles |
+| L&D — Newsletter | All roles |
+| Support Ticket Modal | All roles |
+| Admin Panel — Users | Ops Admin only |
+| Admin Panel — Data Corrections | Ops Admin only |
+| Admin Panel — Incentive Slabs | Ops Admin only |
+| Admin Panel — Quick Links | Ops Admin only |
+| Admin Panel — Training | Ops Admin only |
+| Admin Panel — Support Tickets | Ops Admin only |
+| Admin Panel — Offers | Ops Admin only |
+| Admin Panel — Badges | Ops Admin only |
+| Admin Panel — Bot Settings | Ops Admin only |
+| Admin Panel — Info Hub Management | Ops Admin only |
+| Profile Page | All roles |
+| Chat with Business Team Panel | All roles |
+| Chat in Internal Team Panel | All roles |
+
+---
+
+## 13. What the Next Version Should Consider
+
+The following items are noted for the roadmap. They are NOT part of the current version:
+
+- **Real-time metric sync** — Current data reflects periodically updated snapshots. True sub-second metric updates are a future consideration.
+- **Downloadable reports** — Exporting standup data, earnings summaries, or student lists as CSV or PDF.
+- **Automated follow-up reminders** — System-triggered alerts to counsellors when a follow-up date passes, sent via email or push notification.
+- **Target configuration by Ops** — Ability for Ops Admin to set and update daily and monthly targets per metric without engineering involvement.
+- **Performance trend charts** — Week-over-week or month-over-month visual trends for individual counsellors.
+- **Counsellor-to-student communication log** — Surfacing all call and WA interaction history for a student directly within the Student Detail Page.
+- **Multi-team visibility for Team Leads** — Allowing a Team Lead to compare their team's aggregate performance against other teams (currently only Ops Admin has this view).
