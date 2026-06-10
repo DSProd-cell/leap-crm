@@ -199,8 +199,8 @@ const STUDENT_PIPELINE_DATA = {
   U1006: { islSharedDate:'2026-06-04', secondCallDate:null,         leadStatus:null,       ucAssigned:true  },
   U1007: { islSharedDate:'2026-05-28', secondCallDate:null,         leadStatus:'Drop off', ucAssigned:false },
   U1008: { islSharedDate:'2026-05-18', secondCallDate:'2026-05-30', leadStatus:null,       ucAssigned:true  },
-  U1009: { islSharedDate:'2026-06-07', secondCallDate:null,         leadStatus:null,       ucAssigned:false },
-  U1010: { islSharedDate:'2026-06-02', secondCallDate:null,         leadStatus:null,       ucAssigned:true  },
+  U1009: { islSharedDate:'2026-06-07', secondCallDate:'2026-06-08', leadStatus:null,       ucAssigned:false },
+  U1010: { islSharedDate:'2026-06-02', secondCallDate:'2026-06-06', leadStatus:null,       ucAssigned:true  },
   U1011: { islSharedDate:null,         secondCallDate:null,         leadStatus:null,       ucAssigned:false },
   U1012: { islSharedDate:'2026-06-08', secondCallDate:'2026-06-09', leadStatus:null,       ucAssigned:true  },
 };
@@ -1732,8 +1732,14 @@ function openBoostFunnelDrawer() {
   const onHoldDrafts = all.filter(s =>
     s.subtasks.some(t => ON_HOLD_TASK_LABELS.some(lbl => t.label.toLowerCase().includes(lbl)) && !t.done)
   );
-  // F2F Not Locked: only show while student still has open tasks
-  const f2fNotLocked    = all.filter(s => s.stage !== 'lockin' && ['Connected','Promise to Pay'].includes(s.lastCallOutcome) && !s.subtasks.every(t => t.done));
+  // F2F Not Locked: attended 2nd discussion, not paid Prime/Premium/C2I, not dropped/submitted
+  const f2fNotLocked = all.filter(s =>
+    s.secondCallDate &&
+    !s.hasPaidPremium &&
+    (!s.amountPaid || s.amountPaid === 0) &&
+    s.leadStatus !== 'Drop off' &&
+    !STI_TERMINAL_STATUSES.includes(s.applicationStatus)
+  );
   // ISL shared but 2nd call (F2F) not yet done — exclude Drop off
   const islF2fPending   = getViewingStudents().filter(s => s.islSharedDate && !s.secondCallDate && s.leadStatus !== 'Drop off');
 
@@ -1808,24 +1814,14 @@ function openBoostSubCard(type) {
     },
     'f2f-not-locked': {
       title:   'F2F Done but Not Locked In',
-      // Close when all subtasks done
-      filter:  s => s.stage !== 'lockin' &&
-                    ['Connected', 'Promise to Pay'].includes(s.lastCallOutcome) &&
-                    !s.subtasks.every(t => t.done),
-      nested: {
-        id:     'walkin-2nd-not-done',
-        label:  'F2F (Walkin / Online 2nd Discussion Done) But Locked in Not Done',
-        filter: s => s.stage === 'sti' &&
-                     s.subtasks.some(t => t.label.includes('Book a session') && !t.done),
-      },
+      // Attended 2nd discussion, haven't paid Prime/Premium/C2I, not Drop off or Submitted
+      filter:  s => s.secondCallDate &&
+                    !s.hasPaidPremium &&
+                    (!s.amountPaid || s.amountPaid === 0) &&
+                    s.leadStatus !== 'Drop off' &&
+                    !STI_TERMINAL_STATUSES.includes(s.applicationStatus),
+      nested:  null,   // show students directly, no nested subcard
       prevMode: 'boostFunnel',
-    },
-    'walkin-2nd-not-done': {
-      title:   'F2F (Walkin / Online 2nd Discussion Done) But Locked in Not Done',
-      filter:  s => s.stage === 'sti' &&
-                    s.subtasks.some(t => t.label.includes('Book a session') && !t.done),
-      nested:  null,
-      prevMode: 'boostSubCard',
     },
     // ISL Shared but F2F not Done — closes when secondCallDate is set
     'isl-shared-f2f-pending': {
