@@ -1660,12 +1660,13 @@ function updateServicingSubType(studentId) {
 
 /* Returns true when a student has a follow-up today AND still has pending subtasks */
 function isPendingToday(s, todayStr) {
-  // If student has an applicationStatus defined, use STI active check (not subtask completion)
-  // so they remain visible until status = Submitted to Institute / Application Dropped
+  const hasOpenTasks = !s.subtasks.every(t => t.done);
   if (s.applicationStatus !== undefined) {
-    return s.followup <= todayStr && isBoostSTIActive(s);
+    // Student persists in Boost STI until Lead Status = Submitted to Institute / Application Dropped
+    // BUT on refresh, only show if they still have open tasks
+    return s.followup <= todayStr && isBoostSTIActive(s) && hasOpenTasks;
   }
-  return s.followup === todayStr && !s.subtasks.every(t => t.done);
+  return s.followup === todayStr && hasOpenTasks;
 }
 
 /* Toggle the collapsible "All Tasks" section inside boost drawers */
@@ -1727,11 +1728,12 @@ function openBoostFunnelDrawer() {
 
   /* ── four priority action buckets ── */
   const lockinStiNotDone = all.filter(s => s.stage === 'lockin' && s.subtasks.some(t => !t.done));
-  // On Hold: any student with a subtask matching the 3 on-hold labels
+  // On Hold: any student with a matching on-hold task that is NOT yet done
   const onHoldDrafts = all.filter(s =>
-    s.subtasks.some(t => ON_HOLD_TASK_LABELS.some(lbl => t.label.toLowerCase().includes(lbl)))
+    s.subtasks.some(t => ON_HOLD_TASK_LABELS.some(lbl => t.label.toLowerCase().includes(lbl)) && !t.done)
   );
-  const f2fNotLocked    = all.filter(s => s.stage !== 'lockin' && ['Connected','Promise to Pay'].includes(s.lastCallOutcome));
+  // F2F Not Locked: only show while student still has open tasks
+  const f2fNotLocked    = all.filter(s => s.stage !== 'lockin' && ['Connected','Promise to Pay'].includes(s.lastCallOutcome) && !s.subtasks.every(t => t.done));
   // ISL shared but 2nd call (F2F) not yet done — exclude Drop off
   const islF2fPending   = getViewingStudents().filter(s => s.islSharedDate && !s.secondCallDate && s.leadStatus !== 'Drop off');
 
@@ -1798,15 +1800,18 @@ function openBoostSubCard(type) {
     },
     'on-hold-drafts': {
       title:   'On Hold Application Drafts',
-      filter:  s => s.stage === 'application' &&
-                    ['Not Reachable', 'Callback Requested'].includes(s.lastCallOutcome),
+      // Match by task label AND task must still be open (not done)
+      filter:  s => s.subtasks.some(t =>
+                    ON_HOLD_TASK_LABELS.some(lbl => t.label.toLowerCase().includes(lbl)) && !t.done),
       nested:  null,
       prevMode: 'boostFunnel',
     },
     'f2f-not-locked': {
       title:   'F2F Done but Not Locked In',
+      // Close when all subtasks done
       filter:  s => s.stage !== 'lockin' &&
-                    ['Connected', 'Promise to Pay'].includes(s.lastCallOutcome),
+                    ['Connected', 'Promise to Pay'].includes(s.lastCallOutcome) &&
+                    !s.subtasks.every(t => t.done),
       nested: {
         id:     'walkin-2nd-not-done',
         label:  'F2F (Walkin / Online 2nd Discussion Done) But Locked in Not Done',
@@ -1820,19 +1825,20 @@ function openBoostSubCard(type) {
       filter:  s => s.stage === 'sti' &&
                     s.subtasks.some(t => t.label.includes('Book a session') && !t.done),
       nested:  null,
-      prevMode: 'boostSubCard',   // back → F2F card
+      prevMode: 'boostSubCard',
     },
-    // New Boost STI subcard: ISL Shared but F2F not Done
+    // ISL Shared but F2F not Done — closes when secondCallDate is set
     'isl-shared-f2f-pending': {
       title:   'ISL Shared but F2F not Done',
       filter:  s => s.islSharedDate && !s.secondCallDate && s.leadStatus !== 'Drop off',
       nested:  null,
       prevMode: 'boostFunnel',
     },
-    // New Boost Deposit subcard: C to UC or UC received but deposits Not Paid
+    // C to UC — closes when all subtasks done
     'c-to-uc-deposit-pending': {
       title:   'C to UC / UC Received — Deposit Not Paid',
-      filter:  s => s.stage === 'deposit' && s.ucAssigned === true,
+      filter:  s => s.stage === 'deposit' && s.ucAssigned === true &&
+                    !s.subtasks.every(t => t.done),
       nested:  null,
       prevMode: 'boost-deposit',
     },
@@ -5993,14 +5999,14 @@ function renderStandupTable(filterData) {
 
   // Add Pre ISL Drop and Post ISL Drop at end of Volume Metrics
   volumeRows.push({
-    name:'Pre ISL Drop', key:'pre_isl_drop', isCurrency:false, isPct:true, isDropRate:true,
+    name:'Pre ISL Drop', key:'pre_isl_drop', isCurrency:false, isPct:false, isDropRate:true,
     tYTD:10, tMTD:10,
     aYTD:8,  aMTD:7,
     Y:8, Y1:9, Y2:7,
     W0:8, W01:9, M01:7,
   });
   volumeRows.push({
-    name:'Post ISL Drop', key:'post_isl_drop', isCurrency:false, isPct:true, isDropRate:true,
+    name:'Post ISL Drop', key:'post_isl_drop', isCurrency:false, isPct:false, isDropRate:true,
     tYTD:25, tMTD:25,
     aYTD:22, aMTD:20,
     Y:22, Y1:24, Y2:21,
