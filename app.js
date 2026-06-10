@@ -190,19 +190,19 @@ const STUDENTS = [
 
 /* ── ISL / F2F / UC / Lead Status per student ── */
 const STUDENT_PIPELINE_DATA = {
-  // islSharedDate: when ISL was shared; secondCallDate: when 2nd call (F2F) attended; leadStatus: current lead status; ucAssigned: UC counsellor assigned
-  U1001: { islSharedDate:'2026-06-01', secondCallDate:null,         leadStatus:null,       ucAssigned:false },
-  U1002: { islSharedDate:'2026-06-03', secondCallDate:null,         leadStatus:null,       ucAssigned:true  },
-  U1003: { islSharedDate:'2026-05-20', secondCallDate:'2026-05-25', leadStatus:null,       ucAssigned:true  },
-  U1004: { islSharedDate:'2026-06-05', secondCallDate:null,         leadStatus:null,       ucAssigned:false },
-  U1005: { islSharedDate:'2026-05-15', secondCallDate:'2026-05-22', leadStatus:null,       ucAssigned:true  },
-  U1006: { islSharedDate:'2026-06-04', secondCallDate:null,         leadStatus:null,       ucAssigned:true  },
-  U1007: { islSharedDate:'2026-05-28', secondCallDate:null,         leadStatus:'Drop off', ucAssigned:false },
-  U1008: { islSharedDate:'2026-05-18', secondCallDate:'2026-05-30', leadStatus:null,       ucAssigned:true  },
-  U1009: { islSharedDate:'2026-06-07', secondCallDate:'2026-06-08', leadStatus:null,       ucAssigned:false },
-  U1010: { islSharedDate:'2026-06-02', secondCallDate:'2026-06-06', leadStatus:null,       ucAssigned:true  },
-  U1011: { islSharedDate:null,         secondCallDate:null,         leadStatus:null,       ucAssigned:false },
-  U1012: { islSharedDate:'2026-06-08', secondCallDate:'2026-06-09', leadStatus:null,       ucAssigned:true  },
+  // islSharedDate, secondCallDate, leadStatus, ucAssigned, englishTestGiven (IELTS/TOEFL/Duolingo/PTE)
+  U1001: { islSharedDate:'2026-06-01', secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false },
+  U1002: { islSharedDate:'2026-06-03', secondCallDate:null,         leadStatus:null,       ucAssigned:true,  englishTestGiven:false },
+  U1003: { islSharedDate:'2026-05-20', secondCallDate:'2026-05-25', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
+  U1004: { islSharedDate:'2026-06-05', secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false },
+  U1005: { islSharedDate:'2026-05-15', secondCallDate:'2026-05-22', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
+  U1006: { islSharedDate:'2026-06-04', secondCallDate:null,         leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
+  U1007: { islSharedDate:'2026-05-28', secondCallDate:null,         leadStatus:'Drop off', ucAssigned:false, englishTestGiven:false },
+  U1008: { islSharedDate:'2026-05-18', secondCallDate:'2026-05-30', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
+  U1009: { islSharedDate:'2026-06-07', secondCallDate:'2026-06-08', leadStatus:null,       ucAssigned:false, englishTestGiven:false },
+  U1010: { islSharedDate:'2026-06-02', secondCallDate:'2026-06-06', leadStatus:null,       ucAssigned:true,  englishTestGiven:false },
+  U1011: { islSharedDate:null,         secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false },
+  U1012: { islSharedDate:'2026-06-08', secondCallDate:'2026-06-09', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
 };
 STUDENTS.forEach(s => Object.assign(s, STUDENT_PIPELINE_DATA[s.id] || { islSharedDate:null, secondCallDate:null, leadStatus:null, ucAssigned:false }));
 
@@ -1592,6 +1592,21 @@ function _boostMetricCard(id, label, students, todayStr, onclickFn, todayOnly) {
 
 /* ── Boost Today-Only UX helpers ── */
 
+/* ── Metric Definition + Task Closure banner (used in all subcards) ── */
+function _metricDefBanner(defText, closureText) {
+  return `
+    <div class="mb-3 rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+      <div class="px-3 py-2.5 bg-blue-50 border-b border-blue-100">
+        <p class="text-[10px] font-bold text-blue-700 mb-0.5">ℹ️ Definition</p>
+        <p class="text-[10px] text-blue-600 leading-relaxed">${defText}</p>
+      </div>
+      <div class="px-3 py-2.5 bg-green-50">
+        <p class="text-[10px] font-bold text-green-700 mb-0.5">✅ Task Closure</p>
+        <p class="text-[10px] text-green-600 leading-relaxed">${closureText}</p>
+      </div>
+    </div>`;
+}
+
 function _boostIsAcknowledged(drawerType) {
   return !!(state.boostAcknowledged && state.boostAcknowledged[drawerType]);
 }
@@ -1803,40 +1818,56 @@ function openBoostSubCard(type) {
       filter:  s => s.stage === 'lockin' && s.subtasks.some(t => !t.done),
       nested:  null,
       prevMode: 'boostFunnel',
+      def:     'Student has completed the Lock-in payment but STI (Study Abroad Training/Submission) is still pending.',
+      closure: 'STI is submitted and marked done in the system.',
     },
     'on-hold-drafts': {
       title:   'On Hold Application Drafts',
-      // Match by task label AND task must still be open (not done)
       filter:  s => s.subtasks.some(t =>
                     ON_HOLD_TASK_LABELS.some(lbl => t.label.toLowerCase().includes(lbl)) && !t.done),
       nested:  null,
       prevMode: 'boostFunnel',
+      def:     'Student\'s application is on hold — QC cleared the documents and filing is pending, or the draft was rejected and needs revision (QC Rejected / On Hold).',
+      closure: 'Application is filed and status moves forward in the pipeline.',
     },
     'f2f-not-locked': {
       title:   'F2F Done but Not Locked In',
-      // Attended 2nd discussion, haven't paid Prime/Premium/C2I, not Drop off or Submitted
       filter:  s => s.secondCallDate &&
                     !s.hasPaidPremium &&
                     (!s.amountPaid || s.amountPaid === 0) &&
                     s.leadStatus !== 'Drop off' &&
                     !STI_TERMINAL_STATUSES.includes(s.applicationStatus),
-      nested:  null,   // show students directly, no nested subcard
+      nested:  null,
       prevMode: 'boostFunnel',
+      def:     'Student attended the 2nd F2F/online discussion but hasn\'t paid any amount (Prime / Premium / C2I). Lead is active and not dropped.',
+      closure: 'Student makes a payment — Prime, Premium, or C2I amount is recorded in the system.',
     },
-    // ISL Shared but F2F not Done — closes when secondCallDate is set
     'isl-shared-f2f-pending': {
       title:   'ISL Shared but F2F not Done',
       filter:  s => s.islSharedDate && !s.secondCallDate && s.leadStatus !== 'Drop off',
       nested:  null,
       prevMode: 'boostFunnel',
+      def:     'ISL (Institute Shortlisting) has been shared with the student but they haven\'t attended the 2nd discussion call yet. Lead is not dropped.',
+      closure: 'Student attends the 2nd discussion and second call date is recorded in the system.',
     },
-    // C to UC — closes when all subtasks done
     'c-to-uc-deposit-pending': {
       title:   'C to UC / UC Received — Deposit Not Paid',
       filter:  s => s.stage === 'deposit' && s.ucAssigned === true &&
                     !s.subtasks.every(t => t.done),
       nested:  null,
       prevMode: 'boost-deposit',
+      def:     'Student has been assigned a University Counsellor (UC) but the deposit payment has not yet been collected.',
+      closure: 'Deposit is paid and recorded in the system.',
+    },
+    'c2i-enrolment': {
+      title:   'C2I Enrolment',
+      filter:  s => !s.englishTestGiven &&
+                    ['sti','application'].includes(s.stage) &&
+                    s.leadStatus !== 'Drop off',
+      nested:  null,
+      prevMode: 'boostRevenue',
+      def:     'Students eligible for English Proficiency Test (IELTS / TOEFL / Duolingo / PTE) — test not yet given and lead status is not beyond Admit Received.',
+      closure: 'English Proficiency Test is completed and updated in the system.',
     },
   };
 
@@ -1866,10 +1897,11 @@ function openBoostSubCard(type) {
     return;
   }
 
+  const banner    = cfg.def ? _metricDefBanner(cfg.def, cfg.closure || '') : '';
   const todayLabel = !acked ? `<div class="mb-3">${_renderBoostTodayHeader(students.length)}</div>` : `<div class="mb-3">${_renderBoostAckHeader()}</div>`;
   const listHTML = students.length
-    ? `${todayLabel}<div class="space-y-2">${renderStudentList(students)}</div>`
-    : `${todayLabel}<p class="text-xs text-text-muted italic text-center py-6">No students due today for this criteria.</p>`;
+    ? `${banner}${todayLabel}<div class="space-y-2">${renderStudentList(students)}</div>`
+    : `${banner}${todayLabel}<p class="text-xs text-text-muted italic text-center py-6">No students due today for this criteria.</p>`;
 
   openDrawer(cfg.title, listHTML, true);
 }
@@ -2341,6 +2373,7 @@ function openBoostRevenueDrawer() {
         ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue',  todayNP, todayStr, "openRevenueSubCard('non-partner-revenue')", true)}
         ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',     todayPE, todayStr, "openRevenueSubCard('prime-enrolments')",    true)}
         ${_boostMetricCard('specialised-services','Specialised Services',  todaySS, todayStr, "openRevenueSubCard('specialised-services')", true)}
+        ${_boostMetricCard('c2i-enrolment',       'C2I Enrolment',        getViewingStudents().filter(s => !s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off'), todayStr, "openBoostSubCard('c2i-enrolment')", true)}
         ${allDone ? _renderBoostAckPrompt('revenue') : ''}
         ${_renderAllTasksSection(false, allRevStudents, 'revenue')}
       </div>`;
@@ -2352,6 +2385,7 @@ function openBoostRevenueDrawer() {
         ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue', nonPartner, todayStr, "openRevenueSubCard('non-partner-revenue')")}
         ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',   primeEnrol,  todayStr, "openRevenueSubCard('prime-enrolments')")}
         ${_boostMetricCard('specialised-services','Specialised Services',specServices,todayStr, "openRevenueSubCard('specialised-services')")}
+        ${_boostMetricCard('c2i-enrolment',       'C2I Enrolment',       getViewingStudents().filter(s => !s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off'), todayStr, "openBoostSubCard('c2i-enrolment')")}
         ${_renderAllTasksSection(true, allRevStudents, 'revenue')}
       </div>`;
   }
@@ -2368,16 +2402,22 @@ function openRevenueSubCard(type) {
       title:   'Non Partner Revenue',
       filter:  s => s.servicingType === 'non-partner',
       badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Non Partner</span>${s.nonPartnerSubType === 'specialised-services' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">Specialised</span>` : s.nonPartnerSubType === 'premium-universities' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 ml-1">Premium Uni</span>` : ''}`,
+      def:     'Students with non-partner university servicing where non-partner fee/revenue has not been fully collected.',
+      closure: 'Full non-partner revenue is collected and recorded in the system.',
     },
     'prime-enrolments': {
       title:   'Prime Enrolments',
       filter:  s => s.servicingType === 'partner',
       badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Partner Servicing</span>`,
+      def:     'Students enrolled under partner university servicing (Prime) where enrolment revenue is pending or outstanding.',
+      closure: 'Full partner enrolment revenue is collected from the student.',
     },
     'specialised-services': {
       title:   'Specialised Services',
       filter:  s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services',
       badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Specialised Services</span>`,
+      def:     'Students availing specialised services (SOP, Visa, IELTS prep etc.) where service fee payment is pending.',
+      closure: 'Specialised service fee is paid and recorded in the system.',
     },
   };
 
@@ -2394,8 +2434,9 @@ function openRevenueSubCard(type) {
 
   const headerHtml = !acked ? `<div class="mb-3">${_renderBoostTodayHeader(students.length)}</div>` : `<div class="mb-3">${_renderBoostAckHeader()}</div>`;
 
+  const revBanner = cfg.def ? _metricDefBanner(cfg.def, cfg.closure || '') : '';
   const listHTML = students.length
-    ? `${headerHtml}<div class="space-y-2">${students.map(s => `
+    ? `${revBanner}${headerHtml}<div class="space-y-2">${students.map(s => `
         <div class="student-card" onclick="openStudentDetail('${s.id}')">
           <div class="flex items-start justify-between mb-2">
             <div>
@@ -2407,7 +2448,7 @@ function openRevenueSubCard(type) {
           <div class="text-xs text-text-muted">📅 Follow-up: ${s.followup}</div>
           <p class="text-xs text-primary font-semibold mt-2 cursor-pointer">Open →</p>
         </div>`).join('')}</div>`
-    : `${headerHtml}<p class="text-xs text-text-muted italic text-center py-6">No students due today for this category.</p>`;
+    : `${revBanner}${headerHtml}<p class="text-xs text-text-muted italic text-center py-6">No students due today for this category.</p>`;
 
   openDrawer(cfg.title, listHTML, true);
 }
