@@ -145,7 +145,7 @@ const STUDENTS = [
     whatsappGroups:[{ groupName:'CSE Batch Jun 2026', counselorJoined:true, studentJoined:true },{ groupName:'Tech Prep Group', counselorJoined:false, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'21 May 10:00 AM', notes:'Promised to pay by 23rd', outcome:'Promise to Pay' }, { label:'Follow up on payment', done:false }, { label:'Send a WhatsApp message', done:true, timestamp:'21 May 11:00 AM', notes:'Sent payment link', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 10:00 AM', notes:'Promised deposit by 23 May' }, { type:'WhatsApp sent', time:'21 May 11:00 AM', notes:'Payment link shared' }] },
-  { id:'U1004', name:'Prerna Singh',    course:'MBA HR',            stage:'sti',         followup:'2026-05-26', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Callback Requested', qualityScore:55, lastConnected:'22 May 2026 3:00 PM', country:'USA',
+  { id:'U1004', name:'Prerna Singh',    course:'MBA HR',            stage:'sti',         followup:'2026-06-10', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Callback Requested', qualityScore:55, lastConnected:'22 May 2026 3:00 PM', country:'USA',
     whatsappGroups:[{ groupName:'MBA General – Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }, { label:'Share a document / template', done:false }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'22 May 3:00 PM', notes:'Requested callback at 5 PM tomorrow' }] },
@@ -153,11 +153,11 @@ const STUDENTS = [
     whatsappGroups:[{ groupName:'BCA Batch A', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:true, timestamp:'21 May 2:30 PM', notes:'Received offer, finalizing', outcome:'Connected' }, { label:'Update application status', done:true, timestamp:'21 May 3:00 PM', notes:'Shortlisted — awaiting lock-in payment', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 2:30 PM', notes:'Shortlisting offer shared, student reviewing' }, { type:'Application updated', time:'21 May 3:00 PM', notes:'Stage: Shortlisted — lock-in pending' }] },
-  { id:'U1006', name:'Ishita Rawat',    course:'MBA Finance',       stage:'application', followup:'2026-05-27', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:68, lastConnected:'20 May 2026 5:00 PM', country:'Ireland',
+  { id:'U1006', name:'Ishita Rawat',    course:'MBA Finance',       stage:'application', followup:'2026-06-10', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:68, lastConnected:'20 May 2026 5:00 PM', country:'Ireland',
     whatsappGroups:[{ groupName:'MBA Batch A – Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'20 May 5:00 PM', notes:'Submitted application', outcome:'Connected' }, { label:'Send a WhatsApp message', done:true, timestamp:'20 May 5:30 PM', notes:'Sent next steps doc', outcome:'Connected' }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'20 May 5:00 PM', notes:'Application submitted successfully' }, { type:'WhatsApp sent', time:'20 May 5:30 PM', notes:'Next steps document shared' }] },
-  { id:'U1007', name:'Karan Tiwari',    course:'B.Com',             stage:'sti',         followup:'2026-05-28', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Not Reachable', qualityScore:40, lastConnected:'19 May 2026 11:00 AM', country:'Singapore',
+  { id:'U1007', name:'Karan Tiwari',    course:'B.Com',             stage:'sti',         followup:'2026-06-10', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Not Reachable', qualityScore:40, lastConnected:'19 May 2026 11:00 AM', country:'Singapore',
     whatsappGroups:[{ groupName:'B.Com General', counselorJoined:true, studentJoined:false },{ groupName:'Finance Study Group', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }],
     activity:[{ type:'Call logged', time:'22 May 9:00 AM', notes:'Not reachable for 3 days' }] },
@@ -165,6 +165,27 @@ const STUDENTS = [
     whatsappGroups:[{ groupName:'MBA Batch B – Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:false }, { label:'Call the student', done:true, timestamp:'22 May 12:00 PM', notes:'Confirming deposit timeline', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'22 May 12:00 PM', notes:'Deposit expected by 25 May' }] },
+
+  /* ── New demo students added for full card coverage ── */
+  { id:'U1009', name:'Arjun Sharma',    course:'MBA Operations',    stage:'lockin',      followup:'2026-06-10', appDownloaded:true,  lastCallDate:'08 Jun 2026', lastCallOutcome:'Connected',      qualityScore:85, lastConnected:'08 Jun 2026 10:00 AM', country:'UK',
+    whatsappGroups:[{ groupName:'MBA Ops Batch Jun 2026', counselorJoined:false, studentJoined:false }],
+    subtasks:[{ label:'Follow up on payment', done:false }, { label:'Book a session / demo', done:false }, { label:'Send STI confirmation', done:false }],
+    activity:[{ type:'Call logged', time:'08 Jun 10:00 AM', notes:'Student ready to lock in — pending STI confirmation' }] },
+
+  { id:'U1010', name:'Kavya Nair',      course:'B.Tech IT',         stage:'deposit',     followup:'2026-06-10', appDownloaded:false, lastCallDate:'09 Jun 2026', lastCallOutcome:'Not Reachable',  qualityScore:62, lastConnected:'07 Jun 2026 3:00 PM',  country:'Australia',
+    whatsappGroups:[{ groupName:'Tech Batch Jun 2026', counselorJoined:true, studentJoined:false }],
+    subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Follow up on payment', done:false }],
+    activity:[{ type:'Call logged', time:'09 Jun 11:00 AM', notes:'Not reachable — tried twice today' }] },
+
+  { id:'U1011', name:'Rohan Gupta',     course:'BBA International', stage:'application', followup:'2026-06-10', appDownloaded:false, lastCallDate:'09 Jun 2026', lastCallOutcome:'Not Reachable',  qualityScore:58, lastConnected:'06 Jun 2026 4:00 PM',  country:'Canada',
+    whatsappGroups:[],
+    subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Update application status', done:false }],
+    activity:[{ type:'Call logged', time:'09 Jun 2:00 PM', notes:'Not reachable — escalation raised by student' }] },
+
+  { id:'U1012', name:'Sneha Patel',     course:'MBA Marketing',     stage:'lockin',      followup:'2026-06-10', appDownloaded:true,  lastCallDate:'09 Jun 2026', lastCallOutcome:'Connected',      qualityScore:91, lastConnected:'09 Jun 2026 11:00 AM', country:'Germany',
+    whatsappGroups:[{ groupName:'MBA Europe Jun 2026', counselorJoined:true, studentJoined:true }],
+    subtasks:[{ label:'Follow up on payment', done:true, timestamp:'09 Jun 11:00 AM', notes:'Payment confirmed', outcome:'Connected' }, { label:'Lock-in confirmation', done:false }],
+    activity:[{ type:'Call logged', time:'09 Jun 11:00 AM', notes:'Lock-in almost done — awaiting final confirmation' }] },
 ];
 
 /* Revenue & services data per student */
@@ -175,8 +196,12 @@ const STUDENT_REVENUE_DATA = {
   U1004: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['Visa'],       hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'specialised-services'  },
   U1005: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 120000, servicingType: 'partner',     nonPartnerSubType: null                    },
   U1006: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP','Visa'], hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'premium-universities'  },
-  U1007: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: false, amountPaid: 0,      servicingType: null,          nonPartnerSubType: null                    },
-  U1008: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: false, specialServices: [],            hasPaidPremium: true,  amountPaid: 60000,  servicingType: 'partner',     nonPartnerSubType: null                    },
+  U1007: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: [],              hasPaidPremium: false, amountPaid: 0,      servicingType: null,          nonPartnerSubType: null                   },
+  U1008: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: false, specialServices: [],              hasPaidPremium: true,  amountPaid: 60000,  servicingType: 'partner',     nonPartnerSubType: null                   },
+  U1009: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],              hasPaidPremium: true,  amountPaid: 95000,  servicingType: 'partner',     nonPartnerSubType: null                   },
+  U1010: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['IELTS'],       hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'premium-universities' },
+  U1011: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP','IELTS'], hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'specialised-services' },
+  U1012: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],              hasPaidPremium: true,  amountPaid: 110000, servicingType: 'partner',     nonPartnerSubType: null                   },
 };
 STUDENTS.forEach(s => Object.assign(s, STUDENT_REVENUE_DATA[s.id] || { isQlPremium:false, hasFinalisedUniversity:false, hasDocs:false, specialServices:[], hasPaidPremium:false }));
 
@@ -190,6 +215,10 @@ const STUDENT_ISL = {
   U1006: { islRating: 7.0, hasEscalation: false },
   U1007: { islRating: 4.3, hasEscalation: true  },
   U1008: { islRating: 8.0, hasEscalation: false },
+  U1009: { islRating: 8.7, hasEscalation: false },
+  U1010: { islRating: 6.0, hasEscalation: false },
+  U1011: { islRating: 7.0, hasEscalation: true  },
+  U1012: { islRating: 9.2, hasEscalation: false },
 };
 STUDENTS.forEach(s => Object.assign(s, STUDENT_ISL[s.id] || { islRating: 8.0, hasEscalation: false }));
 
@@ -198,6 +227,7 @@ const STUDENT_CA_DATES = {
   U1001: '2026-04-10', U1002: '2026-04-15', U1003: '2026-03-20',
   U1004: '2026-05-01', U1005: '2026-03-05', U1006: '2026-04-22',
   U1007: '2026-05-10', U1008: '2026-04-28',
+  U1009: '2026-05-15', U1010: '2026-05-20', U1011: '2026-05-25', U1012: '2026-05-18',
 };
 STUDENTS.forEach(s => { s.caDate = STUDENT_CA_DATES[s.id] || ''; });
 
@@ -214,6 +244,13 @@ const WA_UNANSWERED = {
     { question: 'What documents do I need to submit for B.Com admission?', date: '2026-05-26', leadStatus: 'STI' },
     { question: 'Is hostel accommodation available on campus?', date: '2026-05-28', leadStatus: 'STI' },
   ],
+  U1010: [
+    { question: 'When is the last date to pay the deposit?', date: '2026-06-08', leadStatus: 'Deposit' },
+  ],
+  U1011: [
+    { question: 'Can you review my SOP draft before submission?', date: '2026-06-09', leadStatus: 'Application' },
+    { question: 'What is the deadline for the IELTS waiver?', date: '2026-06-09', leadStatus: 'Application' },
+  ],
 };
 
 /* Deferrals opportunity — admits with no deposit, or deposit with no visa */
@@ -222,6 +259,8 @@ const DEFERRAL_DATA = {
   U1006: { hasAdmitPrevIntake: true,  admitUniversity: 'Trinity College Dublin',   admitIntake: 'Sep 2025', depositPaid: false, visaDone: false },
   U1003: { hasAdmitPrevIntake: false, admitUniversity: 'Deakin University',        admitIntake: 'Feb 2026', depositPaid: true,  visaDone: false },
   U1008: { hasAdmitPrevIntake: false, admitUniversity: 'Massey University NZ',     admitIntake: 'Mar 2026', depositPaid: true,  visaDone: false },
+  U1009: { hasAdmitPrevIntake: true,  admitUniversity: 'Warwick Business School',  admitIntake: 'Jan 2026', depositPaid: false, visaDone: false },
+  U1012: { hasAdmitPrevIntake: false, admitUniversity: 'TU Munich',               admitIntake: 'Oct 2026', depositPaid: true,  visaDone: false },
 };
 STUDENTS.forEach(s => { s.deferral = DEFERRAL_DATA[s.id] || null; });
 
