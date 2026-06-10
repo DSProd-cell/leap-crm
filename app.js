@@ -969,8 +969,8 @@ function bootApp(role, email) {
 
   renderAll();
   switchTab('tab1');
-  // Idle-based 10x banner — show only after 1 hour of inactivity
-  _startIdleBannerTimer();
+  // Show 10x banner immediately on every page after login
+  show10xBanner();
   // Clear chat and show IST time-based greeting on every fresh login
   setTimeout(initBotWithGreeting, 300);
 }
@@ -2905,28 +2905,7 @@ function openQuickLink(type) {
 }
 
 /* ═══════════════ IDLE 10X BANNER ═══════════════ */
-let _idleBannerTimer = null;
-const IDLE_MS = 60 * 60 * 1000; // 1 hour
-
-function _startIdleBannerTimer() {
-  if (_idleBannerTimer) clearTimeout(_idleBannerTimer);
-  _idleBannerTimer = setTimeout(() => {
-    // Only show if user is logged in
-    if (state.currentUser) show10xBanner();
-    // Restart timer to show again every hour of subsequent inactivity
-    _startIdleBannerTimer();
-  }, IDLE_MS);
-}
-
-function _resetIdleTimer() {
-  dismiss10xBanner();
-  _startIdleBannerTimer();
-}
-
-// Reset idle timer on any user activity
-['mousemove','keydown','click','scroll','touchstart'].forEach(evt =>
-  document.addEventListener(evt, _resetIdleTimer, { passive: true })
-);
+// Banner is shown immediately on login and stays visible on all tabs until dismissed.
 
 /* ═══════════════ JOIN 10X ═══════════════ */
 
@@ -2952,7 +2931,7 @@ function show10xBanner() {
   const banner = document.getElementById('join10xBanner');
   const main = document.getElementById('mainContent');
   if (banner) banner.classList.remove('hidden');
-  if (main) main.style.marginTop = '144px'; // extra 40px for banner
+  if (main) main.style.marginTop = '126px'; // slim banner ~22px
   // Also send bot notification message
   setTimeout(() => {
     appendBotMessageLive(`<p>🚀 <strong>Hey! Your 10x session is live.</strong> Don't miss it — click <strong>Join 10x</strong> in the purple banner at the top to jump in now with your team! 💪</p>`);
