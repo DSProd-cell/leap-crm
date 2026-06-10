@@ -6456,22 +6456,37 @@ function openWAGroupDetailsDrawer() {
 
   /* ── Unhappy Cohort sub-card ── */
   const unhappyStudents = students.filter(s => s.islRating < 8 || s.hasEscalation);
-  const unhappyInner = `
-    <p class="text-[11px] text-text-muted mb-2.5">Students with low ISL rating or open escalations.</p>
-    ${unhappyStudents.length === 0
-      ? `<p class="text-xs text-text-muted italic text-center py-4">No unhappy cases right now 🎉</p>`
-      : unhappyStudents.map(s => `
-          <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-            <div>
-              <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
-              <p class="text-[10px] text-text-muted">${s.id} · ${s.course}</p>
-              <div class="flex gap-1.5 mt-0.5">
-                ${s.islRating < 8 ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">ISL ${s.islRating}/10</span>` : ''}
-                ${s.hasEscalation ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Escalation</span>` : ''}
-              </div>
+  const unhappyBanner = `
+    <div class="mb-3 rounded-lg overflow-hidden border border-gray-100">
+      <div class="px-2.5 py-2 bg-blue-50 border-b border-gray-100">
+        <p class="text-[10px] font-bold text-blue-700 mb-0.5">ℹ️ Definition</p>
+        <p class="text-[10px] text-blue-600 leading-relaxed">Leads where the student has given a rating <strong>less than 4</strong> in the app for ISL, or the student has given a rating in an <strong>F2F discussion</strong>.</p>
+      </div>
+      <div class="px-2.5 py-2 bg-green-50">
+        <p class="text-[10px] font-bold text-green-700 mb-0.5">✅ Task Closure</p>
+        <p class="text-[10px] text-green-600 leading-relaxed">
+          • Counsellor shares the <strong>revised shortlist</strong><br/>
+          • ISL share date gets <strong>changed</strong><br/>
+          • Student <strong>finalises</strong> one university<br/>
+          • Student purchases <strong>Leap Prime</strong><br/>
+          • Student gives a rating of <strong>more than 3 out of 5</strong>
+        </p>
+      </div>
+    </div>`;
+  const unhappyInner = unhappyBanner + (unhappyStudents.length === 0
+    ? `<p class="text-xs text-text-muted italic text-center py-4">No unhappy cases right now 🎉</p>`
+    : unhappyStudents.map(s => `
+        <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+          <div>
+            <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
+            <p class="text-[10px] text-text-muted">${s.id} · ${s.course}</p>
+            <div class="flex gap-1.5 mt-0.5 flex-wrap">
+              ${s.islRating < 8 ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">ISL ${s.islRating}/10</span>` : ''}
+              ${s.hasEscalation ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Escalation</span>` : ''}
             </div>
-            <button onclick="openStudentDetail('${s.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer">View Lead →</button>
-          </div>`).join('')}`;
+          </div>
+          <button onclick="openStudentDetail('${s.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer flex-shrink-0">View Lead →</button>
+        </div>`).join(''));
 
   const content = `
     <p class="text-xs text-text-muted mb-4">Overview of user experience, voice & non-voice communication across your students.</p>
