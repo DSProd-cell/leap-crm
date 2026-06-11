@@ -2979,6 +2979,91 @@ function switchInfoHubSection(section, btn) {
   document.querySelectorAll('.ih-section').forEach(s => s.classList.add('hidden'));
   const el = document.getElementById('ihSection-' + section);
   if (el) el.classList.remove('hidden');
+  if (section === 'training-guidelines') renderTGGrid();
+}
+
+/* ── Training and Guidelines ── */
+const TG_DOCS = [
+  { university: 'Brock University',                                          country: 'Canada',    category: 'training',      docType: 'University Training Document', filename: 'Brock University Viewbook (1).pdf',                                  ext: 'pdf'  },
+  { university: 'California State University Fullerton',                     country: 'USA',       category: 'consent',       docType: 'Consent Form',                 filename: '1770204673502-CSU_Fullerton_FERPA_advising_release_Consent_Form.pdf', ext: 'pdf'  },
+  { university: 'University of the West of Scotland',                        country: 'UK',        category: 'consent',       docType: 'Application Form',             filename: 'UWS international applicant personal statement template.docx',        ext: 'docx' },
+  { university: 'Newcastle University',                                      country: 'UK',        category: 'authorisation', docType: 'Authorisation',                filename: 'Newcastle University Agent Authorisation Form 2026.docx',            ext: 'docx' },
+  { university: 'TEG - University of the West of Scotland - London Campus',  country: 'UK',        category: 'training',      docType: 'University Training Document', filename: 'UWS London_slidedeck.pdf',                                           ext: 'pdf'  },
+  { university: 'Abu Dhabi University',                                      country: 'UAE',       category: 'training',      docType: 'University Training Document', filename: 'International Brochure 2025-2026 PG.pdf',                            ext: 'pdf'  },
+  { university: 'University of East London',                                 country: 'UK',        category: 'authorisation', docType: 'Authorisation',                filename: 'Representation Authorisation.docx',                                  ext: 'docx' },
+  { university: 'Coventry University - London',                              country: 'UK',        category: 'authorisation', docType: 'Authorisation',                filename: 'AGENT AUTHORISATION and CONSENT FORM (1).pdf',                       ext: 'pdf'  },
+  { university: 'University of Exeter',                                      country: 'UK',        category: 'authorisation', docType: 'Authorisation',                filename: 'New Agent form - Jan 26 - Exeter.pdf',                               ext: 'pdf'  },
+  { university: 'University of Manchester',                                  country: 'UK',        category: 'training',      docType: 'University Training Document', filename: 'UoM Partner Training Deck 2025.pdf',                                 ext: 'pdf'  },
+  { university: 'Northeastern University',                                   country: 'USA',       category: 'consent',       docType: 'Consent Form',                 filename: 'NEU_Agent_Consent_Form_2025.pdf',                                    ext: 'pdf'  },
+  { university: 'University of Toronto',                                     country: 'Canada',    category: 'authorisation', docType: 'Authorisation',                filename: 'UofT_Agent_Authorisation_2026.docx',                                 ext: 'docx' },
+];
+
+let tgActiveCategory = 'all';
+
+function renderTGGrid() {
+  const grid = document.getElementById('tgGrid');
+  if (!grid) return;
+  const country = (document.getElementById('tgFilterCountry')?.value || '').toLowerCase();
+  const uni     = (document.getElementById('tgFilterUniversity')?.value || '').toLowerCase();
+  const filtered = TG_DOCS.filter(d => {
+    if (tgActiveCategory !== 'all' && d.category !== tgActiveCategory) return false;
+    if (country && !d.country.toLowerCase().includes(country)) return false;
+    if (uni && !d.university.toLowerCase().includes(uni)) return false;
+    return true;
+  });
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="col-span-3 flex flex-col items-center justify-center py-16 text-center">
+      <svg class="w-16 h-16 text-text-muted/30 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p class="font-semibold text-text-main mb-1">No documents found</p>
+      <p class="text-sm text-text-muted">Try adjusting the filters or selecting a different category.</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(d => {
+    const isPdf  = d.ext === 'pdf';
+    const fileIcon = isPdf
+      ? `<svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8 17v-2h8v2H8zm0-4v-2h8v2H8z"/></svg>`
+      : `<svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM8 17v-2h8v2H8zm0-4v-2h8v2H8z"/></svg>`;
+    return `<div class="bg-white rounded-xl border border-border p-4 hover:shadow-sm transition-shadow">
+      <div class="flex items-start justify-between gap-2 mb-1">
+        <p class="font-semibold text-sm text-text-main leading-snug">${d.university}</p>
+        <button class="flex-shrink-0 text-primary hover:text-primary-light" title="Download">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        </button>
+      </div>
+      <p class="text-xs text-text-muted mb-3">${d.docType}</p>
+      <div class="flex items-center gap-2 bg-surface rounded-lg px-3 py-2">
+        ${fileIcon}
+        <span class="text-xs text-text-main truncate">${d.filename}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchTGCategory(cat, btn) {
+  tgActiveCategory = cat;
+  document.querySelectorAll('.tg-cat-btn').forEach(b => {
+    b.classList.remove('bg-primary/10', 'text-primary', 'border-primary');
+    b.classList.add('border-border', 'text-text-muted', 'hover:bg-surface');
+  });
+  if (btn) {
+    btn.classList.add('bg-primary/10', 'text-primary', 'border-primary');
+    btn.classList.remove('border-border', 'text-text-muted', 'hover:bg-surface');
+  }
+  renderTGGrid();
+}
+
+function filterTrainingGuidelines() { renderTGGrid(); }
+
+function resetTrainingGuidelines() {
+  document.getElementById('tgFilterCountry').value    = '';
+  document.getElementById('tgFilterUniversity').value = '';
+  tgActiveCategory = 'all';
+  document.querySelectorAll('.tg-cat-btn').forEach((b, i) => {
+    if (i === 0) { b.classList.add('bg-primary/10','text-primary','border-primary'); b.classList.remove('border-border','text-text-muted','hover:bg-surface'); }
+    else         { b.classList.remove('bg-primary/10','text-primary','border-primary'); b.classList.add('border-border','text-text-muted','hover:bg-surface'); }
+  });
+  renderTGGrid();
 }
 
 function switchDeadlineTab(tab, btn) {
