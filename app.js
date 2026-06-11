@@ -133,56 +133,56 @@ const SUPPORT_TICKETS = [
 
 /* ── Mock students for Priya Sharma (counselor id:1) ── */
 const STUDENTS = [
-  { id:'U1001', name:'Aarav Mehta',     course:'MBA Finance',      stage:'sti',         followup:'2026-06-02', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:82, lastConnected:'20 May 2026 11:42 AM', country:'UK',
+  { id:'U1001', counselorId:1, name:'Aarav Mehta',     course:'MBA Finance',      stage:'sti',         followup:'2026-06-02', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:82, lastConnected:'20 May 2026 11:42 AM', country:'UK',
     whatsappGroups:[{ groupName:'MBA Batch A – Jun 2026', counselorJoined:true, studentJoined:true },{ groupName:'Finance Study Group', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'20 May 11:42 AM', notes:'Discussed fees', outcome:'Connected' }, { label:'Send a WhatsApp message', done:true, timestamp:'20 May 1:00 PM', notes:'Sent brochure', outcome:'Connected' }, { label:'Follow up on payment', done:false }, { label:'Book a session / demo', done:false }, { label:'Update application status', done:false }],
     activity:[{ type:'Call logged', time:'20 May 11:42 AM', notes:'Student interested, follow up on fee waiver' }, { type:'WhatsApp sent', time:'20 May 1:00 PM', notes:'Sent MBA brochure PDF' }] },
-  { id:'U1002', name:'Sanya Kapoor',    course:'BBA Marketing',    stage:'application', followup:'2026-06-10', appDownloaded:false, lastCallDate:'19 May 2026', lastCallOutcome:'Not Reachable', qualityScore:65, lastConnected:'18 May 2026 4:15 PM', country:'Canada',
+  { id:'U1002', counselorId:2, name:'Sanya Kapoor',    course:'BBA Marketing',    stage:'application', followup:'2026-06-10', appDownloaded:false, lastCallDate:'19 May 2026', lastCallOutcome:'Not Reachable', qualityScore:65, lastConnected:'18 May 2026 4:15 PM', country:'Canada',
     whatsappGroups:[{ groupName:'BBA General – Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'19 May 4:15 PM', notes:'Not reachable', outcome:'Not Reachable' }, { label:'On Hold Application Drafts', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'19 May 4:15 PM', notes:'Not reachable — tried 3 times' }, { type:'Application updated', time:'19 May 5:00 PM', notes:'Marked as application submitted' }] },
-  { id:'U1003', name:'Rahul Verma',     course:'B.Tech CSE',       stage:'deposit',     followup:'2026-06-02', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Promise to Pay', qualityScore:74, lastConnected:'21 May 2026 10:00 AM', country:'Australia',
+  { id:'U1003', counselorId:1, name:'Rahul Verma',     course:'B.Tech CSE',       stage:'deposit',     followup:'2026-06-02', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Promise to Pay', qualityScore:74, lastConnected:'21 May 2026 10:00 AM', country:'Australia',
     whatsappGroups:[{ groupName:'CSE Batch Jun 2026', counselorJoined:true, studentJoined:true },{ groupName:'Tech Prep Group', counselorJoined:false, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'21 May 10:00 AM', notes:'Promised to pay by 23rd', outcome:'Promise to Pay' }, { label:'Follow up on payment', done:false }, { label:'Send a WhatsApp message', done:true, timestamp:'21 May 11:00 AM', notes:'Sent payment link', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 10:00 AM', notes:'Promised deposit by 23 May' }, { type:'WhatsApp sent', time:'21 May 11:00 AM', notes:'Payment link shared' }] },
-  { id:'U1004', name:'Prerna Singh',    course:'MBA HR',            stage:'sti',         followup:'2026-06-10', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Callback Requested', qualityScore:55, lastConnected:'22 May 2026 3:00 PM', country:'USA',
+  { id:'U1004', counselorId:3, name:'Prerna Singh',    course:'MBA HR',            stage:'sti',         followup:'2026-06-10', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Callback Requested', qualityScore:55, lastConnected:'22 May 2026 3:00 PM', country:'USA',
     whatsappGroups:[{ groupName:'MBA General – Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }, { label:'Share a document / template', done:false }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'22 May 3:00 PM', notes:'Requested callback at 5 PM tomorrow' }] },
-  { id:'U1005', name:'Devansh Joshi',   course:'BCA Data Science',  stage:'lockin',      followup:'2026-06-02', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Connected', qualityScore:90, lastConnected:'21 May 2026 2:30 PM', country:'Germany',
+  { id:'U1005', counselorId:4, name:'Devansh Joshi',   course:'BCA Data Science',  stage:'lockin',      followup:'2026-06-02', appDownloaded:true,  lastCallDate:'21 May 2026', lastCallOutcome:'Connected', qualityScore:90, lastConnected:'21 May 2026 2:30 PM', country:'Germany',
     whatsappGroups:[{ groupName:'BCA Batch A', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:true, timestamp:'21 May 2:30 PM', notes:'Received offer, finalizing', outcome:'Connected' }, { label:'Update application status', done:true, timestamp:'21 May 3:00 PM', notes:'Shortlisted — awaiting lock-in payment', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'21 May 2:30 PM', notes:'Shortlisting offer shared, student reviewing' }, { type:'Application updated', time:'21 May 3:00 PM', notes:'Stage: Shortlisted — lock-in pending' }] },
-  { id:'U1006', name:'Ishita Rawat',    course:'MBA Finance',       stage:'application', followup:'2026-06-10', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:68, lastConnected:'20 May 2026 5:00 PM', country:'Ireland',
+  { id:'U1006', counselorId:1, name:'Ishita Rawat',    course:'MBA Finance',       stage:'application', followup:'2026-06-10', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:68, lastConnected:'20 May 2026 5:00 PM', country:'Ireland',
     whatsappGroups:[{ groupName:'MBA Batch A – Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Call the student', done:true, timestamp:'20 May 5:00 PM', notes:'Documents pending QC', outcome:'Connected' }, { label:'QC Cleared: Filing Pending', done:false }, { label:'Send a WhatsApp message', done:true, timestamp:'20 May 5:30 PM', notes:'Sent next steps doc', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'20 May 5:00 PM', notes:'QC cleared — awaiting filing' }, { type:'WhatsApp sent', time:'20 May 5:30 PM', notes:'Next steps document shared' }] },
-  { id:'U1007', name:'Karan Tiwari',    course:'B.Com',             stage:'sti',         followup:'2026-06-10', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Not Reachable', qualityScore:40, lastConnected:'19 May 2026 11:00 AM', country:'Singapore',
+  { id:'U1007', counselorId:2, name:'Karan Tiwari',    course:'B.Com',             stage:'sti',         followup:'2026-06-10', appDownloaded:false, lastCallDate:'22 May 2026', lastCallOutcome:'Not Reachable', qualityScore:40, lastConnected:'19 May 2026 11:00 AM', country:'Singapore',
     whatsappGroups:[{ groupName:'B.Com General', counselorJoined:true, studentJoined:false },{ groupName:'Finance Study Group', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Book a session / demo', done:false }],
     activity:[{ type:'Call logged', time:'22 May 9:00 AM', notes:'Not reachable for 3 days' }] },
-  { id:'U1008', name:'Meenal Shah',     course:'MBA Marketing',     stage:'deposit',     followup:'2026-06-02', appDownloaded:true,  lastCallDate:'22 May 2026', lastCallOutcome:'Connected', qualityScore:79, lastConnected:'22 May 2026 12:00 PM', country:'New Zealand',
+  { id:'U1008', counselorId:3, name:'Meenal Shah',     course:'MBA Marketing',     stage:'deposit',     followup:'2026-06-02', appDownloaded:true,  lastCallDate:'22 May 2026', lastCallOutcome:'Connected', qualityScore:79, lastConnected:'22 May 2026 12:00 PM', country:'New Zealand',
     whatsappGroups:[{ groupName:'MBA Batch B – Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:false }, { label:'Call the student', done:true, timestamp:'22 May 12:00 PM', notes:'Confirming deposit timeline', outcome:'Connected' }],
     activity:[{ type:'Call logged', time:'22 May 12:00 PM', notes:'Deposit expected by 25 May' }] },
 
   /* ── New demo students added for full card coverage ── */
-  { id:'U1009', name:'Arjun Sharma',    course:'MBA Operations',    stage:'lockin',      followup:'2026-06-10', appDownloaded:true,  lastCallDate:'08 Jun 2026', lastCallOutcome:'Connected',      qualityScore:85, lastConnected:'08 Jun 2026 10:00 AM', country:'UK',
+  { id:'U1009', counselorId:4, name:'Arjun Sharma',    course:'MBA Operations',    stage:'lockin',      followup:'2026-06-10', appDownloaded:true,  lastCallDate:'08 Jun 2026', lastCallOutcome:'Connected',      qualityScore:85, lastConnected:'08 Jun 2026 10:00 AM', country:'UK',
     whatsappGroups:[{ groupName:'MBA Ops Batch Jun 2026', counselorJoined:false, studentJoined:false }],
     subtasks:[{ label:'Follow up on payment', done:false }, { label:'Book a session / demo', done:false }, { label:'Send STI confirmation', done:false }],
     activity:[{ type:'Call logged', time:'08 Jun 10:00 AM', notes:'Student ready to lock in — pending STI confirmation' }] },
 
-  { id:'U1010', name:'Kavya Nair',      course:'B.Tech IT',         stage:'deposit',     followup:'2026-06-10', appDownloaded:false, lastCallDate:'09 Jun 2026', lastCallOutcome:'Not Reachable',  qualityScore:62, lastConnected:'07 Jun 2026 3:00 PM',  country:'Australia',
+  { id:'U1010', counselorId:1, name:'Kavya Nair',      course:'B.Tech IT',         stage:'deposit',     followup:'2026-06-10', appDownloaded:false, lastCallDate:'09 Jun 2026', lastCallOutcome:'Not Reachable',  qualityScore:62, lastConnected:'07 Jun 2026 3:00 PM',  country:'Australia',
     whatsappGroups:[{ groupName:'Tech Batch Jun 2026', counselorJoined:true, studentJoined:false }],
     subtasks:[{ label:'Call the student', done:false }, { label:'Send a WhatsApp message', done:false }, { label:'Follow up on payment', done:false }],
     activity:[{ type:'Call logged', time:'09 Jun 11:00 AM', notes:'Not reachable — tried twice today' }] },
 
-  { id:'U1011', name:'Rohan Gupta',     course:'BBA International', stage:'application', followup:'2026-06-10', appDownloaded:false, lastCallDate:'09 Jun 2026', lastCallOutcome:'Not Reachable',  qualityScore:58, lastConnected:'06 Jun 2026 4:00 PM',  country:'Canada',
+  { id:'U1011', counselorId:2, name:'Rohan Gupta',     course:'BBA International', stage:'application', followup:'2026-06-10', appDownloaded:false, lastCallDate:'09 Jun 2026', lastCallOutcome:'Not Reachable',  qualityScore:58, lastConnected:'06 Jun 2026 4:00 PM',  country:'Canada',
     whatsappGroups:[],
     subtasks:[{ label:'Call the student', done:false }, { label:'QC Rejected and On Hold', done:false }, { label:'Send a WhatsApp message', done:false }],
     activity:[{ type:'Call logged', time:'09 Jun 2:00 PM', notes:'QC rejected — application on hold' }] },
 
-  { id:'U1012', name:'Sneha Patel',     course:'MBA Marketing',     stage:'lockin',      followup:'2026-06-10', appDownloaded:true,  lastCallDate:'09 Jun 2026', lastCallOutcome:'Connected',      qualityScore:91, lastConnected:'09 Jun 2026 11:00 AM', country:'Germany',
+  { id:'U1012', counselorId:4, name:'Sneha Patel',     course:'MBA Marketing',     stage:'lockin',      followup:'2026-06-10', appDownloaded:true,  lastCallDate:'09 Jun 2026', lastCallOutcome:'Connected',      qualityScore:91, lastConnected:'09 Jun 2026 11:00 AM', country:'Germany',
     whatsappGroups:[{ groupName:'MBA Europe Jun 2026', counselorJoined:true, studentJoined:true }],
     subtasks:[{ label:'Follow up on payment', done:true, timestamp:'09 Jun 11:00 AM', notes:'Payment confirmed', outcome:'Connected' }, { label:'Lock-in confirmation', done:false }],
     activity:[{ type:'Call logged', time:'09 Jun 11:00 AM', notes:'Lock-in almost done — awaiting final confirmation' }] },
@@ -875,22 +875,40 @@ function bootApp(role, email) {
     document.getElementById('adminTabBtn').classList.remove('hidden');
   }
 
-  // Counselor selector
-  if (role !== 'counselor') {
+  // Counselor selector (header — keep for ops_admin only)
+  if (role === 'ops_admin') {
     const wrapper = document.getElementById('counselorSelectorWrapper');
     wrapper.classList.remove('hidden');
     const sel = document.getElementById('counselorSelector');
     sel.innerHTML = '';
-    let list = (role === 'team_lead')
-      ? COUNSELORS.filter(c => c.team === state.currentUser.team)
-      : COUNSELORS;
-    list.forEach(c => {
+    COUNSELORS.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = c.name + ' (' + c.team + ')';
       sel.appendChild(opt);
     });
     sel.value = state.viewingCounselorId;
+  }
+
+  // TL: show prominent counsellor filter bar on tab1
+  if (role === 'team_lead') {
+    const bar = document.getElementById('tlCounsellorFilterBar');
+    if (bar) bar.classList.remove('hidden');
+    const tlSel = document.getElementById('tlCounsellorSelect');
+    if (tlSel) {
+      tlSel.innerHTML = '';
+      const cList = COUNSELORS.filter(c => c.team === state.currentUser.team);
+      cList.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        tlSel.appendChild(opt);
+      });
+      tlSel.value = state.viewingCounselorId;
+    }
+    // Show the leaderboard view toggle
+    const lvw = document.getElementById('leaderViewToggleWrap');
+    if (lvw) lvw.classList.remove('hidden');
   }
 
   // Role-aware Scorecard & Performance Summary visibility
@@ -901,22 +919,9 @@ function bootApp(role, email) {
     if (reportCardSection) reportCardSection.classList.add('hidden');
     if (standupScoreStrip) standupScoreStrip.classList.remove('hidden');
   } else if (role === 'team_lead') {
-    // TL: show standalone scorecard with counsellor filter, hide strip
-    if (reportCardSection) reportCardSection.classList.remove('hidden');
+    // TL: hide scorecard and scorecard strip
+    if (reportCardSection) reportCardSection.classList.add('hidden');
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
-    // Populate TL counsellor filter on the scorecard
-    const scFilter = document.getElementById('scorecardCounsellorFilter');
-    if (scFilter) {
-      scFilter.classList.remove('hidden');
-      scFilter.innerHTML = '';
-      const cList = COUNSELORS.filter(c => c.team === state.currentUser.team);
-      cList.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.id; o.textContent = c.name;
-        scFilter.appendChild(o);
-      });
-      scFilter.value = state.viewingCounselorId;
-    }
   }
 
   // Standup manager-only filters (Counsellor Name + TL Name)
@@ -1907,8 +1912,10 @@ function openBoostSubCard(type) {
 }
 
 function getViewingStudents() {
-  // v1: all students are Priya's. In real app, filter by viewingCounselorId
-  return STUDENTS;
+  if (state.role === 'team_lead' || state.role === 'ops_admin') {
+    return STUDENTS.filter(s => s.counselorId === state.viewingCounselorId);
+  }
+  return STUDENTS.filter(s => s.counselorId === state.currentUser.id);
 }
 
 /* ═══════════════ TEAM CHAT ═══════════════ */
@@ -2571,10 +2578,31 @@ function renderHistoryTable() {
 
 /* ═══════════════ LEADERBOARD (Tab 1) ═══════════════ */
 
+let leaderViewMode = 'counsellor'; // 'counsellor' | 'teamlead'
+
 function switchLeader(period, btn) {
   state.leaderPeriod = period;
   document.querySelectorAll('#tab1 .period-btn').forEach((b,i) => { if(i>=3) b.classList.remove('active'); });
   btn.classList.add('active');
+  renderLeaderboard();
+}
+
+function switchLeaderView(mode, btn) {
+  leaderViewMode = mode;
+  document.querySelectorAll('.leader-view-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderLeaderboard();
+}
+
+function onTLCounsellorChange() {
+  const sel = document.getElementById('tlCounsellorSelect');
+  if (!sel) return;
+  state.viewingCounselorId = parseInt(sel.value);
+  // Sync header selector if visible
+  const hdrSel = document.getElementById('counselorSelector');
+  if (hdrSel) hdrSel.value = state.viewingCounselorId;
+  renderBoostCards();
+  renderMetricCards();
   renderLeaderboard();
 }
 
@@ -2588,10 +2616,16 @@ function renderLeaderboard() {
   ];
   const pMult = { today:1, month:22, year:264 }[state.leaderPeriod] || 1;
   const grid  = document.getElementById('leaderboardGrid');
+
+  // Choose pool based on toggle
+  const pool = (leaderViewMode === 'teamlead')
+    ? TEAM_LEADS.map((c, i) => ({ ...c, today: { stis: 18+i*4, applications: 14+i*3, deposits: 10+i*2, lockins: 7+i*2, revenueCollected: 520000+i*80000, calls: 60+i*10 } }))
+    : COUNSELORS;
+
   grid.innerHTML = metrics.map(m => {
-    const ranked = COUNSELORS.map((c,i) => ({
+    const ranked = pool.map((c, i) => ({
       name: c.name,
-      val: Math.round((m.key === 'revenue' ? c.today.revenueCollected : c.today[m.key] || c.today.calls) * offsets[i] * pMult),
+      val: Math.round((m.key === 'revenue' ? c.today.revenueCollected : c.today[m.key] || c.today.calls) * (leaderViewMode === 'teamlead' ? 1 : offsets[i]) * pMult),
     })).sort((a,b) => b.val - a.val).slice(0, 3);
 
     const rows = ranked.map((r,i) => {
