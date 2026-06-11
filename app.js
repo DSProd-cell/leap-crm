@@ -717,6 +717,8 @@ let QUICK_LINK_URLS = {
 /* ── Stable seeds for leaderboard ── */
 const EARNER_SEED_MONTH   = [88400,72000,45000,91000,63500,55000,38000,79000];
 const EARNER_SEED_ALLTIME = [720000,540000,380000,810000,495000,430000,290000,670000];
+const EARNER_TL_SEED_MONTH   = [142000, 118000];
+const EARNER_TL_SEED_ALLTIME = [1240000, 980000];
 const offsets = [0.95,1.08,0.72,1.00,0.88,1.15,0.62,0.91];
 const histMults = [0.82,0.91,0.74,0.88,0.95,0.79,1.00,0.86,0.93,0.77,0.90,0.84];
 
@@ -906,9 +908,18 @@ function bootApp(role, email) {
       });
       tlSel.value = state.viewingCounselorId;
     }
-    // Show the leaderboard view toggle
+    // Show the leaderboard view toggle (tab1 Top Performers)
     const lvw = document.getElementById('leaderViewToggleWrap');
     if (lvw) lvw.classList.remove('hidden');
+    // Show the earner view toggle (tab2 Top Earners)
+    const evw = document.getElementById('earnerViewToggleWrap');
+    if (evw) evw.classList.remove('hidden');
+  }
+
+  if (role === 'ops_admin') {
+    // Show earner view toggle for ops too
+    const evw = document.getElementById('earnerViewToggleWrap');
+    if (evw) evw.classList.remove('hidden');
   }
 
   // Role-aware Scorecard & Performance Summary visibility
@@ -2793,13 +2804,27 @@ function initEarningsChart() {
 
 /* ═══════════════ EARNERS LEADERBOARD ═══════════════ */
 
-function renderEarnersLeaderboard() {
-  renderEarnerList('earnerMonthList', EARNER_SEED_MONTH);
-  renderEarnerList('earnerAllList', EARNER_SEED_ALLTIME);
+let earnerViewMode = 'counsellor'; // 'counsellor' | 'teamlead'
+
+function switchEarnerView(mode, btn) {
+  earnerViewMode = mode;
+  document.querySelectorAll('.earner-view-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderEarnersLeaderboard();
 }
 
-function renderEarnerList(elId, seeds) {
-  const ranked = COUNSELORS.map((c,i) => ({ name:c.name, avatar:c.avatar, val:seeds[i] }))
+function renderEarnersLeaderboard() {
+  if (earnerViewMode === 'teamlead') {
+    renderEarnerList('earnerMonthList', EARNER_TL_SEED_MONTH, TEAM_LEADS);
+    renderEarnerList('earnerAllList', EARNER_TL_SEED_ALLTIME, TEAM_LEADS);
+  } else {
+    renderEarnerList('earnerMonthList', EARNER_SEED_MONTH, COUNSELORS);
+    renderEarnerList('earnerAllList', EARNER_SEED_ALLTIME, COUNSELORS);
+  }
+}
+
+function renderEarnerList(elId, seeds, pool) {
+  const ranked = (pool || COUNSELORS).map((c,i) => ({ name:c.name, avatar:c.avatar, val:seeds[i] || 0 }))
     .sort((a,b) => b.val - a.val);
   const max = ranked[0].val;
   const el = document.getElementById(elId);
