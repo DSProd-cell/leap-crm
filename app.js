@@ -191,18 +191,18 @@ const STUDENTS = [
 /* ── ISL / F2F / UC / Lead Status per student ── */
 const STUDENT_PIPELINE_DATA = {
   // islSharedDate, secondCallDate, leadStatus, ucAssigned, englishTestGiven (IELTS/TOEFL/Duolingo/PTE)
-  U1001: { islSharedDate:'2026-06-01', secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false },
-  U1002: { islSharedDate:'2026-06-03', secondCallDate:null,         leadStatus:null,       ucAssigned:true,  englishTestGiven:false },
-  U1003: { islSharedDate:'2026-05-20', secondCallDate:'2026-05-25', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
-  U1004: { islSharedDate:'2026-06-05', secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false },
-  U1005: { islSharedDate:'2026-05-15', secondCallDate:'2026-05-22', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
-  U1006: { islSharedDate:'2026-06-04', secondCallDate:null,         leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
-  U1007: { islSharedDate:'2026-05-28', secondCallDate:null,         leadStatus:'Drop off', ucAssigned:false, englishTestGiven:false },
-  U1008: { islSharedDate:'2026-05-18', secondCallDate:'2026-05-30', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
-  U1009: { islSharedDate:'2026-06-07', secondCallDate:'2026-06-08', leadStatus:null,       ucAssigned:false, englishTestGiven:false },
-  U1010: { islSharedDate:'2026-06-02', secondCallDate:'2026-06-06', leadStatus:null,       ucAssigned:true,  englishTestGiven:false },
-  U1011: { islSharedDate:null,         secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false },
-  U1012: { islSharedDate:'2026-06-08', secondCallDate:'2026-06-09', leadStatus:null,       ucAssigned:true,  englishTestGiven:true  },
+  U1001: { islSharedDate:'2026-06-01', secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false, casI20Raised:false },
+  U1002: { islSharedDate:'2026-06-03', secondCallDate:null,         leadStatus:null,       ucAssigned:true,  englishTestGiven:false, casI20Raised:false },
+  U1003: { islSharedDate:'2026-05-20', secondCallDate:'2026-05-25', leadStatus:null,       ucAssigned:true,  englishTestGiven:true,  casI20Raised:false },
+  U1004: { islSharedDate:'2026-06-05', secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false, casI20Raised:false },
+  U1005: { islSharedDate:'2026-05-15', secondCallDate:'2026-05-22', leadStatus:null,       ucAssigned:true,  englishTestGiven:true,  casI20Raised:false },
+  U1006: { islSharedDate:'2026-06-04', secondCallDate:null,         leadStatus:null,       ucAssigned:true,  englishTestGiven:true,  casI20Raised:false },
+  U1007: { islSharedDate:'2026-05-28', secondCallDate:null,         leadStatus:'Drop off', ucAssigned:false, englishTestGiven:false, casI20Raised:false },
+  U1008: { islSharedDate:'2026-05-18', secondCallDate:'2026-05-30', leadStatus:null,       ucAssigned:true,  englishTestGiven:true,  casI20Raised:false },
+  U1009: { islSharedDate:'2026-06-07', secondCallDate:'2026-06-08', leadStatus:null,       ucAssigned:false, englishTestGiven:false, casI20Raised:false },
+  U1010: { islSharedDate:'2026-06-02', secondCallDate:'2026-06-06', leadStatus:null,       ucAssigned:true,  englishTestGiven:false, casI20Raised:false },
+  U1011: { islSharedDate:null,         secondCallDate:null,         leadStatus:null,       ucAssigned:false, englishTestGiven:false, casI20Raised:false },
+  U1012: { islSharedDate:'2026-06-08', secondCallDate:'2026-06-09', leadStatus:null,       ucAssigned:true,  englishTestGiven:true,  casI20Raised:false },
 };
 STUDENTS.forEach(s => Object.assign(s, STUDENT_PIPELINE_DATA[s.id] || { islSharedDate:null, secondCallDate:null, leadStatus:null, ucAssigned:false }));
 
@@ -1874,6 +1874,17 @@ function openBoostSubCard(type) {
       prevMode: 'boost-deposit',
       def:     'Student has been assigned a University Counsellor (UC) but the deposit payment has not yet been collected.',
       closure: 'Deposit is paid and recorded in the system.',
+    },
+    'cas-i20-review': {
+      title:   'CAS/I20 - Counsellor Review Needed',
+      filter:  s => ['deposit','lockin'].includes(s.stage) &&
+                    ['UK','USA'].includes(s.country) &&
+                    s.leadStatus !== 'Drop off' &&
+                    s.casI20Raised !== true,
+      nested:  null,
+      prevMode: 'boost-deposit',
+      def:     'Students going to the UK require a CAS (Confirmation of Acceptance for Studies) and students going to the USA require an I20 — both must be raised by the counsellor with the university after the offer is confirmed.',
+      closure: 'CAS or I20 is successfully raised with the university and updated in the system. Mark the subtask done to close this task.',
     },
     'c2i-enrolment': {
       title:   'C2I Enrolment',
@@ -3577,11 +3588,18 @@ function openBoostDrawer(type) {
 
   // ── Boost Deposit: show only subcards (no flat student list) ──
   if (type === 'deposit') {
-    const cToUcStudents = getViewingStudents().filter(s => s.stage === 'deposit' && s.ucAssigned === true);
+    const cToUcStudents  = getViewingStudents().filter(s => s.stage === 'deposit' && s.ucAssigned === true);
+    const casI20Students = getViewingStudents().filter(s =>
+      ['deposit','lockin'].includes(s.stage) &&
+      ['UK','USA'].includes(s.country) &&
+      s.leadStatus !== 'Drop off' &&
+      s.casI20Raised !== true
+    );
     const content = `
       <div class="space-y-3">
         <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted mb-2">Priority Actions</p>
         ${_boostMetricCard('c-to-uc-deposit-pending', 'C to UC / UC Received — Deposit Not Paid', cToUcStudents, todayStr)}
+        ${_boostMetricCard('cas-i20-review', 'CAS/I20 - Counsellor Review Needed', casI20Students, todayStr)}
         <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted mt-4 mb-2">Less Efforts High Output</p>
         ${_boostMetricCard('deferrals-opp', 'Deferrals Opportunity', getDeferralOpportunityStudents(), todayStr,
           "openVolumeMetricDrawer('deferrals')")}
