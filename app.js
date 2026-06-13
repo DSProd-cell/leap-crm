@@ -872,30 +872,42 @@ function bootApp(role, email) {
   document.getElementById('headerAvatar').textContent = u.avatar || initials(u.name);
   document.getElementById('headerName').textContent   = u.name.split(' ')[0];
 
+  // Reset all role-gated elements before applying role-specific visibility
+  ['counselorSelectorWrapper', 'tlCounsellorFilterBar', 'adminTabBtn',
+   'leaderViewToggleWrap', 'earnerViewToggleWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+
   // Admin tab
   if (role === 'ops_admin') {
     document.getElementById('adminTabBtn').classList.remove('hidden');
   }
 
-  // Counselor selector (header — keep for ops_admin only)
-  if (role === 'ops_admin') {
+  // Counselor selector in header — visible for TL and ops_admin, NEVER for counselor
+  if (role === 'team_lead' || role === 'ops_admin') {
     const wrapper = document.getElementById('counselorSelectorWrapper');
     wrapper.classList.remove('hidden');
     const sel = document.getElementById('counselorSelector');
     sel.innerHTML = '';
-    COUNSELORS.forEach(c => {
+    // TL sees only their team's counsellors; ops_admin sees all
+    const cList = (role === 'team_lead')
+      ? COUNSELORS.filter(c => c.team === state.currentUser.team)
+      : COUNSELORS;
+    cList.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = c.name + ' (' + c.team + ')';
+      opt.textContent = role === 'ops_admin' ? c.name + ' (' + c.team + ')' : c.name;
       sel.appendChild(opt);
     });
     sel.value = state.viewingCounselorId;
   }
 
-  // TL: show prominent counsellor filter bar on tab1
+  // TL: also show the Tab 1 filter bar as a persistent "you are viewing" indicator
   if (role === 'team_lead') {
     const bar = document.getElementById('tlCounsellorFilterBar');
     if (bar) bar.classList.remove('hidden');
+    // Keep the Tab 1 dropdown in sync with the header selector
     const tlSel = document.getElementById('tlCounsellorSelect');
     if (tlSel) {
       tlSel.innerHTML = '';
