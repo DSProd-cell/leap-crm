@@ -2366,60 +2366,190 @@ function openVolumeMetricDrawer(key) {
 
 /* ═══════════════ BOOST REVENUE ═══════════════ */
 
+/* Determine all revenue actionables for a student */
+function getRevenueActionables(s) {
+  const actions = [];
+  if (!s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off') {
+    actions.push({
+      label:   'Pitch for C2I',
+      badgeCls:'bg-violet-100 text-violet-700',
+      closure: 'Register student for an English Proficiency Test (IELTS / TOEFL / Duolingo / PTE) and mark updated in system.'
+    });
+  }
+  if (s.servicingType === 'partner' && !s.hasPaidPremium) {
+    actions.push({
+      label:   'Pitch for Prime',
+      badgeCls:'bg-blue-100 text-blue-700',
+      closure: 'Student agrees to Prime enrolment — collect payment and record in system.'
+    });
+  }
+  if (s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services') {
+    const svcs = (s.specialServices || []).join(' + ') || 'Specialised Service';
+    actions.push({
+      label:   `Pitch for ${svcs}`,
+      badgeCls:'bg-amber-100 text-amber-700',
+      closure: `Student pays for ${svcs} — service fee recorded and confirmed in system.`
+    });
+  }
+  if (s.servicingType === 'non-partner' && s.nonPartnerSubType === 'premium-universities') {
+    actions.push({
+      label:   'Pitch for Premium Uni Servicing',
+      badgeCls:'bg-purple-100 text-purple-700',
+      closure: 'Student agrees to premium university servicing package — payment recorded in system.'
+    });
+  }
+  return actions;
+}
+
+/* Flat revenue student list (all actionable students, deduped) */
+function getRevenueStudents() {
+  return getViewingStudents().filter(s => getRevenueActionables(s).length > 0);
+}
+
+function _renderRevenueStudentCard(s) {
+  const actions = getRevenueActionables(s);
+  const badgesHtml = actions.map(a =>
+    `<span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full ${a.badgeCls}">${a.label}</span>`
+  ).join(' ');
+  const closureHtml = actions.map(a =>
+    `<div class="flex items-start gap-1.5 mt-1">
+      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${a.badgeCls} flex-shrink-0">${a.label.split(' ')[2] || a.label}</span>
+      <p class="text-[10px] text-text-muted leading-snug">${a.closure}</p>
+    </div>`
+  ).join('');
+  const waIssue = (s.whatsappGroups||[]).some(g => !g.studentJoined);
+
+  return `<div class="student-card cursor-pointer" onclick="openStudentDetail('${s.id}')">
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <div class="min-w-0">
+        <p class="font-semibold text-sm text-text-main truncate">${s.name}</p>
+        <p class="text-xs text-text-muted">${s.id} · ${s.course} · <span class="font-medium text-primary/80">${s.country || '—'}</span></p>
+      </div>
+      <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0 ${s.stage === 'deposit' ? 'bg-orange-100 text-orange-700' : s.stage === 'lockin' ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-600'}">${s.stage?.toUpperCase()}</span>
+    </div>
+    <div class="flex flex-wrap gap-1 mb-2">${badgesHtml}</div>
+    ${s.followup ? `<p class="text-[10px] text-text-muted mb-2">📅 Follow-up: ${s.followup}${waIssue ? ' · <span class="text-accent font-semibold">WA group issue</span>' : ''}</p>` : ''}
+    <div class="bg-surface rounded-lg px-3 py-2 mt-1">
+      <p class="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-1">How to close</p>
+      ${closureHtml}
+    </div>
+    <button class="mt-2 text-xs font-semibold text-accent hover:underline">Open student →</button>
+  </div>`;
+}
+
+let revenueCohortTab = 'all'; // 'all' | 'c2i' | 'premium' | 'prime' | 'nonpartner'
+
+const REVENUE_COHORT_FILTERS = {
+  all:        s => true,
+  c2i:        s => !s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off',
+  prime:      s => s.servicingType === 'partner' && !s.hasPaidPremium,
+  premium:    s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'premium-universities',
+  nonpartner: s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services',
+};
+
+const REVENUE_TAB_META = [
+  { key:'all',        label:'All',          activeCls:'bg-primary text-white',            inactiveCls:'bg-surface text-text-muted hover:text-text-main' },
+  { key:'c2i',        label:'C2I',          activeCls:'bg-violet-600 text-white',          inactiveCls:'bg-violet-50 text-violet-700 hover:bg-violet-100' },
+  { key:'prime',      label:'Prime',        activeCls:'bg-blue-600 text-white',            inactiveCls:'bg-blue-50 text-blue-700 hover:bg-blue-100' },
+  { key:'premium',    label:'Premium Uni',  activeCls:'bg-purple-600 text-white',          inactiveCls:'bg-purple-50 text-purple-700 hover:bg-purple-100' },
+  { key:'nonpartner', label:'Non Partner',  activeCls:'bg-amber-500 text-white',           inactiveCls:'bg-amber-50 text-amber-700 hover:bg-amber-100' },
+];
+
+function _getRevenueTabStudents(baseStudents) {
+  return baseStudents.filter(REVENUE_COHORT_FILTERS[revenueCohortTab] || (() => true));
+}
+
+function _renderRevenueTabs(baseStudents) {
+  return `<div class="flex flex-wrap gap-1.5 mb-3">
+    ${REVENUE_TAB_META.map(t => {
+      const count = baseStudents.filter(REVENUE_COHORT_FILTERS[t.key]).length;
+      const isActive = revenueCohortTab === t.key;
+      return `<button onclick="switchRevenueCohortTab('${t.key}')"
+        class="rev-cohort-tab flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer transition-all ${isActive ? t.activeCls : t.inactiveCls}">
+        ${t.label}
+        <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] rounded-full px-1
+          ${isActive ? 'bg-white/30 text-white' : 'bg-white/80 text-text-muted'}">${count}</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
+function switchRevenueCohortTab(key) {
+  revenueCohortTab = key;
+  const acked    = _boostIsAcknowledged('revenue');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const allRevStudents = getRevenueStudents();
+  const baseStudents   = acked ? allRevStudents : allRevStudents.filter(s => isPendingToday(s, todayStr));
+
+  // Re-render tabs (update active state)
+  const tabsEl = document.getElementById('revenueCohortTabs');
+  if (tabsEl) tabsEl.innerHTML = _renderRevenueTabs(baseStudents);
+
+  // Re-render student list
+  const q = document.getElementById('revenueSearchInput')?.value || '';
+  _applyRevenueFilters(baseStudents, q);
+}
+
+function _applyRevenueFilters(baseStudents, q) {
+  let students = _getRevenueTabStudents(baseStudents);
+  if (q) students = students.filter(s =>
+    s.name.toLowerCase().includes(q.toLowerCase()) || s.id.toLowerCase().includes(q.toLowerCase())
+  );
+  const el = document.getElementById('revenueStudentList');
+  if (el) el.innerHTML = students.length
+    ? students.map(_renderRevenueStudentCard).join('')
+    : `<div class="flex flex-col items-center justify-center py-10 text-center">
+        <div class="text-3xl mb-2">✅</div>
+        <p class="font-semibold text-text-main text-sm mb-1">No students here</p>
+        <p class="text-xs text-text-muted">Try a different tab or check back tomorrow.</p>
+      </div>`;
+}
+
 function openBoostRevenueDrawer() {
   state.drawerMode     = 'boostRevenue';
   state.drawerPrevMode = null;
-  const all      = getViewingStudents();
+  revenueCohortTab     = 'all'; // reset tab on open
   const todayStr = new Date().toISOString().split('T')[0];
   const acked    = _boostIsAcknowledged('revenue');
 
-  const nonPartner   = all.filter(s => s.servicingType === 'non-partner');
-  const primeEnrol   = all.filter(s => s.servicingType === 'partner');
-  const specServices = all.filter(s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services');
+  const allRevStudents = getRevenueStudents();
+  const todayStudents  = allRevStudents.filter(s => isPendingToday(s, todayStr));
+  const dueStudents    = allRevStudents.filter(s => s.followup === todayStr);
+  const allDone        = dueStudents.length > 0 && dueStudents.every(s => s.subtasks.every(t => t.done));
 
-  /* All revenue students (for the "All Tasks" section) */
-  const allRevStudents = [...new Map([...nonPartner,...primeEnrol,...specServices].map(s => [s.id,s])).values()];
+  const baseStudents    = acked ? allRevStudents : todayStudents;
+  const displayStudents = _getRevenueTabStudents(baseStudents);
 
-  let content;
-  if (!acked) {
-    const todayNP  = nonPartner.filter(s => isPendingToday(s, todayStr));
-    const todayPE  = primeEnrol.filter(s => isPendingToday(s, todayStr));
-    const todaySS  = specServices.filter(s => isPendingToday(s, todayStr));
-    const totalToday = new Set([...todayNP,...todayPE,...todaySS].map(s => s.id)).size;
+  const listHtml = displayStudents.length
+    ? `<div id="revenueStudentList" class="space-y-3">${displayStudents.map(_renderRevenueStudentCard).join('')}</div>`
+    : `<div id="revenueStudentList"><div class="flex flex-col items-center justify-center py-12 text-center">
+        <div class="text-4xl mb-3">✅</div>
+        <p class="font-semibold text-text-main mb-1">All clear today!</p>
+        <p class="text-xs text-text-muted">No students with pending revenue actions due today.</p>
+      </div></div>`;
 
-    // allDone: any student due today has all subtasks done
-    const todayDueAll = [...new Map([
-      ...nonPartner.filter(s => s.followup === todayStr),
-      ...primeEnrol.filter(s => s.followup === todayStr),
-      ...specServices.filter(s => s.followup === todayStr),
-    ].map(s => [s.id,s])).values()];
-    const allDone = todayDueAll.length > 0 && todayDueAll.every(s => s.subtasks.every(t => t.done));
+  const content = `<div class="space-y-3">
+    ${!acked ? _renderBoostTodayHeader(todayStudents.length) : _renderBoostAckHeader()}
+    ${!acked && allDone ? _renderBoostAckPrompt('revenue') : ''}
+    <div id="revenueCohortTabs">${_renderRevenueTabs(baseStudents)}</div>
+    <div class="mb-1">
+      <input id="revenueSearchInput" type="text" placeholder="Search by name or ID…"
+        oninput="filterRevenueStudents(this.value)"
+        class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+    </div>
+    ${listHtml}
+    ${_renderAllTasksSection(acked, allRevStudents, 'revenue')}
+  </div>`;
 
-    content = `
-      <div class="space-y-3">
-        ${_renderBoostTodayHeader(totalToday)}
-        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Revenue Categories</p>
-        ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue',  todayNP, todayStr, "openRevenueSubCard('non-partner-revenue')", true)}
-        ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',     todayPE, todayStr, "openRevenueSubCard('prime-enrolments')",    true)}
-        ${_boostMetricCard('specialised-services','Specialised Services',  todaySS, todayStr, "openRevenueSubCard('specialised-services')", true)}
-        ${_boostMetricCard('c2i-enrolment',       'C2I Enrolment',        getViewingStudents().filter(s => !s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off'), todayStr, "openBoostSubCard('c2i-enrolment')", true)}
-        ${allDone ? _renderBoostAckPrompt('revenue') : ''}
-        ${_renderAllTasksSection(false, allRevStudents, 'revenue')}
-      </div>`;
-  } else {
-    content = `
-      <div class="space-y-3">
-        ${_renderBoostAckHeader()}
-        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Revenue Categories</p>
-        ${_boostMetricCard('non-partner-revenue', 'Non Partner Revenue', nonPartner, todayStr, "openRevenueSubCard('non-partner-revenue')")}
-        ${_boostMetricCard('prime-enrolments',    'Prime Enrolments',   primeEnrol,  todayStr, "openRevenueSubCard('prime-enrolments')")}
-        ${_boostMetricCard('specialised-services','Specialised Services',specServices,todayStr, "openRevenueSubCard('specialised-services')")}
-        ${_boostMetricCard('c2i-enrolment',       'C2I Enrolment',       getViewingStudents().filter(s => !s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off'), todayStr, "openBoostSubCard('c2i-enrolment')")}
-        ${_renderAllTasksSection(true, allRevStudents, 'revenue')}
-      </div>`;
-  }
+  openDrawer('Lock the User and Generate Revenue', content, false);
+}
 
-  openDrawer('Boost Revenue', content, false);
+function filterRevenueStudents(q) {
+  const acked    = _boostIsAcknowledged('revenue');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const allRevStudents = getRevenueStudents();
+  const baseStudents   = acked ? allRevStudents : allRevStudents.filter(s => isPendingToday(s, todayStr));
+  _applyRevenueFilters(baseStudents, q);
 }
 
 function openRevenueSubCard(type) {
