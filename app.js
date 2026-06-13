@@ -64,7 +64,7 @@ const INCENTIVE_SLABS = [
     ],
   },
   {
-    component:'Non Partner Revenue', rule:'2% of non-partner revenue', status:'₹4.8L collected', earned:9600,
+    component:'Paid Service Revenue', rule:'2% of paid service revenue', status:'₹4.8L collected', earned:9600,
     drivePeriod:'01 May – 31 May 2026',
     earners:[
       { name:'Sahil Joshi',   count:'₹8.2L', earned:16400 },
@@ -228,7 +228,7 @@ const STUDENT_REVENUE_DATA = {
   U1004: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['Visa'],       hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'specialised-services'  },
   U1005: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],            hasPaidPremium: true,  amountPaid: 120000, servicingType: 'partner',     nonPartnerSubType: null                    },
   U1006: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['SOP','Visa'], hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'premium-universities'  },
-  U1007: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: [],              hasPaidPremium: false, amountPaid: 0,      servicingType: null,          nonPartnerSubType: null                   },
+  U1007: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: [],              hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'paid-application'      },
   U1008: { isQlPremium: true,  hasFinalisedUniversity: false, hasDocs: false, specialServices: [],              hasPaidPremium: true,  amountPaid: 60000,  servicingType: 'partner',     nonPartnerSubType: null                   },
   U1009: { isQlPremium: true,  hasFinalisedUniversity: true,  hasDocs: true,  specialServices: [],              hasPaidPremium: true,  amountPaid: 95000,  servicingType: 'partner',     nonPartnerSubType: null                   },
   U1010: { isQlPremium: false, hasFinalisedUniversity: false, hasDocs: false, specialServices: ['IELTS'],       hasPaidPremium: false, amountPaid: 0,      servicingType: 'non-partner', nonPartnerSubType: 'premium-universities' },
@@ -339,17 +339,17 @@ const COUNSELLOR_OFFERS = [
   {
     id:'co2', icon:'🚀', tag:'Revenue Challenge',
     title:'Non-Partner Revenue Blitz',
-    desc:'Collect ₹5L+ in non-partner revenue before June 5 and unlock an extra 0.5% commission on your full month revenue.',
+    desc:'Collect ₹5L+ in paid service revenue before June 5 and unlock an extra 0.5% commission on your full month revenue.',
     reward:'+0.5% Commission Upgrade', expiry:'2026-06-05', active:true,
     gradFrom:'#1d4ed8', gradTo:'#1e3a8a',
     calcRows:[
-      { rank:'Threshold',       prize:'₹5L non-partner revenue' },
+      { rank:'Threshold',       prize:'₹5L paid service revenue' },
       { rank:'Reward',          prize:'+0.5% commission on entire May revenue' },
       { rank:'Example payout',  prize:'₹8L × 2.5% = ₹20,000 total commission' },
       { rank:'Bonus',           prize:'₹1,000 per additional ₹50K above ₹5L' },
     ],
     targetBucket:'lockin',
-    targetDesc:'Students with finalised universities — push for non-partner enrolment closures.',
+    targetDesc:'Students with finalised universities — push for paid service enrolment closures.',
   },
   {
     id:'co3', icon:'⭐', tag:'Referral Boost',
@@ -1676,7 +1676,7 @@ function updateServicingType(studentId) {
   if (!s) return;
   const val = document.getElementById(`st-type-${studentId}`)?.value || null;
   s.servicingType = val;
-  if (val !== 'non-partner') s.nonPartnerSubType = null;
+  if (val !== 'non-partner') { s.nonPartnerSubType = null; }
   const subDiv = document.getElementById(`st-sub-${studentId}`);
   if (subDiv) subDiv.classList.toggle('hidden', val !== 'non-partner');
   renderBoostCards();
@@ -1749,75 +1749,199 @@ function _renderAllTasksSection(acked, allStudents, sectionId) {
     </div>`;
 }
 
+/* ── STI cohort tab state & helpers ── */
+let stiCohortTab = 'all';
+
+function _getSTIBuckets(all) {
+  const islAll  = getViewingStudents();
+  // Build on-hold set first so other buckets can exclude those students
+  const onholdIds = new Set(
+    all.filter(s => s.subtasks.some(t => ON_HOLD_TASK_LABELS.some(lbl => t.label.toLowerCase().includes(lbl)) && !t.done))
+       .map(s => s.id)
+  );
+  return {
+    lockin:  all.filter(s => s.stage === 'lockin' && s.subtasks.some(t => !t.done)),
+    onhold:  all.filter(s => onholdIds.has(s.id)),
+    f2f:     all.filter(s => !onholdIds.has(s.id) && s.secondCallDate && !s.hasPaidPremium && (!s.amountPaid || s.amountPaid === 0) && s.leadStatus !== 'Drop off' && !STI_TERMINAL_STATUSES.includes(s.applicationStatus)),
+    // ISL → F2F: exclude any student who is on hold — they belong only in On Hold
+    isl:     islAll.filter(s => !onholdIds.has(s.id) && s.islSharedDate && !s.secondCallDate && s.leadStatus !== 'Drop off'),
+  };
+}
+
+function getSTIActionables(s, buckets) {
+  const actions = [];
+  const isOnHold = buckets.onhold.some(x => x.id === s.id);
+  if (buckets.lockin.some(x => x.id === s.id))
+    actions.push({ label:'Submit STI', badgeCls:'bg-violet-100 text-violet-700', closure:'Student was locked in but hasn\'t done the STI yet. Please speak to the student and process the application as per the student\'s choice. Guide them through the next steps and mark STI as submitted once done.' });
+  if (isOnHold)
+    actions.push({ label:'Clear Application Hold', badgeCls:'bg-orange-100 text-orange-700', closure:'File the application or resolve the QC rejection — move status forward in the pipeline.' });
+  if (buckets.f2f.some(x => x.id === s.id))
+    actions.push({ label:'Lock the Student In', badgeCls:'bg-blue-100 text-blue-700', closure:'Student attended the F2F but hasn\'t locked in yet. Please lock in the student by enrolling them for Prime / C2I / Premium / Paid Application. Collect the payment and record it in the system.' });
+  // Only show Schedule F2F if student is NOT on hold
+  if (!isOnHold && buckets.isl.some(x => x.id === s.id))
+    actions.push({ label:'Schedule F2F Call', badgeCls:'bg-teal-100 text-teal-700', closure:'Great job sharing the ISL! Now please make the student visit the branch or schedule a call for an F2F / online discussion. Explain the ISL in detail, address all Q&A, and make the student feel confident and happy about their university choices.' });
+  return actions;
+}
+
+function _renderSTIStudentCard(s, buckets) {
+  const actions = getSTIActionables(s, buckets);
+  const badgesHtml = actions.map(a =>
+    `<span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full ${a.badgeCls}">${a.label}</span>`
+  ).join(' ');
+  const closureHtml = actions.map(a =>
+    `<div class="flex items-start gap-1.5 mt-1">
+      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${a.badgeCls} flex-shrink-0 whitespace-nowrap">${a.label}</span>
+      <p class="text-[10px] text-text-muted leading-snug">${a.closure}</p>
+    </div>`
+  ).join('');
+  const waIssue = (s.whatsappGroups||[]).some(g => !g.studentJoined);
+  const stageCls = s.stage === 'lockin' ? 'bg-green-100 text-green-700' : s.stage === 'deposit' ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600';
+  return `<div class="student-card cursor-pointer" onclick="openStudentDetail('${s.id}')">
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <div class="min-w-0">
+        <p class="font-semibold text-sm text-text-main truncate">${s.name}</p>
+        <p class="text-xs text-text-muted">${s.id} · ${s.course} · <span class="font-medium text-primary/80">${s.country || '—'}</span></p>
+      </div>
+      <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold flex-shrink-0 ${stageCls}">${(s.stage||'').toUpperCase()}</span>
+    </div>
+    <div class="flex flex-wrap gap-1 mb-2">${badgesHtml}</div>
+    ${s.followup ? `<p class="text-[10px] text-text-muted mb-2">📅 Follow-up: ${s.followup}${waIssue ? ' · <span class="text-accent font-semibold">WA group issue</span>' : ''}</p>` : ''}
+    <div class="bg-surface rounded-lg px-3 py-2 mt-1">
+      <p class="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-1">How to close</p>
+      ${closureHtml || '<p class="text-[10px] text-text-muted">Complete all pending subtasks for this student.</p>'}
+    </div>
+    <button class="mt-2 text-xs font-semibold text-accent hover:underline">Open student →</button>
+  </div>`;
+}
+
+const STI_TAB_META = [
+  { key:'all',    label:'All',            activeCls:'bg-primary text-white',          inactiveCls:'bg-surface text-text-muted hover:text-text-main' },
+  { key:'lockin', label:'Lock-in → STI',  activeCls:'bg-violet-600 text-white',        inactiveCls:'bg-violet-50 text-violet-700 hover:bg-violet-100' },
+  { key:'onhold', label:'On Hold',         activeCls:'bg-orange-500 text-white',        inactiveCls:'bg-orange-50 text-orange-700 hover:bg-orange-100' },
+  { key:'f2f',    label:'F2F → Lock',     activeCls:'bg-blue-600 text-white',           inactiveCls:'bg-blue-50 text-blue-700 hover:bg-blue-100' },
+  { key:'isl',    label:'ISL → F2F',      activeCls:'bg-teal-600 text-white',           inactiveCls:'bg-teal-50 text-teal-700 hover:bg-teal-100' },
+];
+
+function _renderSTITabs(allFunnelStudents, buckets) {
+  const counts = {
+    all:    allFunnelStudents.length,
+    lockin: buckets.lockin.length,
+    onhold: buckets.onhold.length,
+    f2f:    buckets.f2f.length,
+    isl:    buckets.isl.length,
+  };
+  return `<div class="flex flex-wrap gap-1.5 mb-3">
+    ${STI_TAB_META.map(t => {
+      const isActive = stiCohortTab === t.key;
+      return `<button onclick="switchSTICohortTab('${t.key}')"
+        class="sti-cohort-tab flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer transition-all ${isActive ? t.activeCls : t.inactiveCls}">
+        ${t.label}
+        <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] rounded-full px-1
+          ${isActive ? 'bg-white/30 text-white' : 'bg-white/80 text-text-muted'}">${counts[t.key]}</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
+function _getSTITabStudents(allFunnelStudents, buckets) {
+  if (stiCohortTab === 'all')    return allFunnelStudents;
+  if (stiCohortTab === 'lockin') return buckets.lockin;
+  if (stiCohortTab === 'onhold') return buckets.onhold;
+  if (stiCohortTab === 'f2f')    return buckets.f2f;
+  if (stiCohortTab === 'isl')    return buckets.isl;
+  return allFunnelStudents;
+}
+
+function switchSTICohortTab(key) {
+  stiCohortTab = key;
+  const all     = getViewingStudents().filter(isBoostSTIActive);
+  const acked   = _boostIsAcknowledged('funnel');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const buckets  = _getSTIBuckets(all);
+  const allFunnel = [...new Map([...buckets.lockin,...buckets.onhold,...buckets.f2f,...buckets.isl].map(s=>[s.id,s])).values()];
+  const base      = acked ? allFunnel : allFunnel.filter(s => isPendingToday(s, todayStr));
+
+  const tabsEl = document.getElementById('stiCohortTabs');
+  if (tabsEl) tabsEl.innerHTML = _renderSTITabs(acked ? allFunnel : allFunnel.filter(s=>isPendingToday(s,todayStr)), {
+    lockin: acked ? buckets.lockin : buckets.lockin.filter(s=>isPendingToday(s,todayStr)),
+    onhold: acked ? buckets.onhold : buckets.onhold.filter(s=>isPendingToday(s,todayStr)),
+    f2f:    acked ? buckets.f2f    : buckets.f2f.filter(s=>isPendingToday(s,todayStr)),
+    isl:    acked ? buckets.isl    : buckets.isl.filter(s=>isPendingToday(s,todayStr)),
+  });
+
+  const q = document.getElementById('stiSearchInput')?.value || '';
+  _applySTIFilters(base, buckets, q);
+}
+
+function _applySTIFilters(baseStudents, buckets, q) {
+  let students = _getSTITabStudents(baseStudents, buckets);
+  if (q) students = students.filter(s =>
+    s.name.toLowerCase().includes(q.toLowerCase()) || s.id.toLowerCase().includes(q.toLowerCase())
+  );
+  const el = document.getElementById('stiStudentList');
+  if (el) el.innerHTML = students.length
+    ? students.map(s => _renderSTIStudentCard(s, buckets)).join('')
+    : `<div class="flex flex-col items-center justify-center py-10 text-center">
+        <div class="text-3xl mb-2">✅</div>
+        <p class="font-semibold text-text-main text-sm mb-1">No students here</p>
+        <p class="text-xs text-text-muted">Try a different tab or check back tomorrow.</p>
+      </div>`;
+}
+
+function filterSTIStudents(q) {
+  const all     = getViewingStudents().filter(isBoostSTIActive);
+  const acked   = _boostIsAcknowledged('funnel');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const buckets  = _getSTIBuckets(all);
+  const allFunnel = [...new Map([...buckets.lockin,...buckets.onhold,...buckets.f2f,...buckets.isl].map(s=>[s.id,s])).values()];
+  const base      = acked ? allFunnel : allFunnel.filter(s => isPendingToday(s, todayStr));
+  _applySTIFilters(base, buckets, q);
+}
+
 function openBoostFunnelDrawer() {
   state.drawerMode     = 'boostFunnel';
   state.drawerPrevMode = null;
-  // Only include STI-active students (exclude Submitted to Institute / Application Dropped)
+  stiCohortTab         = 'all';
   const all      = getViewingStudents().filter(isBoostSTIActive);
   const todayStr = new Date().toISOString().split('T')[0];
   const acked    = _boostIsAcknowledged('funnel');
 
-  /* ── four priority action buckets ── */
-  const lockinStiNotDone = all.filter(s => s.stage === 'lockin' && s.subtasks.some(t => !t.done));
-  // On Hold: any student with a matching on-hold task that is NOT yet done
-  const onHoldDrafts = all.filter(s =>
-    s.subtasks.some(t => ON_HOLD_TASK_LABELS.some(lbl => t.label.toLowerCase().includes(lbl)) && !t.done)
-  );
-  // F2F Not Locked: attended 2nd discussion, not paid Prime/Premium/C2I, not dropped/submitted
-  const f2fNotLocked = all.filter(s =>
-    s.secondCallDate &&
-    !s.hasPaidPremium &&
-    (!s.amountPaid || s.amountPaid === 0) &&
-    s.leadStatus !== 'Drop off' &&
-    !STI_TERMINAL_STATUSES.includes(s.applicationStatus)
-  );
-  // ISL shared but 2nd call (F2F) not yet done — exclude Drop off
-  const islF2fPending   = getViewingStudents().filter(s => s.islSharedDate && !s.secondCallDate && s.leadStatus !== 'Drop off');
+  const buckets = _getSTIBuckets(all);
+  const allFunnelStudents = [...new Map([...buckets.lockin,...buckets.onhold,...buckets.f2f,...buckets.isl].map(s=>[s.id,s])).values()];
 
-  /* All students (for the "All Tasks" section) */
-  const allFunnelStudents = [...new Map([...lockinStiNotDone,...onHoldDrafts,...f2fNotLocked,...islF2fPending].map(s => [s.id,s])).values()];
+  const baseBuckets = acked ? buckets : {
+    lockin: buckets.lockin.filter(s => isPendingToday(s, todayStr)),
+    onhold: buckets.onhold.filter(s => isPendingToday(s, todayStr)),
+    f2f:    buckets.f2f.filter(s => isPendingToday(s, todayStr)),
+    isl:    buckets.isl.filter(s => isPendingToday(s, todayStr)),
+  };
+  const baseStudents = acked ? allFunnelStudents : allFunnelStudents.filter(s => isPendingToday(s, todayStr));
+  const displayStudents = _getSTITabStudents(baseStudents, baseBuckets);
 
-  let content;
-  if (!acked) {
-    // Today-only view — only students who still have pending subtasks
-    const todayLockin = lockinStiNotDone.filter(s => isPendingToday(s, todayStr));
-    const todayDrafts = onHoldDrafts.filter(s => isPendingToday(s, todayStr));
-    const todayF2f    = f2fNotLocked.filter(s => isPendingToday(s, todayStr));
-    const todayIslF2f = islF2fPending.filter(s => isPendingToday(s, todayStr));
-    const totalToday  = new Set([...todayLockin, ...todayDrafts, ...todayF2f, ...todayIslF2f].map(s => s.id)).size;
+  const todayStudents = allFunnelStudents.filter(s => isPendingToday(s, todayStr));
+  const dueStudents   = allFunnelStudents.filter(s => s.followup === todayStr);
+  const allDone       = dueStudents.length > 0 && dueStudents.every(s => s.subtasks.every(t => t.done));
 
-    // allDone: were there students due today, and are all their subtasks now complete?
-    const todayDueAll = [...new Map([
-      ...lockinStiNotDone.filter(s => s.followup === todayStr),
-      ...onHoldDrafts.filter(s => s.followup === todayStr),
-      ...f2fNotLocked.filter(s => s.followup === todayStr),
-    ].map(s => [s.id,s])).values()];
-    const allDone = todayDueAll.length > 0 && todayDueAll.every(s => s.subtasks.every(t => t.done));
+  const listHtml = displayStudents.length
+    ? `<div id="stiStudentList" class="space-y-3">${displayStudents.map(s => _renderSTIStudentCard(s, baseBuckets)).join('')}</div>`
+    : `<div id="stiStudentList"><div class="flex flex-col items-center justify-center py-12 text-center">
+        <div class="text-4xl mb-3">✅</div>
+        <p class="font-semibold text-text-main mb-1">All clear today!</p>
+        <p class="text-xs text-text-muted">No students with pending STI actions due today.</p>
+      </div></div>`;
 
-    content = `
-      <div class="space-y-3">
-        ${_renderBoostTodayHeader(totalToday)}
-        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
-        ${_boostMetricCard('lockin-sti-not-done',    'Lock-in Done and STI Not Done',     todayLockin,  todayStr, null, true)}
-        ${_boostMetricCard('on-hold-drafts',          'On Hold Application Drafts',         todayDrafts,  todayStr, null, true)}
-        ${_boostMetricCard('f2f-not-locked',          'F2F Done but Not Locked In',         todayF2f,     todayStr, null, true)}
-        ${_boostMetricCard('isl-shared-f2f-pending',  'ISL Shared but F2F not Done',        todayIslF2f,  todayStr, null, true)}
-        ${allDone ? _renderBoostAckPrompt('funnel') : ''}
-        ${_renderAllTasksSection(false, allFunnelStudents, 'funnel')}
-      </div>`;
-  } else {
-    // Full view after acknowledgement
-    content = `
-      <div class="space-y-3">
-        ${_renderBoostAckHeader()}
-        <p class="text-[11px] font-bold uppercase tracking-widest text-text-muted">Priority Actions</p>
-        ${_boostMetricCard('lockin-sti-not-done',   'Lock-in Done and STI Not Done',  lockinStiNotDone, todayStr)}
-        ${_boostMetricCard('on-hold-drafts',         'On Hold Application Drafts',      onHoldDrafts,     todayStr)}
-        ${_boostMetricCard('f2f-not-locked',         'F2F Done but Not Locked In',      f2fNotLocked,     todayStr)}
-        ${_boostMetricCard('isl-shared-f2f-pending', 'ISL Shared but F2F not Done',     islF2fPending,    todayStr)}
-        ${_renderAllTasksSection(true, allFunnelStudents, 'funnel')}
-      </div>`;
-  }
+  const content = `<div class="space-y-3">
+    ${!acked ? _renderBoostTodayHeader(todayStudents.length) : _renderBoostAckHeader()}
+    ${!acked && allDone ? _renderBoostAckPrompt('funnel') : ''}
+    <div id="stiCohortTabs">${_renderSTITabs(baseStudents, baseBuckets)}</div>
+    <div class="mb-1">
+      <input id="stiSearchInput" type="text" placeholder="Search by name or ID…"
+        oninput="filterSTIStudents(this.value)"
+        class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+    </div>
+    ${listHtml}
+    ${_renderAllTasksSection(acked, allFunnelStudents, 'funnel')}
+  </div>`;
 
   openDrawer('Boost STI', content, false);
 }
@@ -2114,7 +2238,7 @@ function renderMetricCards() {
       bestLabel: bestISL ? `🏆 Best: ${bestISL.name} · ${bestISL.value.toFixed(1)}/5` : '' },
     { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score,
       bestLabel: bestQ1 ? `🏆 Best: ${bestQ1.name} · ${bestQ1.value}%` : '' },
-    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats },
+    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats, unhappyCount },
   ];
 
   // Own Tasks: Red+First if pending, Green+Last if clear
@@ -2130,31 +2254,36 @@ function renderMetricGrid(elId, metrics) {
     // ── Special: WA Group Details card ──
     if (m.isWAGroups) {
       const ws = m.waStats;
+      const uh = m.unhappyCount || 0;
+
+      function subRow(label, count, urgency) {
+        // urgency: 'good'=green, 'warn'=amber, 'danger'=red, 'info'=blue
+        const cfg = {
+          good:   { bg:'bg-emerald-50', border:'border-emerald-200', numCls:'text-emerald-700 bg-emerald-100', lbl:'text-emerald-700' },
+          warn:   { bg:'bg-amber-50',   border:'border-amber-200',   numCls:'text-amber-700 bg-amber-100',     lbl:'text-amber-700' },
+          danger: { bg:'bg-red-50',     border:'border-red-200',     numCls:'text-red-700 bg-red-100',         lbl:'text-red-700' },
+          info:   { bg:'bg-blue-50',    border:'border-blue-200',    numCls:'text-blue-700 bg-blue-100',       lbl:'text-blue-700' },
+        }[urgency] || {};
+        return `<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg border ${cfg.bg} ${cfg.border} mb-1 last:mb-0">
+          <span class="text-[10px] font-semibold ${cfg.lbl}">${label}</span>
+          <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full ${cfg.numCls}">${count}</span>
+        </div>`;
+      }
+
       return `
-        <div class="metric-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow"
+        <div class="metric-card rounded-xl border p-3 cursor-pointer hover:shadow-md transition-shadow"
           style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
           onclick="openWAGroupDetailsDrawer()">
           <div class="metric-deco"></div>
           <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">⭐ User Experience <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
-          <div class="grid grid-cols-2 gap-1.5 mt-1">
-            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
-              <p class="font-bold text-sm text-emerald-700">${ws.active}</p>
-              <p class="text-[10px] text-emerald-600 font-medium leading-tight">Active</p>
-            </div>
-            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
-              <p class="font-bold text-sm ${ws.inactive > 0 ? 'text-amber-600' : 'text-emerald-700'}">${ws.inactive}</p>
-              <p class="text-[10px] ${ws.inactive > 0 ? 'text-amber-600' : 'text-emerald-600'} font-medium leading-tight">Inactive</p>
-            </div>
-            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
-              <p class="font-bold text-sm ${ws.notJoined > 0 ? 'text-orange-600' : 'text-emerald-700'}">${ws.notJoined}</p>
-              <p class="text-[10px] ${ws.notJoined > 0 ? 'text-orange-600' : 'text-emerald-600'} font-medium leading-tight">Not Joined</p>
-            </div>
-            <div class="bg-white/60 rounded-lg px-2 py-1.5 text-center">
-              <p class="font-bold text-sm ${ws.notReplied > 0 ? 'text-red-600' : 'text-emerald-700'}">${ws.notReplied}</p>
-              <p class="text-[10px] ${ws.notReplied > 0 ? 'text-red-600' : 'text-emerald-600'} font-medium leading-tight">Not Replied</p>
-            </div>
+          <div class="space-y-0.5">
+            ${subRow('Student Not Happy', uh,          uh > 0 ? 'danger' : 'good')}
+            ${subRow('WA Active',         ws.active,   ws.active > 0 ? 'good' : 'warn')}
+            ${subRow('WA Inactive',       ws.inactive, ws.inactive > 0 ? 'warn' : 'good')}
+            ${subRow('Not Joined',        ws.notJoined,  ws.notJoined > 0 ? 'danger' : 'good')}
+            ${subRow('Not Replied',       ws.notReplied, ws.notReplied > 0 ? 'danger' : 'good')}
           </div>
-          <div class="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-700">
+          <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
             View all groups →
           </div>
@@ -2378,9 +2507,9 @@ function getRevenueActionables(s) {
   }
   if (s.servicingType === 'partner' && !s.hasPaidPremium) {
     actions.push({
-      label:   'Pitch for Prime',
+      label:   'Enrol for Free Service',
       badgeCls:'bg-blue-100 text-blue-700',
-      closure: 'Student agrees to Prime enrolment — collect payment and record in system.'
+      closure: 'Student enrols under Free Service — confirm enrolment and record in system.'
     });
   }
   if (s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services') {
@@ -2395,7 +2524,14 @@ function getRevenueActionables(s) {
     actions.push({
       label:   'Pitch for Premium Uni Servicing',
       badgeCls:'bg-purple-100 text-purple-700',
-      closure: 'Student agrees to premium university servicing package — payment recorded in system.'
+      closure: 'Student agrees to Paid Service — Premium University servicing package. Collect payment and record in system.'
+    });
+  }
+  if (s.servicingType === 'non-partner' && s.nonPartnerSubType === 'paid-application') {
+    actions.push({
+      label:   'Pitch for Paid Application',
+      badgeCls:'bg-emerald-100 text-emerald-700',
+      closure: 'Student opts for Paid Application filing service — collect the application fee and record it in the system.'
     });
   }
   return actions;
@@ -2437,22 +2573,24 @@ function _renderRevenueStudentCard(s) {
   </div>`;
 }
 
-let revenueCohortTab = 'all'; // 'all' | 'c2i' | 'premium' | 'prime' | 'nonpartner'
+let revenueCohortTab = 'all'; // 'all'|'c2i'|'freeservice'|'premiumuni'|'specialised'|'paidapp'
 
 const REVENUE_COHORT_FILTERS = {
-  all:        s => true,
-  c2i:        s => !s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off',
-  prime:      s => s.servicingType === 'partner' && !s.hasPaidPremium,
-  premium:    s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'premium-universities',
-  nonpartner: s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services',
+  all:          s => true,
+  c2i:          s => !s.englishTestGiven && ['sti','application'].includes(s.stage) && s.leadStatus !== 'Drop off',
+  freeservice:  s => s.servicingType === 'partner' && !s.hasPaidPremium,
+  premiumuni:   s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'premium-universities',
+  specialised:  s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services',
+  paidapp:      s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'paid-application',
 };
 
 const REVENUE_TAB_META = [
-  { key:'all',        label:'All',          activeCls:'bg-primary text-white',            inactiveCls:'bg-surface text-text-muted hover:text-text-main' },
-  { key:'c2i',        label:'C2I',          activeCls:'bg-violet-600 text-white',          inactiveCls:'bg-violet-50 text-violet-700 hover:bg-violet-100' },
-  { key:'prime',      label:'Prime',        activeCls:'bg-blue-600 text-white',            inactiveCls:'bg-blue-50 text-blue-700 hover:bg-blue-100' },
-  { key:'premium',    label:'Premium Uni',  activeCls:'bg-purple-600 text-white',          inactiveCls:'bg-purple-50 text-purple-700 hover:bg-purple-100' },
-  { key:'nonpartner', label:'Non Partner',  activeCls:'bg-amber-500 text-white',           inactiveCls:'bg-amber-50 text-amber-700 hover:bg-amber-100' },
+  { key:'all',         label:'All',                  activeCls:'bg-primary text-white',         inactiveCls:'bg-surface text-text-muted hover:text-text-main' },
+  { key:'c2i',         label:'C2I',                  activeCls:'bg-violet-600 text-white',       inactiveCls:'bg-violet-50 text-violet-700 hover:bg-violet-100' },
+  { key:'freeservice', label:'Free Service',          activeCls:'bg-blue-600 text-white',         inactiveCls:'bg-blue-50 text-blue-700 hover:bg-blue-100' },
+  { key:'premiumuni',  label:'Premium Universities',  activeCls:'bg-purple-600 text-white',       inactiveCls:'bg-purple-50 text-purple-700 hover:bg-purple-100' },
+  { key:'specialised', label:'Specialised Services',  activeCls:'bg-amber-500 text-white',        inactiveCls:'bg-amber-50 text-amber-700 hover:bg-amber-100' },
+  { key:'paidapp',     label:'Paid Application',      activeCls:'bg-emerald-600 text-white',      inactiveCls:'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' },
 ];
 
 function _getRevenueTabStudents(baseStudents) {
@@ -2558,24 +2696,24 @@ function openRevenueSubCard(type) {
 
   const configs = {
     'non-partner-revenue': {
-      title:   'Non Partner Revenue',
+      title:   'Paid Service Revenue',
       filter:  s => s.servicingType === 'non-partner',
-      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Non Partner</span>${s.nonPartnerSubType === 'specialised-services' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">Specialised</span>` : s.nonPartnerSubType === 'premium-universities' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 ml-1">Premium Uni</span>` : ''}`,
-      def:     'Students with non-partner university servicing where non-partner fee/revenue has not been fully collected.',
-      closure: 'Full non-partner revenue is collected and recorded in the system.',
+      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Paid Service</span>${s.nonPartnerSubType === 'specialised-services' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">Specialised</span>` : s.nonPartnerSubType === 'premium-universities' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 ml-1">Premium Uni</span>` : s.nonPartnerSubType === 'paid-application' ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 ml-1">Paid App</span>` : ''}`,
+      def:     'Students under Paid Service — includes Premium Universities, Specialised Services, and Paid Application tracks where the service fee has not yet been collected.',
+      closure: 'Full Paid Service fee is collected and recorded in the system.',
     },
     'prime-enrolments': {
-      title:   'Prime Enrolments',
+      title:   'Free Service Enrolment',
       filter:  s => s.servicingType === 'partner',
-      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Partner Servicing</span>`,
-      def:     'Students enrolled under partner university servicing (Prime) where enrolment revenue is pending or outstanding.',
-      closure: 'Full partner enrolment revenue is collected from the student.',
+      badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Free Service</span>`,
+      def:     'Students enrolled under Free Service (partner university servicing) where enrolment confirmation is pending or outstanding.',
+      closure: 'Student enrolment is confirmed under Free Service and recorded in the system.',
     },
     'specialised-services': {
       title:   'Specialised Services',
       filter:  s => s.servicingType === 'non-partner' && s.nonPartnerSubType === 'specialised-services',
       badge:   s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Specialised Services</span>`,
-      def:     'Students availing specialised services (SOP, Visa, IELTS prep etc.) where service fee payment is pending.',
+      def:     'Students availing Paid Service — Specialised Services (SOP, Visa, IELTS prep etc.) where the service fee payment is pending.',
       closure: 'Specialised service fee is paid and recorded in the system.',
     },
   };
@@ -3912,8 +4050,8 @@ function openStudentDetail(studentId) {
           <select id="st-type-${s.id}" onchange="updateServicingType('${s.id}')"
             class="w-full mt-1 text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
             <option value="">-- Select Servicing Type --</option>
-            <option value="partner"     ${s.servicingType === 'partner'     ? 'selected' : ''}>Partner Servicing</option>
-            <option value="non-partner" ${s.servicingType === 'non-partner' ? 'selected' : ''}>Non Partner Servicing</option>
+            <option value="partner"     ${s.servicingType === 'partner'     ? 'selected' : ''}>Free Service</option>
+            <option value="non-partner" ${s.servicingType === 'non-partner' ? 'selected' : ''}>Paid Service</option>
           </select>
         </div>
         <div id="st-sub-${s.id}" class="${s.servicingType === 'non-partner' ? '' : 'hidden'}">
@@ -3923,6 +4061,7 @@ function openStudentDetail(studentId) {
             <option value="">-- Select Sub Type --</option>
             <option value="premium-universities"  ${s.nonPartnerSubType === 'premium-universities'  ? 'selected' : ''}>Premium Universities</option>
             <option value="specialised-services"  ${s.nonPartnerSubType === 'specialised-services'  ? 'selected' : ''}>Specialised Services</option>
+            <option value="paid-application"      ${s.nonPartnerSubType === 'paid-application'      ? 'selected' : ''}>Paid Application</option>
           </select>
         </div>
       </div>
@@ -6828,8 +6967,8 @@ function openStudentDetail(studentId) {
           <select id="st-type-${s.id}" onchange="updateServicingType('${s.id}')"
             class="w-full mt-1 text-sm px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-accent">
             <option value="">-- Select Servicing Type --</option>
-            <option value="partner"     ${s.servicingType === 'partner'     ? 'selected' : ''}>Partner Servicing</option>
-            <option value="non-partner" ${s.servicingType === 'non-partner' ? 'selected' : ''}>Non Partner Servicing</option>
+            <option value="partner"     ${s.servicingType === 'partner'     ? 'selected' : ''}>Free Service</option>
+            <option value="non-partner" ${s.servicingType === 'non-partner' ? 'selected' : ''}>Paid Service</option>
           </select>
         </div>
         <div id="st-sub-${s.id}" class="${s.servicingType === 'non-partner' ? '' : 'hidden'}">
@@ -6839,6 +6978,7 @@ function openStudentDetail(studentId) {
             <option value="">-- Select Sub Type --</option>
             <option value="premium-universities"  ${s.nonPartnerSubType === 'premium-universities'  ? 'selected' : ''}>Premium Universities</option>
             <option value="specialised-services"  ${s.nonPartnerSubType === 'specialised-services'  ? 'selected' : ''}>Specialised Services</option>
+            <option value="paid-application"      ${s.nonPartnerSubType === 'paid-application'      ? 'selected' : ''}>Paid Application</option>
           </select>
         </div>
       </div>
@@ -7097,7 +7237,7 @@ function openWAGroupDetailsDrawer() {
   /* ── two top-level channel cards (collapsed by default) ── */
   function channelCard(id, icon, title, badge, borderCls, bgCls, headerColor, innerContent) {
     return `
-      <div class="rounded-xl border ${borderCls} overflow-hidden mb-3 shadow-sm">
+      <div class="rounded-xl border ${borderCls} mb-3 shadow-sm">
         <button onclick="toggleCommCard('${id}')" class="w-full flex items-center justify-between px-4 py-3.5 ${bgCls} hover:opacity-90 transition-opacity cursor-pointer text-left">
           <div class="flex items-center gap-2.5">
             <span class="text-lg leading-none">${icon}</span>
@@ -7178,49 +7318,55 @@ function openWAGroupDetailsDrawer() {
     ${accordion('escalations', '🚨', 'Escalation Through Support Ticket', escalationStudents.length, 'text-purple-700', 'bg-purple-50', 'border-purple-200',
       escalationStudents.map(s => voiceRow(s, { label: 'Escalation Raised', cls: 'bg-purple-100 text-purple-700' })).join(''))}`;
 
-  /* ── Unhappy Cohort sub-card ── */
-  const unhappyStudents = students.filter(s => s.islRating < 8 || s.hasEscalation);
-  const unhappyBanner = `
-    <div class="mb-3 rounded-lg overflow-hidden border border-gray-100">
-      <div class="px-2.5 py-2 bg-blue-50 border-b border-gray-100">
-        <p class="text-[10px] font-bold text-blue-700 mb-0.5">ℹ️ Definition</p>
-        <p class="text-[10px] text-blue-600 leading-relaxed">Leads where the student has given a rating <strong>less than 4</strong> in the app for ISL, or the student has given a rating in an <strong>F2F discussion</strong>.</p>
+  /* ── Student Not Happy sub-card ── */
+  const lowRatingStudents  = students.filter(s => s.islRating < 8 && !s.hasEscalation);
+  const escalationStudents2 = students.filter(s => s.hasEscalation);
+  const allUnhappy         = students.filter(s => s.islRating < 8 || s.hasEscalation);
+
+  function _unhappyStudentCard(s) {
+    const hasLowRating  = s.islRating < 8;
+    const hasTicket     = s.hasEscalation;
+    return `<div class="bg-white rounded-xl border border-border p-3 mb-2 last:mb-0">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div>
+          <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
+          <p class="text-[10px] text-text-muted">${s.id} · ${s.course}</p>
+        </div>
+        <button onclick="openStudentDetail('${s.id}');state.drawerPrevMode='waGroup';" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 cursor-pointer flex-shrink-0">View →</button>
       </div>
-      <div class="px-2.5 py-2 bg-green-50">
-        <p class="text-[10px] font-bold text-green-700 mb-0.5">✅ Task Closure</p>
-        <p class="text-[10px] text-green-600 leading-relaxed">
-          • Counsellor shares the <strong>revised shortlist</strong><br/>
-          • ISL share date gets <strong>changed</strong><br/>
-          • Student <strong>finalises</strong> one university<br/>
-          • Student purchases <strong>Leap Prime</strong><br/>
-          • Student gives a rating of <strong>more than 3 out of 5</strong>
-        </p>
-      </div>
-    </div>`;
-  const unhappyInner = unhappyBanner + (unhappyStudents.length === 0
-    ? `<p class="text-xs text-text-muted italic text-center py-4">No unhappy cases right now 🎉</p>`
-    : unhappyStudents.map(s => `
-        <div class="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+      ${hasLowRating ? `
+        <div class="flex items-start gap-2 mb-1.5 p-2 bg-red-50 rounded-lg border border-red-100">
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 flex-shrink-0">ISL ${s.islRating}/10</span>
           <div>
-            <p class="text-xs font-semibold text-text-main">${escHtml(s.name)}</p>
-            <p class="text-[10px] text-text-muted">${s.id} · ${s.course}</p>
-            <div class="flex gap-1.5 mt-0.5 flex-wrap">
-              ${s.islRating < 8 ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">ISL ${s.islRating}/10</span>` : ''}
-              ${s.hasEscalation ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Escalation</span>` : ''}
-            </div>
+            <p class="text-[10px] font-bold text-red-700 mb-0.5">Actionable</p>
+            <p class="text-[10px] text-red-600 leading-snug">Student has given a low rating on ISL / F2F. <strong>Share a revised ISL and speak to the student</strong> to address their concerns and re-align on university choices.</p>
           </div>
-          <button onclick="openStudentDetail('${s.id}')" class="text-[10px] px-2 py-1 bg-primary/5 text-primary border border-primary/20 rounded-lg font-semibold hover:bg-primary/10 transition-colors cursor-pointer flex-shrink-0">View Lead →</button>
-        </div>`).join(''));
+        </div>` : ''}
+      ${hasTicket ? `
+        <div class="flex items-start gap-2 p-2 bg-purple-50 rounded-lg border border-purple-100">
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 flex-shrink-0">Support Ticket</span>
+          <div>
+            <p class="text-[10px] font-bold text-purple-700 mb-0.5">Actionable</p>
+            <p class="text-[10px] text-purple-600 leading-snug">Student has raised a query via support ticket. <strong>Speak to the student and close their issues</strong> — ensure all concerns are resolved before the next follow-up.</p>
+          </div>
+        </div>` : ''}
+    </div>`;
+  }
+
+  const unhappyInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Students who gave a low rating on ISL/F2F or raised a support ticket.</p>
+    ${allUnhappy.length === 0
+      ? `<p class="text-xs text-text-muted italic text-center py-6">No unhappy students right now 🎉</p>`
+      : allUnhappy.map(s => _unhappyStudentCard(s)).join('')}`;
 
   const content = `
-    <p class="text-xs text-text-muted mb-4">Overview of user experience, voice & non-voice communication across your students.</p>
-    ${channelCard('unhappy',   '😟', 'Unhappy Cohort',            `ISL < 8 or Escalation · ${unhappyStudents.length} students`, 'border-red-200',     'bg-red-50',     'text-red-800',     unhappyInner)}
-    ${channelCard('non-voice', '💬', 'Non Voice Channel Summary', 'WA Group',                                                    'border-emerald-200', 'bg-emerald-50', 'text-emerald-800', nonVoiceInner)}
-    ${channelCard('voice',     '📞', 'Voice Channel Summary',     'Jerry Call',                                                  'border-blue-200',    'bg-blue-50',    'text-blue-800',    voiceInner)}
+    <p class="text-xs text-text-muted mb-4">Students who need your immediate attention — unhappy cases and WA group activity.</p>
+    ${channelCard('unhappy',   '🚨', 'Student Not Happy',   `${allUnhappy.length} students need attention`,  'border-red-200',     'bg-red-50',     'text-red-800',     unhappyInner)}
+    ${channelCard('non-voice', '💬', 'WA Summary',          'WhatsApp Group Activity',                       'border-emerald-200', 'bg-emerald-50', 'text-emerald-800', nonVoiceInner)}
   `;
 
   state.drawerMode = 'waGroup';
-  openDrawer('User Experience', content, false);
+  openDrawer('All About User — Immediate Attention Required', content, false);
 }
 
 function toggleWACard(id) {
