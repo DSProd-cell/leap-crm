@@ -3669,6 +3669,15 @@ function renderTrainingModules() {
   if (elLD) elLD.innerHTML = _buildModuleHTML(TRAINING_MODULES, 'ld-');
 }
 
+function toggleTrainingModulesSection() {
+  const body = document.getElementById('trainingModulesSectionBody');
+  const chev = document.getElementById('trainingModulesSectionChevron');
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
 function toggleModule(id) {
   const body = document.getElementById('module-' + id);
   const chev = document.getElementById('chevron-' + id);
