@@ -131,6 +131,15 @@ const SUPPORT_TICKETS = [
   { id:'TKT-004', subject:'App crash on task log submit',        counselor:'Divya Reddy',  category:'Technical Issue', status:'Open'     },
 ];
 
+/* ── Counsellor-facing ticket data (rich, with date/desc/update) ── */
+const COUNSELLOR_TICKETS = [
+  { id:'TKT-001', dateRaised:'20 Jun 2026', category:'Incentive Query',    status:'Resolved', description:'My April incentive slab was not applied correctly. The amount shown is Rs. 12,000 but based on my paid service revenue it should be Rs. 15,500.',                           update:'Incentive recalculated and updated by ops team. Rs. 15,500 has been applied to your account as of 25 June 2026.' },
+  { id:'TKT-002', dateRaised:'01 Jul 2026', category:'CRM Issues',         status:'Open',     description:'Unable to log task completion for student U1003. The Save button is unresponsive after filling all details. Happens consistently on Chrome.',                           update:'Issue escalated to the tech team. Under investigation — expected fix in 48 hours.' },
+  { id:'TKT-003', dateRaised:'05 Jul 2026', category:'SOP Issue',          status:'Open',     description:'The SOP document for Canadian university applications is outdated — it still shows 2025 deadline dates and old fee structures.',                                          update:'SOP team has been notified. Updated document will be shared within 48 hours.' },
+  { id:'TKT-004', dateRaised:'15 Jun 2026', category:'University Support', status:'Resolved', description:'Brock University has not responded to my student\'s (U1006) application for 3 weeks. Need escalation support from the LEAP university relations team.',                update:'LEAP university relations team followed up with Brock directly. Application reviewed and moved to shortlisting stage as of 22 June.' },
+  { id:'TKT-005', dateRaised:'07 Jul 2026', category:'APP Issue',          status:'Open',     description:'The Boost Output cards are not loading on mobile view. All four cards appear blank. Tested on Chrome mobile and Safari — same issue on both.',                         update:'Logged with dev team. Fix expected in the next release cycle.' },
+];
+
 /* ── Mock students for Priya Sharma (counselor id:1) ── */
 const STUDENTS = [
   { id:'U1001', counselorId:1, name:'Aarav Mehta',     course:'MBA Finance',      stage:'sti',         followup:'2026-06-02', appDownloaded:true,  lastCallDate:'20 May 2026', lastCallOutcome:'Connected', qualityScore:82, lastConnected:'20 May 2026 11:42 AM', country:'UK',
@@ -994,6 +1003,22 @@ function bootApp(role, email) {
   document.getElementById('corrDate').valueAsDate = new Date('2026-05-23');
 
   // Bot & WA bubbles are always visible (sticky FABs)
+
+  // Tab 3 — counsellor sees "My Tickets" instead of Info Hub
+  const ldInfoHubBtn = document.getElementById('ldTabInfoHub');
+  if (ldInfoHubBtn) {
+    ldInfoHubBtn.textContent = role === 'counselor' ? 'My Tickets' : 'Info Hub';
+  }
+  // Ensure correct panel is visible on load for counsellor
+  const ticketsPanel = document.getElementById('ldPanelCounsellorTickets');
+  const infoHubPanel = document.getElementById('ldPanelInfohub');
+  if (role === 'counselor') {
+    if (ticketsPanel) ticketsPanel.classList.remove('hidden');
+    if (infoHubPanel) infoHubPanel.classList.add('hidden');
+  } else {
+    if (ticketsPanel) ticketsPanel.classList.add('hidden');
+    if (infoHubPanel) infoHubPanel.classList.remove('hidden');
+  }
 
   renderAll();
   switchTab('tab1');
@@ -3308,11 +3333,67 @@ function switchLDTab(tab) {
     activeBtn.classList.add('border-primary', 'text-primary', 'bg-primary/5');
     activeBtn.classList.remove('border-transparent', 'text-text-muted');
   }
-  // Show/hide panels
-  document.getElementById('ldPanelInfohub').classList.toggle('hidden', tab !== 'infohub');
+  // Show/hide panels — counsellors get ticket summary instead of info hub
+  const isCounsellor = state.currentUser && state.currentUser.role === 'counselor';
+  document.getElementById('ldPanelInfohub').classList.toggle('hidden', tab !== 'infohub' || isCounsellor);
+  document.getElementById('ldPanelCounsellorTickets').classList.toggle('hidden', tab !== 'infohub' || !isCounsellor);
   document.getElementById('ldPanelNewsletter').classList.toggle('hidden', tab !== 'newsletter');
-  // Render newsletter if needed
   if (tab === 'newsletter') renderNewsletterTable();
+  if (tab === 'infohub' && isCounsellor) renderCounsellorTicketSummary();
+}
+
+function renderCounsellorTicketSummary() {
+  const total    = COUNSELLOR_TICKETS.length;
+  const resolved = COUNSELLOR_TICKETS.filter(t => t.status === 'Resolved').length;
+  const open     = COUNSELLOR_TICKETS.filter(t => t.status === 'Open').length;
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('ticketCountAll',      total);
+  setEl('ticketCountResolved', resolved);
+  setEl('ticketCountOpen',     open);
+  filterCounsellorTickets('all');
+}
+
+function filterCounsellorTickets(filter) {
+  const list = document.getElementById('counsellorTicketList');
+  if (!list) return;
+  const tickets = filter === 'all'
+    ? COUNSELLOR_TICKETS
+    : COUNSELLOR_TICKETS.filter(t => t.status === filter);
+
+  if (!tickets.length) {
+    list.innerHTML = `<div class="text-center py-12 text-text-muted text-sm">No tickets found.</div>`;
+    return;
+  }
+
+  list.innerHTML = tickets.map(t => {
+    const isResolved = t.status === 'Resolved';
+    const badge = isResolved
+      ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200">Resolved</span>`
+      : `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-200">Not Resolved</span>`;
+    const updateBorder = isResolved ? 'border-green-400' : 'border-orange-400';
+    return `
+      <div class="bg-white rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono font-semibold text-text-muted bg-surface px-2 py-0.5 rounded">${t.id}</span>
+            <span class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">${t.category}</span>
+            ${badge}
+          </div>
+          <span class="text-xs text-text-muted flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Raised: ${t.dateRaised}
+          </span>
+        </div>
+        <div class="mb-1">
+          <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Issue Description</p>
+          <p class="text-sm text-text-main leading-relaxed">${t.description}</p>
+        </div>
+        <div class="mt-3 bg-surface rounded-lg p-3 border-l-4 ${updateBorder}">
+          <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Latest Update</p>
+          <p class="text-sm text-text-main">${t.update}</p>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function switchInfoHubSection(section, btn) {
@@ -4519,14 +4600,44 @@ document.addEventListener('keydown', (e) => {
   });
 });
 
+function handleTicketScreenshot(input) {
+  const nameEl = document.getElementById('ticketScreenshotName');
+  if (input.files && input.files[0]) {
+    nameEl.textContent = '✓ ' + input.files[0].name;
+    nameEl.classList.add('text-accent');
+  }
+}
+
 function submitTicket() {
-  const subj = document.getElementById('ticketSubject').value.trim();
+  const cat  = document.getElementById('ticketCategory').value;
   const desc = document.getElementById('ticketDesc').value.trim();
-  if (!subj || !desc) { showToast('Please fill in all fields.', 'error'); return; }
-  showToast('Support request submitted! We\'ll get back to you soon.', 'success');
+  if (!cat)  { showToast('Please select a ticket type.', 'error'); return; }
+  if (!desc) { showToast('Please describe your issue.', 'error'); return; }
+
+  // Add to counsellor tickets if counsellor role
+  const today = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  const newTicket = {
+    id: 'TKT-' + String(COUNSELLOR_TICKETS.length + 1).padStart(3, '0'),
+    dateRaised: today,
+    category: cat,
+    status: 'Open',
+    description: desc,
+    update: 'Your ticket has been received. Our ops team will respond within 4 working hours.',
+  };
+  COUNSELLOR_TICKETS.push(newTicket);
+
+  showToast('Ticket raised! Ops team will respond within 4 working hours.', 'success');
   closeModal('ticketModal');
-  document.getElementById('ticketSubject').value = '';
-  document.getElementById('ticketDesc').value    = '';
+
+  // Reset form
+  document.getElementById('ticketCategory').value = '';
+  document.getElementById('ticketDesc').value = '';
+  document.getElementById('ticketScreenshot').value = '';
+  document.getElementById('ticketScreenshotName').textContent = 'Click to upload or drag & drop';
+  document.getElementById('ticketScreenshotName').classList.remove('text-accent');
+
+  // Refresh ticket summary if visible
+  renderCounsellorTicketSummary();
 }
 
 /* ═══════════════ TOAST ═══════════════ */
