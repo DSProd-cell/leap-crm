@@ -133,10 +133,10 @@ const SUPPORT_TICKETS = [
 
 /* ── Counsellor-facing ticket data (rich, with date/desc/update) ── */
 const COUNSELLOR_TICKETS = [
-  { id:'TKT-001', dateRaised:'20 Jun 2026', category:'Incentive Query',    status:'Resolved', description:'My April incentive slab was not applied correctly. The amount shown is Rs. 12,000 but based on my paid service revenue it should be Rs. 15,500.',                           update:'Incentive recalculated and updated by ops team. Rs. 15,500 has been applied to your account as of 25 June 2026.' },
+  { id:'TKT-001', dateRaised:'20 Jun 2026', category:'Incentive Query',    status:'Resolved', resolvedDate:'25 Jun 2026', tat:5, description:'My April incentive slab was not applied correctly. The amount shown is Rs. 12,000 but based on my paid service revenue it should be Rs. 15,500.',                           update:'Incentive recalculated and updated by ops team. Rs. 15,500 has been applied to your account as of 25 June 2026.' },
   { id:'TKT-002', dateRaised:'01 Jul 2026', category:'CRM Issues',         status:'Open',     description:'Unable to log task completion for student U1003. The Save button is unresponsive after filling all details. Happens consistently on Chrome.',                           update:'Issue escalated to the tech team. Under investigation — expected fix in 48 hours.' },
   { id:'TKT-003', dateRaised:'05 Jul 2026', category:'SOP Issue',          status:'Open',     description:'The SOP document for Canadian university applications is outdated — it still shows 2025 deadline dates and old fee structures.',                                          update:'SOP team has been notified. Updated document will be shared within 48 hours.' },
-  { id:'TKT-004', dateRaised:'15 Jun 2026', category:'University Support', status:'Resolved', description:'Brock University has not responded to my student\'s (U1006) application for 3 weeks. Need escalation support from the LEAP university relations team.',                update:'LEAP university relations team followed up with Brock directly. Application reviewed and moved to shortlisting stage as of 22 June.' },
+  { id:'TKT-004', dateRaised:'15 Jun 2026', category:'University Support', status:'Resolved', resolvedDate:'22 Jun 2026', tat:7, description:'Brock University has not responded to my student\'s (U1006) application for 3 weeks. Need escalation support from the LEAP university relations team.',                update:'LEAP university relations team followed up with Brock directly. Application reviewed and moved to shortlisting stage as of 22 June.' },
   { id:'TKT-005', dateRaised:'07 Jul 2026', category:'APP Issue',          status:'Open',     description:'The Boost Output cards are not loading on mobile view. All four cards appear blank. Tested on Chrome mobile and Safari — same issue on both.',                         update:'Logged with dev team. Fix expected in the next release cycle.' },
 ];
 
@@ -1012,12 +1012,16 @@ function bootApp(role, email) {
   // Ensure correct panel is visible on load for counsellor
   const ticketsPanel = document.getElementById('ldPanelCounsellorTickets');
   const infoHubPanel = document.getElementById('ldPanelInfohub');
+  const subTabBar    = document.getElementById('ldSubTabBar');
   if (role === 'counselor') {
     if (ticketsPanel) ticketsPanel.classList.remove('hidden');
     if (infoHubPanel) infoHubPanel.classList.add('hidden');
+    if (subTabBar) subTabBar.classList.add('hidden');
+    renderCounsellorTicketSummary();
   } else {
     if (ticketsPanel) ticketsPanel.classList.add('hidden');
     if (infoHubPanel) infoHubPanel.classList.remove('hidden');
+    if (subTabBar) subTabBar.classList.remove('hidden');
   }
 
   renderAll();
@@ -3241,22 +3245,10 @@ function renderCounsellorOffersRow() {
 function renderQuickLinks() {
   const links = [
     {
-      id:'session', icon:'🚀', color:'bg-indigo-50', iconColor:'text-indigo-600',
-      label: 'Join 10x',
-      desc:'Click to join your 10x session and boost your performance',
-      action:`joinTenX()`
-    },
-    {
       id:'sheet', icon:'📊', color:'bg-green-50', iconColor:'text-green-600',
-      label:'Templates Sheet — Open Templates',
-      desc:'Access the shared Google Sheet with all templates and SOPs',
+      label:'IMP Sheet',
+      desc:'Access important templates, SOPs and reference documents',
       action:`openQuickLink('sheet')`
-    },
-    {
-      id:'support', icon:'🎫', color:'bg-orange-50', iconColor:'text-orange-600',
-      label:'Support — Raise a Request',
-      desc:'Submit a ticket to the ops team for help with data, incentives, or issues',
-      action:`openTicketModal()`
     },
   ];
   const grid = document.getElementById('ldTopCards');
@@ -3361,13 +3353,21 @@ function openTicketDetailPage(filter) {
       const badge = isResolved
         ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200">Resolved</span>`
         : `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-200">Not Resolved</span>`;
+      const tatBadge = isResolved && t.tat
+        ? `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">TAT: ${t.tat} days</span>`
+        : '';
+      const clickAttr = isResolved
+        ? `onclick="openResolvedTicketDetail('${t.id}')" style="cursor:pointer"`
+        : '';
+      const hoverClass = isResolved ? 'hover:border-green-300 hover:shadow-md transition-all' : '';
       return `
-        <div class="bg-white rounded-xl border border-border p-5 shadow-sm">
+        <div ${clickAttr} class="bg-white rounded-xl border border-border p-5 shadow-sm ${hoverClass}">
           <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-xs font-mono font-semibold text-text-muted bg-surface px-2 py-0.5 rounded">${t.id}</span>
               <span class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">${t.category}</span>
               ${badge}
+              ${tatBadge}
             </div>
             <span class="text-xs text-text-muted flex items-center gap-1">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -3380,6 +3380,7 @@ function openTicketDetailPage(filter) {
             <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Latest Update</p>
             <p class="text-sm text-text-main">${t.update}</p>
           </div>
+          ${isResolved ? `<p class="text-xs text-green-600 font-medium mt-3 text-right">Tap to view details &amp; give feedback →</p>` : ''}
         </div>`;
     }).join('');
   }
@@ -3392,15 +3393,145 @@ function closeTicketDetailPage() {
   document.getElementById('ticketDetailPage').classList.add('hidden');
 }
 
+function openResolvedTicketDetail(ticketId) {
+  const t = COUNSELLOR_TICKETS.find(x => x.id === ticketId);
+  if (!t) return;
+  const content = document.getElementById('resolvedTicketDetailContent');
+  if (!content) return;
+
+  content.innerHTML = `
+    <div class="space-y-5 py-4">
+      <!-- Ticket Meta -->
+      <div class="bg-white rounded-xl border border-green-200 p-5 shadow-sm">
+        <div class="flex items-center gap-2 flex-wrap mb-4">
+          <span class="text-xs font-mono font-semibold text-text-muted bg-surface px-2 py-0.5 rounded">${t.id}</span>
+          <span class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">${t.category}</span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200">Resolved</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="text-xs text-text-muted font-semibold uppercase tracking-wide mb-0.5">Date Raised</p>
+            <p class="text-text-main font-medium">${t.dateRaised}</p>
+          </div>
+          <div>
+            <p class="text-xs text-text-muted font-semibold uppercase tracking-wide mb-0.5">Date Resolved</p>
+            <p class="text-green-600 font-medium">${t.resolvedDate || '—'}</p>
+          </div>
+          <div>
+            <p class="text-xs text-text-muted font-semibold uppercase tracking-wide mb-0.5">Resolution TAT</p>
+            <p class="text-blue-600 font-bold">${t.tat ? t.tat + ' day' + (t.tat !== 1 ? 's' : '') : '—'}</p>
+          </div>
+          <div>
+            <p class="text-xs text-text-muted font-semibold uppercase tracking-wide mb-0.5">Category</p>
+            <p class="text-text-main font-medium">${t.category}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue Description -->
+      <div class="bg-white rounded-xl border border-border p-5 shadow-sm">
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Issue Description</p>
+        <p class="text-sm text-text-main leading-relaxed">${t.description}</p>
+      </div>
+
+      <!-- Resolution Update -->
+      <div class="bg-white rounded-xl border border-border p-5 shadow-sm border-l-4 border-green-400">
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Resolution Update</p>
+        <p class="text-sm text-text-main leading-relaxed">${t.update}</p>
+      </div>
+
+      <!-- Feedback Section -->
+      <div class="bg-white rounded-xl border border-border p-5 shadow-sm">
+        <p class="text-sm font-bold text-text-main mb-1">Are you satisfied with the resolution?</p>
+        <p class="text-xs text-text-muted mb-4">Your feedback helps us improve support quality.</p>
+        <div class="flex gap-3">
+          <button onclick="submitTicketFeedback('${t.id}', 'happy')"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-50 hover:bg-green-100 border-2 border-green-200 hover:border-green-400 text-green-700 font-semibold text-sm rounded-xl cursor-pointer transition-all">
+            😊 Happy
+          </button>
+          <button onclick="submitTicketFeedback('${t.id}', 'unhappy')"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-400 text-red-700 font-semibold text-sm rounded-xl cursor-pointer transition-all">
+            😞 Unhappy
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('resolvedTicketDetailPage').classList.remove('hidden');
+  document.getElementById('resolvedTicketDetailPage').scrollTop = 0;
+}
+
+function closeResolvedTicketDetail() {
+  document.getElementById('resolvedTicketDetailPage').classList.add('hidden');
+}
+
+function submitTicketFeedback(ticketId, feedback) {
+  const t = COUNSELLOR_TICKETS.find(x => x.id === ticketId);
+  if (!t) return;
+  const content = document.getElementById('resolvedTicketDetailContent');
+
+  if (feedback === 'happy') {
+    if (content) content.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="text-6xl mb-4">😊</div>
+        <h3 class="text-xl font-bold text-green-600 mb-2">Thank you for your feedback!</h3>
+        <p class="text-sm text-text-muted mb-6">We're glad your issue was resolved satisfactorily.</p>
+        <button onclick="closeResolvedTicketDetail()" class="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg cursor-pointer transition-colors">
+          Go Back
+        </button>
+      </div>`;
+  } else {
+    // Unhappy — recreate ticket as Open, notify support, update counts
+    const newId = 'TKT-' + String(COUNSELLOR_TICKETS.length + 1).padStart(3, '0');
+    const today = new Date();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dateStr = today.getDate() + ' ' + months[today.getMonth()] + ' ' + today.getFullYear();
+
+    COUNSELLOR_TICKETS.push({
+      id: newId,
+      dateRaised: dateStr,
+      category: t.category,
+      status: 'Open',
+      description: `[Re-opened from ${t.id}] ${t.description}`,
+      update: 'Ticket re-opened due to unsatisfactory resolution. Counsellor support team has been notified.'
+    });
+
+    renderCounsellorTicketSummary();
+
+    if (content) content.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="text-6xl mb-4">🔔</div>
+        <h3 class="text-xl font-bold text-red-600 mb-2">Ticket Re-opened</h3>
+        <p class="text-sm text-text-muted mb-2">We're sorry to hear that. Ticket <strong>${newId}</strong> has been created and moved to <strong>Not Resolved</strong>.</p>
+        <p class="text-sm text-text-muted mb-6">Our counsellor support team has been notified and will reach out to you shortly.</p>
+        <button onclick="closeResolvedTicketDetail()" class="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold text-sm rounded-lg cursor-pointer transition-colors">
+          Go Back
+        </button>
+      </div>`;
+    showToast('Ticket re-opened. Support team notified.', 'warning');
+  }
+}
+
 function renderCounsellorTicketSummary() {
   const total    = COUNSELLOR_TICKETS.length;
-  const resolved = COUNSELLOR_TICKETS.filter(t => t.status === 'Resolved').length;
+  const resolvedTickets = COUNSELLOR_TICKETS.filter(t => t.status === 'Resolved');
   const open     = COUNSELLOR_TICKETS.filter(t => t.status === 'Open').length;
   const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   setEl('ticketCountAll',      total);
-  setEl('ticketCountResolved', resolved);
+  setEl('ticketCountResolved', resolvedTickets.length);
   setEl('ticketCountOpen',     open);
-  filterCounsellorTickets('all');
+
+  // Compute avg TAT for resolved tickets
+  const tatEl = document.getElementById('ticketAvgTat');
+  if (tatEl) {
+    const ticketsWithTat = resolvedTickets.filter(t => t.tat);
+    if (ticketsWithTat.length) {
+      const avg = Math.round(ticketsWithTat.reduce((sum, t) => sum + t.tat, 0) / ticketsWithTat.length);
+      tatEl.textContent = `Avg TAT: ${avg} day${avg !== 1 ? 's' : ''}`;
+    } else {
+      tatEl.textContent = '';
+    }
+  }
 }
 
 function filterCounsellorTickets(filter) {
