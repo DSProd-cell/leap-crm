@@ -3337,9 +3337,59 @@ function switchLDTab(tab) {
   const isCounsellor = state.currentUser && state.currentUser.role === 'counselor';
   document.getElementById('ldPanelInfohub').classList.toggle('hidden', tab !== 'infohub' || isCounsellor);
   document.getElementById('ldPanelCounsellorTickets').classList.toggle('hidden', tab !== 'infohub' || !isCounsellor);
-  document.getElementById('ldPanelNewsletter').classList.toggle('hidden', tab !== 'newsletter');
-  if (tab === 'newsletter') renderNewsletterTable();
   if (tab === 'infohub' && isCounsellor) renderCounsellorTicketSummary();
+}
+
+function openTicketDetailPage(filter) {
+  const page = document.getElementById('ticketDetailPage');
+  const titleEl = document.getElementById('ticketDetailTitle');
+  const countEl = document.getElementById('ticketDetailCount');
+  const tickets = filter === 'all'
+    ? COUNSELLOR_TICKETS
+    : COUNSELLOR_TICKETS.filter(t => t.status === filter);
+
+  const label = filter === 'all' ? 'All Tickets' : filter === 'Resolved' ? 'Resolved Tickets' : 'Not Resolved';
+  titleEl.textContent = label;
+  countEl.textContent = tickets.length;
+
+  const list = document.getElementById('ticketDetailList');
+  if (!tickets.length) {
+    list.innerHTML = `<div class="text-center py-16 text-text-muted text-sm">No tickets in this category.</div>`;
+  } else {
+    list.innerHTML = tickets.map(t => {
+      const isResolved = t.status === 'Resolved';
+      const badge = isResolved
+        ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200">Resolved</span>`
+        : `<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-200">Not Resolved</span>`;
+      return `
+        <div class="bg-white rounded-xl border border-border p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-mono font-semibold text-text-muted bg-surface px-2 py-0.5 rounded">${t.id}</span>
+              <span class="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">${t.category}</span>
+              ${badge}
+            </div>
+            <span class="text-xs text-text-muted flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Raised: ${t.dateRaised}
+            </span>
+          </div>
+          <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Issue Description</p>
+          <p class="text-sm text-text-main leading-relaxed mb-3">${t.description}</p>
+          <div class="bg-surface rounded-lg p-3 border-l-4 ${isResolved ? 'border-green-400' : 'border-orange-400'}">
+            <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">Latest Update</p>
+            <p class="text-sm text-text-main">${t.update}</p>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  page.classList.remove('hidden');
+  page.scrollTop = 0;
+}
+
+function closeTicketDetailPage() {
+  document.getElementById('ticketDetailPage').classList.add('hidden');
 }
 
 function renderCounsellorTicketSummary() {

@@ -638,10 +638,6 @@
           class="ld-subtab px-5 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 border-primary text-primary bg-primary/5 cursor-pointer transition-all">
           Info Hub
         </button>
-        <button id="ldTabNewsletter" onclick="switchLDTab('newsletter')"
-          class="ld-subtab px-5 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 border-transparent text-text-muted hover:text-text-main cursor-pointer transition-all">
-          Newsletter
-        </button>
       </div>
 
       <!-- ─── INFO HUB PANEL ─── -->
@@ -824,25 +820,23 @@
 
         <!-- Summary Stats -->
         <div class="grid grid-cols-3 gap-4 mb-6">
-          <div onclick="filterCounsellorTickets('all')" class="bg-white rounded-xl border-2 border-border p-5 cursor-pointer hover:border-primary hover:shadow-md transition-all text-center group">
+          <div onclick="openTicketDetailPage('all')" class="bg-white rounded-xl border-2 border-border p-5 cursor-pointer hover:border-primary hover:shadow-md transition-all text-center group">
             <p class="text-xs text-text-muted font-semibold uppercase tracking-wide mb-2">Total Raised</p>
             <p id="ticketCountAll" class="text-5xl font-black text-primary group-hover:scale-110 transition-transform inline-block">0</p>
             <p class="text-xs text-text-muted mt-2">Tap to view all</p>
           </div>
-          <div onclick="filterCounsellorTickets('Resolved')" class="bg-white rounded-xl border-2 border-border p-5 cursor-pointer hover:border-green-500 hover:shadow-md transition-all text-center group">
+          <div onclick="openTicketDetailPage('Resolved')" class="bg-white rounded-xl border-2 border-border p-5 cursor-pointer hover:border-green-500 hover:shadow-md transition-all text-center group">
             <p class="text-xs text-text-muted font-semibold uppercase tracking-wide mb-2">Resolved</p>
             <p id="ticketCountResolved" class="text-5xl font-black text-green-500 group-hover:scale-110 transition-transform inline-block">0</p>
             <p class="text-xs text-text-muted mt-2">Tap to view</p>
           </div>
-          <div onclick="filterCounsellorTickets('Open')" class="bg-white rounded-xl border-2 border-border p-5 cursor-pointer hover:border-red-500 hover:shadow-md transition-all text-center group">
+          <div onclick="openTicketDetailPage('Open')" class="bg-white rounded-xl border-2 border-border p-5 cursor-pointer hover:border-red-500 hover:shadow-md transition-all text-center group">
             <p class="text-xs text-text-muted font-semibold uppercase tracking-wide mb-2">Not Resolved</p>
             <p id="ticketCountOpen" class="text-5xl font-black text-red-500 group-hover:scale-110 transition-transform inline-block">0</p>
             <p class="text-xs text-text-muted mt-2">Tap to view</p>
           </div>
         </div>
 
-        <!-- Ticket Detail List -->
-        <div id="counsellorTicketList" class="space-y-3"></div>
       </div>
 
       <!-- ─── TRAINING MODULES — always visible at bottom ─── -->
@@ -882,59 +876,22 @@
         </div>
       </div>
 
-      <!-- ─── NEWSLETTER PANEL ─── -->
-      <div id="ldPanelNewsletter" class="hidden p-5">
-        <h2 class="text-xl font-bold text-text-main mb-4">Newsletter</h2>
-        <!-- Filters Row -->
-        <div class="flex flex-wrap items-center gap-2 mb-4 bg-white rounded-xl border border-border p-3">
-          <select id="nlFilterCountry" class="text-xs px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">Select Country</option>
-            <option>USA</option><option>UK</option><option>Canada</option><option>Australia</option><option>Germany</option><option>Ireland</option><option>Singapore</option>
-          </select>
-          <div class="flex items-center gap-1 border border-border rounded-lg px-3 py-2 bg-white text-xs text-text-muted">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <input type="date" id="nlFilterDateFrom" class="text-xs border-none outline-none bg-transparent" placeholder="Date From" />
-          </div>
-          <div class="flex items-center gap-1 border border-border rounded-lg px-3 py-2 bg-white text-xs text-text-muted">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <input type="date" id="nlFilterDateTo" class="text-xs border-none outline-none bg-transparent" placeholder="Date To" />
-          </div>
-          <select id="nlFilterRelated" class="text-xs px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">Select Related to</option>
-            <option>Pending Deferral Applications</option><option>Bangor University</option><option>London South Bank University</option><option>Swansea University</option><option>University of Hertfordshire</option>
-          </select>
-          <select id="nlFilterCategory" class="text-xs px-3 py-2 border border-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">Select Category</option>
-            <option>Important Update</option><option>Scholarship Alert</option><option>Deadline Reminder</option><option>Event</option>
-          </select>
-          <button onclick="resetNewsletterFilters()" class="text-xs px-3 py-2 border border-border rounded-lg text-text-muted hover:bg-surface cursor-pointer font-semibold">Reset Filters</button>
-          <div class="flex-1"></div>
-          <span class="text-xs text-text-muted font-semibold">Viewing 1 – 12 of 9915</span>
-          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&laquo;</button>
-          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&lsaquo;</button>
-          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&rsaquo;</button>
-          <button class="text-xs px-2 py-1 border border-border rounded text-text-muted cursor-pointer">&raquo;</button>
+      <!-- Newsletter panel removed -->
+
+      <!-- ─── TICKET DETAIL PAGE (full overlay within tab3) ─── -->
+      <div id="ticketDetailPage" class="hidden fixed inset-0 z-40 bg-white overflow-y-auto" style="top:0">
+        <!-- Header -->
+        <div class="sticky top-0 z-10 bg-white border-b border-border px-5 py-4 flex items-center gap-3">
+          <button onclick="closeTicketDetailPage()" class="flex items-center gap-2 text-sm font-semibold text-text-muted hover:text-primary cursor-pointer transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Back
+          </button>
+          <div class="h-5 w-px bg-border"></div>
+          <h2 id="ticketDetailTitle" class="text-base font-bold text-text-main">Tickets</h2>
+          <span id="ticketDetailCount" class="ml-1 px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full"></span>
         </div>
-        <!-- Table -->
-        <div class="bg-white rounded-xl border border-border overflow-x-auto">
-          <table class="w-full text-xs min-w-[1200px]">
-            <thead>
-              <tr class="border-b border-border bg-surface text-text-muted font-semibold uppercase tracking-wide">
-                <th class="text-left px-3 py-3 w-12">Id</th>
-                <th class="text-left px-3 py-3 w-20">Country</th>
-                <th class="text-left px-3 py-3 w-28">Date</th>
-                <th class="text-left px-3 py-3 w-44">Related To</th>
-                <th class="text-left px-3 py-3 w-32">Category</th>
-                <th class="text-left px-3 py-3">Summary</th>
-                <th class="text-left px-3 py-3 w-32">Link</th>
-                <th class="text-left px-3 py-3 w-32">Special Remarks</th>
-                <th class="text-left px-3 py-3 w-28">Admit Probability</th>
-                <th class="text-left px-3 py-3 w-20">IM Related</th>
-              </tr>
-            </thead>
-            <tbody id="newsletterTableBody" class="divide-y divide-border"></tbody>
-          </table>
-        </div>
+        <!-- Ticket list -->
+        <div id="ticketDetailList" class="p-5 space-y-4 max-w-3xl mx-auto"></div>
       </div>
     </div>
 
