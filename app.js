@@ -3673,8 +3673,15 @@ function toggleModule(id) {
   const body = document.getElementById('module-' + id);
   const chev = document.getElementById('chevron-' + id);
   if (!body || !chev) return;
-  body.classList.toggle('open');
-  chev.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+  const isOpening = !body.classList.contains('open');
+  // Collapse all modules first (accordion behaviour)
+  document.querySelectorAll('.module-body').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('[id^="chevron-"]').forEach(el => el.style.transform = '');
+  // Then open the clicked one if it was closed
+  if (isOpening) {
+    body.classList.add('open');
+    chev.style.transform = 'rotate(180deg)';
+  }
 }
 
 function openLesson(title) {
