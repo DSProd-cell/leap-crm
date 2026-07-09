@@ -3254,13 +3254,13 @@ function renderQuickLinks() {
   const grid = document.getElementById('ldTopCards');
   if (!grid) return;
   grid.innerHTML = links.map(l => `
-    <div onclick="${l.action}" class="bg-white border border-border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all group">
-      <div class="w-12 h-12 rounded-xl ${l.color} flex items-center justify-center text-2xl flex-shrink-0">${l.icon}</div>
-      <div class="min-w-0">
-        <p class="font-bold text-text-main text-sm group-hover:text-primary transition-colors">${l.label}</p>
+    <div onclick="${l.action}" class="flex items-center gap-4 p-3 rounded-xl hover:bg-green-50 cursor-pointer transition-all group border border-transparent hover:border-green-200">
+      <div class="w-10 h-10 rounded-xl ${l.color} flex items-center justify-center text-xl flex-shrink-0">${l.icon}</div>
+      <div class="min-w-0 flex-1">
+        <p class="font-semibold text-text-main text-sm group-hover:text-green-700 transition-colors">${l.label}</p>
         <p class="text-xs text-text-muted mt-0.5 leading-snug">${l.desc}</p>
       </div>
-      <svg class="w-4 h-4 text-text-muted group-hover:text-primary flex-shrink-0 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      <svg class="w-4 h-4 text-text-muted group-hover:text-green-600 flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </div>
   `).join('');
 }
@@ -3798,6 +3798,15 @@ function renderTrainingModules() {
   if (el) el.innerHTML = _buildModuleHTML(TRAINING_MODULES, '');
   const elLD = document.getElementById('trainingModulesLD');
   if (elLD) elLD.innerHTML = _buildModuleHTML(TRAINING_MODULES, 'ld-');
+}
+
+function toggleImpSheetSection() {
+  const body = document.getElementById('impSheetBody');
+  const chev = document.getElementById('impSheetChevron');
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function toggleTrainingModulesSection() {

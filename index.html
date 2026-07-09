@@ -703,8 +703,21 @@
         </div>
       </div>
 
-      <!-- Quick Link Cards — always visible at top of L&D -->
-      <div id="ldTopCards" class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 pb-0"></div>
+      <!-- IMP Sheet — collapsible bar (same style as Training Modules) -->
+      <div class="p-5 pb-0">
+        <div class="bg-white rounded-xl border border-border overflow-hidden">
+          <button onclick="toggleImpSheetSection()" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface transition-colors cursor-pointer">
+            <span class="font-bold text-text-main flex items-center gap-2">
+              <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              IMP Sheet
+            </span>
+            <svg id="impSheetChevron" class="w-4 h-4 text-text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="impSheetBody" class="hidden">
+            <div id="ldTopCards" class="px-5 pb-5"></div>
+          </div>
+        </div>
+      </div>
 
       <!-- L&D Sub-tab Bar -->
       <div id="ldSubTabBar" class="flex items-center gap-1 px-5 pt-4 border-b border-border bg-white">
