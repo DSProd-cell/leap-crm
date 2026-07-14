@@ -637,6 +637,26 @@ const BOT_INTENT_MAP = {
     navLabel: null,
     navAction: null,
   },
+  incentive_details_guide: {
+    keywords: ['incentive details', 'how your incentives work', 'how do incentives work', 'how incentives work'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  my_raised_tickets: {
+    keywords: ['my raised tickets', 'my tickets', 'support tickets', 'ticket status', 'my support', 'raised tickets'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  agreement_reminders: {
+    keywords: ['agreement reminders', 'agreement reminder', 'pending agreements', 'e-agreement', 'e agreement', 'agreement status', 'who signed', 'agreement'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  connect_manager_hr_ds: {
+    keywords: ['do you want to connect with manager', 'connect with manager', 'connect with hr', 'connect with ds', 'connect manager hr ds', 'connect manager', 'talk to hr', 'talk to manager', 'talk to ds'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  raise_support_ticket_guide: {
+    keywords: ['raise support ticket', 'raise a ticket', 'create ticket', 'new ticket', 'support request'],
+    answer: null, navLabel: null, navAction: null,
+  },
   fallback: {
     keywords: [],
     answer: `🤔 I'm not sure about that one. Here's how you can get help:\n\n• Try rephrasing your question\n• Browse the relevant tab directly\n• Raise a support ticket for ops team help`,
@@ -1065,6 +1085,9 @@ function initBotWithGreeting() {
   `;
   container.appendChild(div);
   addToHistory('bot', msg);
+
+  // Show Good / Not okay options after greeting
+  setTimeout(() => appendQuickReplies(['Good', 'Not okay']), 800);
 
   // Update input placeholder
   const inp = document.getElementById('botInput');
@@ -5095,7 +5118,7 @@ function escHtml(str) {
    BOT V3 — CONVERSATION ENGINE
 ═══════════════════════════════════════════════════════ */
 
-const FLOW_INTENTS = ['greeting', 'start_my_day', 'connect_business_team', 'clarify_before_answering', 'need_help', 'top_performer', 'incentive_clarify', 'training_help', 'live_offers_query', 'earn_more_guide', 'target_today_guide', 'who_to_call_guide'];
+const FLOW_INTENTS = ['greeting', 'start_my_day', 'connect_business_team', 'connect_manager_hr_ds', 'clarify_before_answering', 'need_help', 'top_performer', 'incentive_clarify', 'incentive_details_guide', 'training_help', 'live_offers_query', 'earn_more_guide', 'target_today_guide', 'who_to_call_guide', 'my_raised_tickets', 'agreement_reminders', 'raise_support_ticket_guide'];
 const CANCEL_PHRASES = ['cancel', 'stop', 'nevermind', 'never mind'];
 
 const FOLLOW_UP_CONFIG = {
@@ -5265,14 +5288,19 @@ function startFlow(intent, userText) {
   if (intent === 'greeting')               handleGreetingStep(null);
   else if (intent === 'start_my_day')      handleStartMyDayStep(null);
   else if (intent === 'connect_business_team') handleConnectBusinessTeamStep(null);
+  else if (intent === 'connect_manager_hr_ds') handleConnectManagerHrDsStep(null);
   else if (intent === 'need_help')         handleNeedHelpStep(null);
   else if (intent === 'top_performer')     handleTopPerformerStep(null);
   else if (intent === 'incentive_clarify') handleIncentiveClarifyStep(null);
+  else if (intent === 'incentive_details_guide') handleIncentiveDetailsStep(null);
   else if (intent === 'training_help')     handleTrainingStep(null);
   else if (intent === 'live_offers_query') handleLiveOffersQueryStep(null);
   else if (intent === 'earn_more_guide')   handleEarnMoreStep(null);
   else if (intent === 'target_today_guide') handleTargetTodayGuideStep(null);
   else if (intent === 'who_to_call_guide') handleWhoToCallGuideStep(null);
+  else if (intent === 'my_raised_tickets') handleMyRaisedTicketsStep(null);
+  else if (intent === 'agreement_reminders') handleAgreementRemindersStep(null);
+  else if (intent === 'raise_support_ticket_guide') handleRaiseSupportTicketStep(null);
   else if (intent === 'clarify_before_answering') {
     bc.collected.originalMessage = userText;
     handleClarifyStep(null);
@@ -5285,14 +5313,19 @@ function handleFlowStep(userText) {
   if (flow === 'greeting')                  handleGreetingStep(userText);
   else if (flow === 'start_my_day')         handleStartMyDayStep(userText);
   else if (flow === 'connect_business_team') handleConnectBusinessTeamStep(userText);
+  else if (flow === 'connect_manager_hr_ds') handleConnectManagerHrDsStep(userText);
   else if (flow === 'need_help')            handleNeedHelpStep(userText);
   else if (flow === 'top_performer')        handleTopPerformerStep(userText);
   else if (flow === 'incentive_clarify')    handleIncentiveClarifyStep(userText);
+  else if (flow === 'incentive_details_guide') handleIncentiveDetailsStep(userText);
   else if (flow === 'training_help')        handleTrainingStep(userText);
   else if (flow === 'live_offers_query')    handleLiveOffersQueryStep(userText);
   else if (flow === 'earn_more_guide')      handleEarnMoreStep(userText);
   else if (flow === 'target_today_guide')   handleTargetTodayGuideStep(userText);
   else if (flow === 'who_to_call_guide')    handleWhoToCallGuideStep(userText);
+  else if (flow === 'my_raised_tickets')    handleMyRaisedTicketsStep(userText);
+  else if (flow === 'agreement_reminders')  handleAgreementRemindersStep(userText);
+  else if (flow === 'raise_support_ticket_guide') handleRaiseSupportTicketStep(userText);
   else if (flow === 'clarify_before_answering') handleClarifyStep(userText);
 }
 
@@ -5479,7 +5512,7 @@ function handleClarifyStep(userText) {
   }
 }
 
-/* ── Helper: post-help quick replies ── */
+/* ── Helper: post-help quick replies (all 13 options) ── */
 function showPostHelpQuickReplies() {
   setTimeout(() => appendQuickReplies([
     'How to Start my Day',
@@ -5491,6 +5524,10 @@ function showPostHelpQuickReplies() {
     'Live Offers Running?',
     'Incentive Details',
     'How Can I Earn More',
+    'My Raised Tickets',
+    'Agreement Reminders',
+    'Do You Want to Connect with Manager/HR/DS',
+    'Raise Support Ticket',
   ]), 400);
 }
 
@@ -5501,32 +5538,49 @@ function handleGreetingStep(userText) {
 
   if (bc.step === 0) {
     bc.step = 1;
-    const msg = `Hello ${firstName}! 👋 How are you doing today?`;
+    const msg = `Got it, ${firstName}! 😊 How is your day going?`;
     appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
     addToHistory('bot', msg);
+    setTimeout(() => appendQuickReplies(['Good', 'Not okay']), 400);
 
   } else if (bc.step === 1) {
-    const lower = (userText || '').toLowerCase();
-    endFlow();
+    const lower = (userText || '').toLowerCase().trim();
+    const isNotOkay = lower.includes('not okay') || lower.includes('not ok') || lower === 'not' || lower.includes('bad') || lower.includes('sad') || lower.includes('tired') || lower.includes('stressed');
 
-    // Check negative FIRST — "not good" contains "good" at word boundary so must not match positive
-    const isNegative = /\b(not good|not well|not great|not ok|not okay|bad|sad|tired|stressed|upset|down|struggling|rough|tough|horrible|terrible|nahi|bura|thaka|tension|feeling low|not feeling|exhausted|overwhelmed)\b/.test(lower);
-    const isPositive = !isNegative && /\b(good|great|well|fine|amazing|awesome|fantastic|excellent|wonderful|happy|perfect|nice|okay|ok|not bad|alright|doing well|doing good|sahi|badhiya|mast|accha)\b/.test(lower);
-
-    if (isNegative) {
-      const msg = `Oops! Sorry to hear that, ${firstName} 😔 How can I help?`;
-      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
-      addToHistory('bot', msg);
-    } else if (isPositive) {
-      const msg = `Great to hear that, ${firstName}! 😊 Please tell me — how can I help you today?`;
-      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
-      addToHistory('bot', msg);
+    if (isNotOkay) {
+      bc.step = 2;
+      bc.collected.sentimentPath = 'not_okay';
+      const msg = `Oh no, ${firstName} — sorry to hear this 😔\n\nWant me to connect you with SM, HR, or DS? Let's get this sorted and make sure you feel better before you start working again.`;
+      appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+      addToHistory('bot', msg.replace(/\n\n/g, ' '));
+      setTimeout(() => appendQuickReplies(['Yes', 'No']), 400);
     } else {
-      const msg = `Got it, ${firstName}! 😊 How can I help you today?`;
+      // Good path
+      endFlow();
+      const msg = `Awesome! 🎉 I'm ready to help make it even better. How can I help you today?`;
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
+      showPostHelpQuickReplies();
     }
-    showPostHelpQuickReplies();
+
+  } else if (bc.step === 2) {
+    // After "Not okay" → Yes = connect, No = show options
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower === 'yes') {
+      endFlow();
+      setTimeout(() => {
+        state.botConversation.flow = 'connect_manager_hr_ds';
+        state.botConversation.step = 0;
+        state.botConversation.collected = {};
+        handleConnectManagerHrDsStep(null);
+      }, 300);
+    } else {
+      endFlow();
+      const msg = `Alright! Let's keep going 💪 How can I help you today?`;
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showPostHelpQuickReplies();
+    }
   }
 }
 
@@ -5539,16 +5593,16 @@ function handleTrainingStep(userText) {
     const msg = 'Sure! What type of training are you looking for?';
     appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
     addToHistory('bot', msg);
-    appendQuickReplies(['Domain Training', 'Soft Skills', 'Objection Handling', 'System Training']);
+    appendQuickReplies(['Domain Training', 'Soft Skills', 'New Features', 'System Training']);
 
   } else if (bc.step === 1) {
     endFlow();
     const lower = (userText || '').toLowerCase();
     let label = userText;
-    if (lower.includes('domain'))    label = 'Domain Training';
-    if (lower.includes('soft'))      label = 'Soft Skills';
-    if (lower.includes('objection')) label = 'Objection Handling';
-    if (lower.includes('system'))    label = 'System Training';
+    if (lower.includes('domain'))   label = 'Domain Training';
+    if (lower.includes('soft'))     label = 'Soft Skills';
+    if (lower.includes('new') || lower.includes('feature')) label = 'New Features';
+    if (lower.includes('system'))   label = 'System Training';
 
     const msg = `Got it! Taking you to the **${label}** modules in the Learning & Development tab 📚`;
     appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
@@ -5570,10 +5624,10 @@ function handleLiveOffersQueryStep(userText) {
 
   if (bc.step === 0) {
     bc.step = 1;
-    const msg = 'Are you looking for offers for your **Students** or offers **For You** (Counsellor)?';
-    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
-    addToHistory('bot', msg.replace(/\*\*/g,''));
-    appendQuickReplies(['Offers for Students', 'Offers for Me (Counsellor)']);
+    const msg = '🎁 Here are the active promotional tracks running right now.';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(['Offers for Students', 'Offers for Me']);
 
   } else if (bc.step === 1) {
     endFlow();
@@ -7776,4 +7830,215 @@ function toggleWaHistory(studentId) {
   const isHidden = hist.classList.contains('hidden');
   hist.classList.toggle('hidden', !isHidden);
   if (chev) chev.style.transform = isHidden ? 'rotate(180deg)' : '';
+}
+
+/* ═══════════════ NEW BOT FLOWS ═══════════════ */
+
+/* ── Flow: my_raised_tickets (Option 10) ── */
+function handleMyRaisedTicketsStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const resolved = COUNSELLOR_TICKETS.filter(t => t.status === 'Resolved');
+    const open = COUNSELLOR_TICKETS.filter(t => t.status === 'Open').length;
+    const ticketsWithTat = resolved.filter(t => t.tat);
+    const avgTat = ticketsWithTat.length
+      ? Math.round(ticketsWithTat.reduce((s, t) => s + t.tat, 0) / ticketsWithTat.length) + ' days'
+      : 'N/A';
+
+    const msg = `🛠️ **Your Support Tickets Status:**\n\n• Total Raised: ${COUNSELLOR_TICKETS.length} Tickets\n• Resolved: ${resolved.length} Tickets (Avg. resolution time: ${avgTat})\n• Pending/Not Resolved: ${open} Tickets\n\nShould I take you to your active support dashboard view?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['Yes, show my tickets', 'No thanks']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower.includes('show') || lower.includes('ticket')) {
+      const msg = '🎁 Taking you to the My Tickets section!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab3'); setTimeout(() => openTicketDetailPage('all'), 400); }, 600);
+    } else {
+      const msg = '👍 Your tickets are always available on the Learning & Development tab.';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showPostHelpQuickReplies();
+    }
+  }
+}
+
+/* ── Flow: agreement_reminders (Option 11) ── */
+function handleAgreementRemindersStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = `📋 **Pending Agreement Status:**\n\nYou have 3 premium students who have paid but haven't signed their e-agreements yet.\n\n• Rohan Sharma — Paid 2 hours ago\n• Ananya Iyer — Paid Yesterday\n• Vikram Malhotra — Paid 2 days ago\n\nWhere would you like to follow up first?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['WhatsApp Rohan', 'Go to Agreement Tracker']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('whatsapp') || lower.includes('rohan')) {
+      const msg = '📲 Agreement template sent to Rohan Sharma on WhatsApp!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showToast('WhatsApp agreement template sent to Rohan Sharma!', 'success');
+      showPostHelpQuickReplies();
+    } else {
+      const msg = '🎁 Taking you to the Agreement Tracker section!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => switchTab('tab2'), 600);
+    }
+  }
+}
+
+/* ── Flow: connect_manager_hr_ds (Option 12) ── */
+function handleConnectManagerHrDsStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = 'Please let me know with whom you want to connect.';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(['SM (Sales Manager)', 'HR', 'DS']);
+
+  } else if (bc.step === 1) {
+    const lower = (userText || '').toLowerCase();
+    let recipient = 'SM';
+    let recipientEmail = 'sm@leapfinance.com';
+    if (lower.includes('hr')) {
+      recipient = 'HR'; recipientEmail = 'rakshitha.mohan@leapfinance.com';
+    } else if (lower.includes('ds') || lower.includes('data')) {
+      recipient = 'DS'; recipientEmail = 'debasish.sahoo@leapfinance.com';
+    } else {
+      recipient = 'SM (Sales Manager)'; recipientEmail = 'sm@leapfinance.com';
+    }
+
+    bc.collected.recipient = recipient;
+    bc.collected.recipientEmail = recipientEmail;
+    bc.step = 2;
+
+    const formHtml = `
+      <div class="mt-3 p-3 bg-surface rounded-xl border border-border space-y-3">
+        <p class="text-xs font-semibold text-text-muted uppercase tracking-wide">Connect with ${recipient}</p>
+        <textarea id="connectMsgInput" placeholder="Message you want to send for the connect..."
+          class="w-full text-sm border border-border rounded-lg p-2 resize-none h-20 focus:outline-none focus:border-primary"></textarea>
+        <div>
+          <p class="text-xs text-text-muted mb-2 font-medium">Preferred Time:</p>
+          <div class="flex flex-wrap gap-2">
+            ${['Morning','Afternoon','Evening','Post Office Hours'].map(t =>
+              `<button onclick="selectConnectTime(this,'${t}')" class="connect-time-btn text-xs px-2.5 py-1 rounded-full border border-border hover:border-primary hover:text-primary transition-colors cursor-pointer">${t}</button>`
+            ).join('')}
+          </div>
+        </div>
+        <button onclick="submitConnectForm()" class="w-full py-2 bg-accent hover:bg-accent-dark text-white text-sm font-semibold rounded-lg cursor-pointer transition-colors">Submit</button>
+      </div>`;
+
+    const intro = `Got it! Please fill in the details to connect with ${recipient}:`;
+    appendBotMessageLive(`<p>${escHtml(intro)}</p>${formHtml}`);
+    addToHistory('bot', intro);
+  }
+}
+
+function selectConnectTime(btn, time) {
+  document.querySelectorAll('.connect-time-btn').forEach(b => {
+    b.classList.remove('border-primary', 'text-primary', 'bg-primary/10');
+  });
+  btn.classList.add('border-primary', 'text-primary', 'bg-primary/10');
+  state.botConversation.collected.preferredTime = time;
+}
+
+function submitConnectForm() {
+  const msg = document.getElementById('connectMsgInput')?.value?.trim();
+  const time = state.botConversation.collected?.preferredTime;
+  const recipient = state.botConversation.collected?.recipient || 'team';
+  const recipientEmail = state.botConversation.collected?.recipientEmail || 'sm@leapfinance.com';
+  const name = state.currentUser?.name || 'Counsellor';
+
+  if (!msg) { showToast('Please enter a message before submitting.', 'warning'); return; }
+  if (!time) { showToast('Please select a preferred time slot.', 'warning'); return; }
+
+  endFlow();
+
+  const confirmation = `✅ I have notified the Team. They will get in touch with you shortly.`;
+  appendBotMessageLive(`<p>${escHtml(confirmation)}</p>`);
+  addToHistory('bot', confirmation);
+  showToast('Connection request sent!', 'success');
+
+  // Open email client
+  const subject = encodeURIComponent('Counsellor wants to connect');
+  const body = encodeURIComponent(`Hi,\n\nCounsellor ${name} wants to connect with ${recipient}.\n\nMessage: ${msg}\nPreferred Time: ${time}\n\nPlease reach out to them at your earliest.\n\nThank you,\nLeap CRM`);
+  setTimeout(() => { window.open(`mailto:${recipientEmail}?subject=${subject}&body=${body}`, '_blank'); }, 500);
+  setTimeout(showPostHelpQuickReplies, 900);
+}
+
+/* ── Flow: raise_support_ticket_guide (Option 13) ── */
+function handleRaiseSupportTicketStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = `🎫 Need help with something? Let's get it fixed for you right away.\n\nShould I take you to the Raise Support Ticket page?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n\n/g,' '));
+    appendQuickReplies(['Yes, take me there!', 'No thanks']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower.includes('take') || lower.includes('there')) {
+      const msg = '🎁 Taking you to the Raise Support Ticket section!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab3'); setTimeout(openTicketModal, 400); }, 600);
+    } else {
+      const msg = '👍 No problem! You can raise a ticket anytime from the Learning & Development tab.';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showPostHelpQuickReplies();
+    }
+  }
+}
+
+/* ── Flow: incentive_details_guide (Option 8) ── */
+function handleIncentiveDetailsStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const c = getCounselorData();
+    const earned = c.revenue ? `₹${(c.revenue / 1000).toFixed(0)}K` : '₹0';
+
+    const msg = `💰 **How your incentives work:**\n\n**Offers for Counsellors criteria:**\n• Enrolment Bonus: ₹6,000 per confirmed enrolment\n• Calls Slab: Bonus for hitting ≥80% of daily call target\n• Revenue Bonus: 1% of revenue above ₹2L threshold\n• Lock-in Sprint: ₹8,000 per lock-in achieved\n\n**Your current earning:** ${earned} this month\n\nSee the full breakdown in the Incentives tab.\n\n**Want to see the opportunity size?**`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\*\*/g,''));
+    appendQuickReplies(['→ See Incentive Breakdown', 'Yes, show me', 'No thanks']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('breakdown') || lower.includes('see incentive')) {
+      const msg = '🎁 Taking you to the Incentives & Earnings section!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => switchTab('tab2'), 600);
+    } else if (lower.includes('yes') || lower.includes('show') || lower.includes('opportunity')) {
+      const msg = '🎁 Taking you to the Opportunity Pipeline section!';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab2'); setTimeout(openOpportunityDrawer, 400); }, 600);
+    } else {
+      const msg = '👍 Noted! The Incentives tab has your full breakdown anytime.';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showPostHelpQuickReplies();
+    }
+  }
 }
