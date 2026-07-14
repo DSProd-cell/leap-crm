@@ -1054,7 +1054,7 @@ function bootApp(role, email) {
 
 function initBotWithGreeting() {
   // Reset bot state completely
-  state.botConversation = { flow: 'greeting', step: 1, collected: {}, history: [], lastIntent: null, shownFollowUps: [] };
+  state.botConversation = { flow: null, step: 0, collected: {}, history: [], lastIntent: null, shownFollowUps: [] };
   if (state.currentUser) localStorage.removeItem(`bot_history_${state.currentUser.id}`);
 
   // Determine IST greeting by offset (UTC+5:30)
@@ -1085,9 +1085,6 @@ function initBotWithGreeting() {
   `;
   container.appendChild(div);
   addToHistory('bot', msg);
-
-  // Show Good / Not okay options after greeting
-  setTimeout(() => appendQuickReplies(['Good', 'Not okay']), 800);
 
   // Update input placeholder
   const inp = document.getElementById('botInput');
@@ -5557,7 +5554,7 @@ function handleGreetingStep(userText) {
     } else {
       // Good path
       endFlow();
-      const msg = `Awesome! 🎉 I'm ready to help make it even better. How can I help you today?`;
+      const msg = `Awesome! I'm ready to help make it even better, How can I help you make it even better today`;
       appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
       addToHistory('bot', msg);
       showPostHelpQuickReplies();
