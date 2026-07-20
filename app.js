@@ -6921,78 +6921,54 @@ function renderStandupTable(filterData) {
   };
   const VOLUME_ORDER = ['leads','isl_24h','f2f','lockins','stis','deposits','visas','revenue_collected'];
 
-  const volumeRows = VOLUME_ORDER.map(key => {
-    const row = allData.find(r => r.key === key);
-    return row ? { ...row, name: VOLUME_MAP[key] } : null;
-  }).filter(Boolean);
-
-  // Insert "Admits" after STI Done (now at index 4 → splice at 5)
-  const admitsBase = Math.max(1, Math.round((c.lockins || 2) * 0.4));
-  const admitsMTD  = admitsBase * 22;
-  const admitsYTD  = admitsBase * 264;
-  volumeRows.splice(5, 0, {
-    name:'Admits', key:'admits', isCurrency:false, isPct:false,
-    tYTD: admitsYTD,                         tMTD: admitsMTD,
-    aYTD: Math.round(admitsYTD * 0.82),      aMTD: Math.round(admitsMTD * 0.82),
-    Y: admitsBase,     Y1: Math.max(0, admitsBase - 1),  Y2: admitsBase,
-    W0: admitsBase * 5, W01: admitsBase * 4, M01: Math.round(admitsMTD * 0.88),
-  });
-
-  // Add Pre ISL Drop and Total Drop at end of Volume Metrics
-  volumeRows.push({
-    name:'Pre ISL Drop', key:'pre_isl_drop', isCurrency:false, isPct:false, isDropRate:true,
-    tYTD:10, tMTD:10,
-    aYTD:8,  aMTD:7,
-    Y:8, Y1:9, Y2:7,
-    W0:8, W01:9, M01:7,
-  });
-  volumeRows.push({
-    name:'Total Drop', key:'post_isl_drop', isCurrency:false, isPct:false, isDropRate:true,
-    tYTD:25, tMTD:25,
-    aYTD:22, aMTD:20,
-    Y:22, Y1:24, Y2:21,
-    W0:22, W01:23, M01:21,
-  });
+  // Hardcoded volume actuals (targets not set = 0 for all)
+  const volumeRows = [
+    { name:'Leads',                      key:'leads',            isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:342,   aMTD:6,  Y:0, Y1:0, Y2:0, W0:0, W01:2,  M01:22 },
+    { name:'ISL Shared within 24 Hours', key:'isl_24h',          isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:202,   aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:2,  M01:14 },
+    { name:'F2F Done',                   key:'f2f',              isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:20,    aMTD:1,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:4  },
+    { name:'Lock In Done',               key:'lockins',          isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:66,    aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
+    { name:'STI Done',                   key:'stis',             isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:485,   aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:2  },
+    { name:'Admits',                     key:'admits',           isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:329,   aMTD:1,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
+    { name:'Deposits',                   key:'deposits',         isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:80,    aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:3  },
+    { name:'Visa Approved',              key:'visas',            isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:39,    aMTD:4,  Y:0, Y1:0, Y2:1, W0:0, W01:3,  M01:1  },
+    { name:'Revenue Generated',          key:'revenue_collected',isCurrency:true,  isPct:false, tYTD:0, tMTD:0, aYTD:272590,aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:12799 },
+    { name:'Pre ISL Drop',               key:'pre_isl_drop',     isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:34,    aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
+    { name:'Total Drop',                 key:'post_isl_drop',    isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:86,    aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
+  ];
 
   // ── SECTION 2: CONVERSION FUNNEL ───────────────────────────
   const FUNNEL_DEF = [
-    { name:'ISL Shared in 24 Hours',              target:75,  actual:72, offsets:[1,3,2,2,4,3] },
-    { name:'CA to ISL',                           target:80,  actual:65, offsets:[3,5,4,4,6,5] },
-    { name:'CA to STI — 14 Days',                target:30,  actual:18, offsets:[2,4,3,3,5,4] },
-    { name:'CA to F2F — 14 Days',                target:25,  actual:22, offsets:[0,2,1,1,3,2] },
-    { name:'CA to Lock In Done — 14 Days',       target:20,  actual:15, offsets:[1,2,1,1,2,1] },
-    { name:'STI to Admits — 30 Days',            target:40,  actual:35, offsets:[2,3,2,3,4,3] },
-    { name:'Admit to Deposits — 14 Days',        target:50,  actual:28, offsets:[4,6,5,5,7,6] },
-    { name:'CA to Visa',                          target:20,  actual:12, offsets:[1,2,1,2,3,2] },
-    { name:'CA to Revenue (Excl. Partner Visa)', target:15,  actual:11, offsets:[2,3,2,2,4,3] },
-    { name:'Deposit to Leap Pay %',              target:60,  actual:42, offsets:[3,5,4,4,6,5] },
-    { name:'CA → Pre ISL Drop %',               target:10,  actual:8,  offsets:[1,2,1,1,2,1], isDropRate:true },
-    { name:'CA → Total Drop %',                 target:35,  actual:30, offsets:[2,4,2,2,3,2], isDropRate:true },
+    { name:'01.ISL Shared (24 hrs)',     tYTD:75, tMTD:80, aYTD:61, aMTD:41, Y:46, Y1:53, Y2:66, W0:0, W01:100, M01:40 },
+    { name:'02.CA->ISL (60 mins)',       tYTD:60, tMTD:60, aYTD:5,  aMTD:0,  Y:3,  Y1:23, Y2:14, W0:0, W01:0,   M01:0  },
+    { name:'03.CA->STI (14D)',           tYTD:13, tMTD:13, aYTD:54, aMTD:0,  Y:7,  Y1:14, Y2:14, W0:0, W01:0,   M01:7  },
+    { name:'04.CA->F2F (14D)',           tYTD:30, tMTD:30, aYTD:53, aMTD:0,  Y:16, Y1:7,  Y2:0,  W0:0, W01:0,   M01:13 },
+    { name:'05.CA->LockIn (14D)',        tYTD:20, tMTD:20, aYTD:25, aMTD:0,  Y:5,  Y1:5,  Y2:0,  W0:0, W01:0,   M01:0  },
+    { name:'06.STI->Admit (30D)',        tYTD:85, tMTD:85, aYTD:101,aMTD:0,  Y:86, Y1:86, Y2:60, W0:0, W01:0,   M01:100},
+    { name:'07.Admit->Deposits (14D)',  tYTD:35, tMTD:35, aYTD:20, aMTD:0,  Y:7,  Y1:13, Y2:50, W0:0, W01:0,   M01:0  },
+    { name:'08.CA->Pre ISL Drop',        tYTD:5,  tMTD:5,  aYTD:100,aMTD:340,Y:5,  Y1:18, Y2:17, W0:0, W01:0,   M01:0,  isDropRate:true },
+    { name:'09.CA->Total Drop',          tYTD:7,  tMTD:7,  aYTD:200,aMTD:243,Y:14, Y1:40, Y2:55, W0:0, W01:0,   M01:0,  isDropRate:true },
   ];
   const funnelRows = FUNNEL_DEF.map((m, i) => ({
     name: m.name, key: `funnel_${i}`, isPct: true, isCurrency: false,
     isDropRate: m.isDropRate || false,
-    tYTD: m.target, tMTD: m.target,
-    aYTD: m.actual, aMTD: m.actual,
-    Y:   m.actual,
-    Y1:  Math.max(0, m.actual - m.offsets[0]),
-    Y2:  Math.max(0, m.actual - m.offsets[1]),
-    W0:  m.actual,
-    W01: Math.max(0, m.actual - m.offsets[2]),
-    M01: Math.max(0, m.actual - m.offsets[3]),
+    tYTD: m.tYTD, tMTD: m.tMTD,
+    aYTD: m.aYTD, aMTD: m.aMTD,
+    Y: m.Y, Y1: m.Y1, Y2: m.Y2, W0: m.W0, W01: m.W01, M01: m.M01,
   }));
 
   // ── STATUS COMPUTATION ─────────────────────────────────────
   function addStatus(rows) {
     rows.forEach(r => {
-      const aMTD = typeof r.aMTD === 'string' ? parseFloat(r.aMTD.replace(/[^0-9.]/g,'')) : r.aMTD;
-      const tMTD = typeof r.tMTD === 'string' ? parseFloat(r.tMTD.replace(/[^0-9.]/g,'')) : r.tMTD;
-      r.mtdPct = tMTD > 0 ? Math.round((aMTD / tMTD) * 100) : (aMTD > 0 ? 100 : 0);
+      const aYTD = typeof r.aYTD === 'number' ? r.aYTD : parseFloat(String(r.aYTD).replace(/[^0-9.]/g,''));
+      const tYTD = typeof r.tYTD === 'number' ? r.tYTD : parseFloat(String(r.tYTD).replace(/[^0-9.]/g,''));
+      // No target set → cannot assess
+      if (tYTD === 0) { r.status = 'focus'; return; }
       if (r.isDropRate) {
-        // Lower is better: actual ≤ target = good, ≤ 1.5× target = ontrack, > 1.5× = focus
-        r.status = aMTD <= tMTD ? 'good' : aMTD <= tMTD * 1.5 ? 'ontrack' : 'focus';
+        // Lower is better: actual ≤ target = good, else focus
+        r.status = aYTD <= tYTD ? 'good' : 'focus';
       } else {
-        r.status = r.mtdPct >= 80 ? 'good' : r.mtdPct >= 50 ? 'ontrack' : 'focus';
+        // Good only if meets or exceeds the target rate
+        r.status = aYTD >= tYTD ? 'good' : 'focus';
       }
     });
   }
@@ -7058,11 +7034,13 @@ function renderStandupTable(filterData) {
     const numV = typeof val    === 'string' ? parseFloat(val.replace(/[^0-9.]/g,''))    : val;
     const numT = typeof target === 'string' ? parseFloat(target.replace(/[^0-9.]/g,'')) : target;
     let cls;
-    if (isDropRate) {
+    if (numT === 0) {
+      cls = 'text-danger'; // no target set
+    } else if (isDropRate) {
       cls = numV <= numT ? 'text-success' : numV <= numT * 1.5 ? 'text-accent' : 'text-danger';
     } else {
-      const pct = numT > 0 ? Math.round((numV / numT) * 100) : (numV > 0 ? 100 : 0);
-      cls = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
+      const pct = Math.round((numV / numT) * 100);
+      cls = pct >= 100 ? 'text-success' : pct >= 80 ? 'text-accent' : 'text-danger';
     }
     return `<span class="font-semibold ${cls}">${fval}</span>`;
   }
@@ -7074,19 +7052,21 @@ function renderStandupTable(filterData) {
   }
 
   function sectionHeader(title, groupId, count, goodN, ontrackN, focusN) {
+    const chips = [];
+    if (goodN > 0)    chips.push(`<span class="text-[9px] text-success font-bold">${goodN} ✓</span>`);
+    if (ontrackN > 0) chips.push(`<span class="text-[9px] text-accent font-bold">${ontrackN} ~</span>`);
+    if (focusN > 0)   chips.push(`<span class="text-[9px] text-danger font-bold">${focusN} !</span>`);
     return `<tr onclick="togglePerfSection('${groupId}')" class="cursor-pointer hover:bg-slate-200/60 transition-colors select-none">
       <td colspan="12" class="px-3 py-2.5 bg-slate-100 border-y border-border">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${title}</span>
+            <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest">${title}</span>
             <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500 font-semibold">${count} metrics</span>
-            <span class="text-[9px] text-success font-semibold">${goodN}✓</span>
-            <span class="text-[9px] text-accent font-semibold">${ontrackN}~</span>
-            <span class="text-[9px] text-danger font-semibold">${focusN}!</span>
+            ${chips.join('')}
           </div>
           <div class="flex items-center gap-1.5">
             <span class="text-[9px] text-slate-400 font-medium">tap to expand</span>
-            <svg id="chevron-perf-${groupId}" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            <svg id="chevron-perf-${groupId}" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" style="transform:rotate(180deg)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
           </div>
         </div>
       </td>
@@ -7095,9 +7075,10 @@ function renderStandupTable(filterData) {
 
   function dataRow(row, idx, i, groupId) {
     const rowBg = i % 2 === 0 ? '' : 'bg-surface/30';
-    return `<tr class="hover:bg-primary/5 transition-colors ${rowBg} perf-row-${groupId} hidden">
+    const nameDisplay = /^\d/.test(row.name) ? row.name : `${idx + 1}. ${row.name}`;
+    return `<tr class="hover:bg-primary/5 transition-colors ${rowBg} perf-row-${groupId}">
       <td class="px-3 py-2.5 font-medium text-text-main sticky left-0 ${rowBg || 'bg-white'} whitespace-nowrap">
-        <div class="flex items-center">${statusDotRow(row.status)}${idx + 1}. ${row.name}</div>
+        <div class="flex items-center">${statusDotRow(row.status)}${nameDisplay}</div>
       </td>
       <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtV(row.tYTD, row.isPct, row.isCurrency)}</td>
       <td class="px-3 py-2.5 text-right font-mono text-text-muted bg-blue-50/40">${fmtV(row.tMTD, row.isPct, row.isCurrency)}</td>
@@ -7126,15 +7107,23 @@ function renderStandupTable(filterData) {
     volumeRows.map((r, i) => dataRow(r, i, i, 'volume')).join('') +
     sectionHeader('🔁 Conversion Funnel', 'funnel', funnelRows.length, fGood, fOn, fFoc) +
     funnelRows.map((r, i) => dataRow(r, i, i, 'funnel')).join('');
+
+  // Auto-expand the section body on render
+  const body = document.getElementById('body-standup');
+  const chev = document.getElementById('chevron-standup');
+  if (body) {
+    body.classList.remove('hidden');
+    if (chev) chev.style.transform = 'rotate(180deg)';
+  }
 }
 
 function togglePerfSection(groupId) {
   const rows = document.querySelectorAll(`.perf-row-${groupId}`);
   const chevron = document.getElementById(`chevron-perf-${groupId}`);
   if (!rows.length) return;
-  const isCollapsed = rows[0].classList.contains('hidden');
-  rows.forEach(r => r.classList.toggle('hidden', !isCollapsed));
-  if (chevron) chevron.style.transform = isCollapsed ? 'rotate(180deg)' : '';
+  const isVisible = !rows[0].classList.contains('hidden');
+  rows.forEach(r => r.classList.toggle('hidden', isVisible));
+  if (chevron) chevron.style.transform = isVisible ? '' : 'rotate(180deg)';
 }
 
 function toggleStandupAdvancedFilter() {
