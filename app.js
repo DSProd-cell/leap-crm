@@ -8325,33 +8325,93 @@ function renderMgrBoostCards() {
   const grid = document.getElementById('mgrBoostCards');
   if (!grid) return;
 
-  const totals = pool.reduce((acc, c) => {
-    acc.stis       += c.today.stis || 0;
-    acc.deposits   += c.today.deposits || 0;
-    acc.revenue    += c.today.revenue || 0;
-    acc.referrals  += c.today.referralPct ? Math.round(c.today.referralPct / 10) : 0;
-    return acc;
-  }, { stis:0, deposits:0, revenue:0, referrals:0 });
+  const poolIds = new Set(pool.map(c => c.id));
+  const poolStudents = STUDENTS.filter(s => poolIds.has(s.counselorId));
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  function dueCount(arr) {
+    return arr.filter(s => s.followup && s.followup <= todayStr).length;
+  }
+  function urgency(due) {
+    if (due > 5)  return { bg:'linear-gradient(135deg,#fef2f2,#fee2e2)', border:'#fca5a5', textClr:'#dc2626', badgeBg:'#fee2e2' };
+    if (due >= 1) return { bg:'linear-gradient(135deg,#fff7ed,#ffedd5)', border:'#fdba74', textClr:'#ea580c', badgeBg:'#ffedd5' };
+    return               { bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', border:'#bbf7d0', textClr:'#16a34a', badgeBg:'#dcfce7' };
+  }
+
+  const stiStu = poolStudents.filter(s => s.stage === 'sti');
+  const depStu = poolStudents.filter(s => s.stage === 'deposit');
+  const revStu = poolStudents.filter(s => s.servicingType === 'partner' || s.servicingType === 'non-partner');
+  const refStu = poolStudents.filter(s => ['sti','deposit','lockin'].includes(s.stage));
 
   const cards = [
-    { label:'Boost Referrals', value:totals.referrals, unit:'students', color:'bg-orange-50 border-orange-200', textColor:'text-accent', icon:'🤝', type:'referrals' },
-    { label:'Boost STI',       value:totals.stis,      unit:'students', color:'bg-blue-50 border-blue-200',   textColor:'text-primary', icon:'🔁', type:'sti' },
-    { label:'Boost Deposit',   value:totals.deposits,  unit:'students', color:'bg-green-50 border-green-200', textColor:'text-success', icon:'📦', type:'deposit' },
-    { label:'Boost Revenue',   value:Math.round(totals.revenue/1000), unit:'K pipeline', color:'bg-purple-50 border-purple-200', textColor:'text-purple-700', icon:'💰', type:'revenue' },
+    { label:'Boost Referrals', icon:'🤝', count:refStu.length,  due:dueCount(refStu),  sub:`${refStu.length} students can refer`,          type:'referrals' },
+    { label:'Boost STI',       icon:'🎯', count:stiStu.length,  due:dueCount(stiStu),  sub:`${stiStu.length} students need attention`,      type:'sti' },
+    { label:'Boost Deposit',   icon:'📦', count:depStu.length,  due:dueCount(depStu),  sub:`${depStu.length} students need attention`,      type:'deposit' },
+    { label:'Boost Revenue',   icon:'💰', count:revStu.length,  due:dueCount(revStu),  sub:'Revenue opportunities',                         type:'revenue' },
   ];
 
-  grid.innerHTML = cards.map(c => `
-    <div class="bg-white rounded-xl border-2 ${c.color} p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="openBoostDrawer('${c.type}')">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-lg">${c.icon}</span>
-        <span class="text-[10px] text-text-muted font-semibold uppercase">${pool.length} CL</span>
+  grid.innerHTML = cards.map(c => {
+    const u = urgency(c.due);
+    const dueTxt = `<span style="background:${u.badgeBg};color:${u.textClr}" class="text-[10px] font-bold px-2 py-0.5 rounded-full">${c.due} due today</span>`;
+    return `
+      <div class="boost-card relative cursor-pointer"
+        style="background:${u.bg};border:1px solid ${u.border};box-shadow:0 2px 8px ${u.border}55;"
+        onclick="openMgrBoostPipeline('${c.type}')">
+        <button class="absolute top-2 right-2 p-1 rounded-full hover:bg-black/10 z-10 transition-colors"
+          onclick="event.stopPropagation(); renderMgrBoostCards()" title="Refresh">
+          <svg class="w-3 h-3" style="color:${u.textClr}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+        <div class="text-[11px] font-bold uppercase tracking-wide mb-1" style="color:${u.textClr};opacity:0.8">${c.icon} ${c.label}</div>
+        <div class="font-mono leading-none mb-1" style="font-size:2.4rem;font-weight:800;color:${u.textClr}">${c.count}</div>
+        <div class="text-xs mb-2" style="color:${u.textClr};opacity:0.7">${c.sub}</div>
+        <div class="mb-2">${dueTxt}</div>
+        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full"
+          style="color:${u.textClr};background:${u.badgeBg}">View Pipeline →</span>
+      </div>`;
+  }).join('');
+}
+
+function openMgrBoostPipeline(type) {
+  const pool = getFilteredCounselorPool();
+  const poolIds = new Set(pool.map(c => c.id));
+  const poolStudents = STUDENTS.filter(s => poolIds.has(s.counselorId));
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const stageMap = {
+    referrals: { label:'Boost Referrals', filter: s => ['sti','deposit','lockin'].includes(s.stage), emoji:'🤝' },
+    sti:       { label:'Boost STI',       filter: s => s.stage === 'sti',                            emoji:'🎯' },
+    deposit:   { label:'Boost Deposit',   filter: s => s.stage === 'deposit',                        emoji:'📦' },
+    revenue:   { label:'Boost Revenue',   filter: s => s.servicingType === 'partner' || s.servicingType === 'non-partner', emoji:'💰' },
+  };
+  const def = stageMap[type] || stageMap.sti;
+  const students = poolStudents.filter(def.filter);
+
+  const rows = students.map(s => {
+    const counsellor = pool.find(c => c.id === s.counselorId);
+    const due = s.followup && s.followup <= todayStr;
+    return `
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border hover:bg-surface/40 last:border-0">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-text-main truncate">${escHtml(s.name)}</p>
+          <p class="text-[11px] text-text-muted">${escHtml(s.course)} · ${escHtml(counsellor?.name || '')}</p>
+        </div>
+        <div class="flex items-center gap-2 ml-3">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${due ? 'bg-red-100 text-red-700' : 'bg-surface text-text-muted'}">${due ? '⚡ Due today' : s.followup || '—'}</span>
+        </div>
+      </div>`;
+  }).join('') || '<p class="text-sm text-text-muted text-center py-8">No students in this pipeline.</p>';
+
+  openDrawer(`
+    <div class="flex items-center gap-3 mb-0">
+      <span class="text-2xl">${def.emoji}</span>
+      <div>
+        <h2 class="text-lg font-bold text-text-main">${def.label}</h2>
+        <p class="text-xs text-text-muted">${students.length} students · ${pool.length} counsellors in view</p>
       </div>
-      <p class="${c.textColor} text-3xl font-black">${c.value}</p>
-      <p class="text-xs text-text-muted mt-1">${c.unit} across team</p>
-      <p class="text-xs font-semibold text-text-main mt-2">${c.label}</p>
-      <p class="text-[10px] text-text-muted mt-0.5">View Pipeline →</p>
-    </div>
-  `).join('');
+    </div>`, `
+    <div class="divide-y divide-border">${rows}</div>`);
 }
 
 function renderMgrBoostInput() {
@@ -8359,42 +8419,106 @@ function renderMgrBoostInput() {
   const grid = document.getElementById('mgrBoostInput');
   if (!grid || !pool.length) return;
 
-  const avgISL = (pool.reduce((s,c) => s + (c.today.isl||0), 0) / pool.length).toFixed(1);
-  const avgQuality = Math.round(pool.reduce((s,c) => s + ((c.today.q1score + c.today.q2score)/2||0), 0) / pool.length);
-  const bestISL = pool.reduce((best,c) => (c.today.isl||0) > (best.today.isl||0) ? c : best, pool[0]);
-  const bestQ   = pool.reduce((best,c) => ((c.today.q1score+c.today.q2score)/2||0) > ((best.today.q1score+best.today.q2score)/2||0) ? c : best, pool[0]);
-  const orgBestISL = COUNSELORS.reduce((b,c) => (c.today.isl||0) > (b.today.isl||0) ? c : b, COUNSELORS[0]);
+  const poolIds = new Set(pool.map(c => c.id));
+  const poolStudents = STUDENTS.filter(s => poolIds.has(s.counselorId));
 
-  const uxTotal = pool.reduce((s,c) => {
-    const st = STUDENTS.filter(u => u.counselorId === c.id);
-    return s + st.filter(u => u.qualityScore < 50 || u.lastCallOutcome === 'Not Reachable').length;
-  }, 0);
+  // ISL
+  const avgISL = (pool.reduce((s,c) => s + (c.today.isl||0), 0) / pool.length).toFixed(1);
+  const islPct  = Math.round((avgISL / 5) * 100);
+  const bestISL = pool.reduce((b,c) => (c.today.isl||0) > (b.today.isl||0) ? c : b, pool[0]);
+
+  // Quality
+  const sorted = [...pool].sort((a,b) => ((b.today.q1score+b.today.q2score)/2) - ((a.today.q1score+a.today.q2score)/2));
+  const q1  = Math.round((sorted[0]?.today.q1score + sorted[0]?.today.q2score) / 2 || 0);
+  const q2  = Math.round((sorted[1]?.today.q1score + sorted[1]?.today.q2score) / 2 || 0);
+  const avgQ = Math.round(pool.reduce((s,c) => s + ((c.today.q1score+c.today.q2score)/2||0), 0) / pool.length);
+  const bestQ = sorted[0];
+
+  // UX aggregation
+  let unhappy = 0, waActive = 0, waInactive = 0, notJoined = 0, studentNotJoined = 0, notReplied = 0;
+  poolStudents.forEach(s => {
+    if (s.islRating < 8 || s.hasEscalation) unhappy++;
+    if ((WA_UNANSWERED[s.id] || []).length > 0) notReplied++;
+    let hasJoined = false;
+    (s.whatsappGroups || []).forEach(g => {
+      if (g.counselorJoined && g.studentJoined) { waActive++; hasJoined = true; }
+      else if (!g.counselorJoined) waInactive++;
+      if (!g.studentJoined) notJoined++;
+    });
+    if (!hasJoined && (s.whatsappGroups||[]).length > 0) studentNotJoined++;
+  });
+
+  // Own tasks
+  const ownCount = (state.ownTasks || []).filter(t => !t.done).length;
+
+  function subRow(label, count, urgency) {
+    const cfg = {
+      good:   { bg:'bg-emerald-50', border:'border-emerald-200', numCls:'text-emerald-700 bg-emerald-100', lbl:'text-emerald-700' },
+      warn:   { bg:'bg-amber-50',   border:'border-amber-200',   numCls:'text-amber-700 bg-amber-100',     lbl:'text-amber-700' },
+      danger: { bg:'bg-red-50',     border:'border-red-200',     numCls:'text-red-700 bg-red-100',         lbl:'text-red-700' },
+    }[urgency];
+    return `<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg border ${cfg.bg} ${cfg.border} mb-1 last:mb-0">
+      <span class="text-[10px] font-semibold ${cfg.lbl}">${label}</span>
+      <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full ${cfg.numCls}">${count}</span>
+    </div>`;
+  }
 
   grid.innerHTML = `
-    <div class="bg-white rounded-xl border border-border p-4 shadow-sm">
-      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">📞 ISL Feedback Rating</p>
-      <p class="text-3xl font-black text-primary">${avgISL} <span class="text-sm text-text-muted font-normal">/ 5</span></p>
-      <p class="text-xs text-text-muted mt-2">Team weighted avg</p>
-      <div class="mt-2 pt-2 border-t border-border space-y-1">
-        <p class="text-xs text-text-muted">🏆 Team Best: <strong class="text-text-main">${bestISL.name.split(' ')[0]} · ${bestISL.today.isl}</strong></p>
-        <p class="text-xs text-text-muted">🌐 Org Best: <strong class="text-text-main">${orgBestISL.name.split(' ')[0]} · ${orgBestISL.today.isl}</strong></p>
+    <!-- ISL Feedback Rating -->
+    <div class="metric-card rounded-xl border p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+      style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border-color:#93c5fd;">
+      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-blue-700">📞 ISL Feedback Rating</p>
+      <div class="flex items-end gap-1 mb-1">
+        <span class="font-mono font-black text-blue-700" style="font-size:2rem">${avgISL}</span>
+        <span class="text-sm text-blue-400 font-normal mb-1">/ 5</span>
+      </div>
+      <p class="text-xs text-blue-500 mb-2">${islPct}%</p>
+      <div class="w-full bg-blue-100 rounded-full h-1.5 mb-2">
+        <div class="bg-blue-500 h-1.5 rounded-full" style="width:${islPct}%"></div>
+      </div>
+      <p class="text-[10px] text-blue-600">🏆 Best: <strong>${bestISL.name} · ${bestISL.today.isl}/5</strong></p>
+    </div>
+
+    <!-- User Experience IMP -->
+    <div class="metric-card rounded-xl border p-3 cursor-pointer hover:shadow-md transition-shadow"
+      style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
+      onclick="openWAGroupDetailsDrawer()">
+      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">⭐ User Experience <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
+      <div class="space-y-0.5">
+        ${subRow('Student Not Happy',  unhappy,         unhappy > 0 ? 'danger' : 'good')}
+        ${subRow('WA Active',          waActive,        waActive > 0 ? 'good' : 'warn')}
+        ${subRow('WA Inactive',        waInactive,      waInactive > 0 ? 'warn' : 'good')}
+        ${subRow('Not Joined',         notJoined,       notJoined > 0 ? 'danger' : 'good')}
+        ${subRow('Student Not Joined', studentNotJoined,studentNotJoined > 0 ? 'warn' : 'good')}
+        ${subRow('Not Replied',        notReplied,      notReplied > 0 ? 'danger' : 'good')}
+      </div>
+      <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        View all groups →
       </div>
     </div>
-    <div class="bg-white rounded-xl border border-border p-4 shadow-sm">
-      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">⭐ Quality Score</p>
-      <p class="text-3xl font-black text-success">${avgQuality}<span class="text-sm text-text-muted font-normal">%</span></p>
-      <p class="text-xs text-text-muted mt-2">Team weighted avg</p>
-      <div class="mt-2 pt-2 border-t border-border space-y-1">
-        <p class="text-xs text-text-muted">🏆 Team Best: <strong class="text-text-main">${bestQ.name.split(' ')[0]} · ${Math.round((bestQ.today.q1score+bestQ.today.q2score)/2)}%</strong></p>
-      </div>
+
+    <!-- Own Tasks -->
+    <div class="metric-card rounded-xl border p-3 shadow-sm"
+      style="background:linear-gradient(135deg,#fefce8 0%,#fef9c3 100%);border-color:#fde047;">
+      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-yellow-700">📋 Own Tasks</p>
+      <div class="font-mono font-black text-yellow-700 mb-1" style="font-size:2rem">${ownCount}</div>
+      <p class="text-xs text-yellow-600">${ownCount === 1 ? '1 pending reminder' : ownCount + ' pending reminders'}</p>
     </div>
-    <div class="bg-white rounded-xl border border-border p-4 shadow-sm">
-      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">⚠️ User Experience Flags</p>
-      <p class="text-3xl font-black text-danger">${uxTotal}</p>
-      <p class="text-xs text-text-muted mt-2">Total flags across ${pool.length} counsellors</p>
-      <div class="mt-2 pt-2 border-t border-border">
-        <p class="text-xs text-text-muted">Includes: Not Reachable, Low QC Score cases</p>
+
+    <!-- Quality Score -->
+    <div class="metric-card rounded-xl border p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+      style="background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-color:#86efac;">
+      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-green-700">⭐ Quality Score</p>
+      <div class="flex items-end gap-3 mb-1">
+        <div><span class="font-mono font-black text-green-700" style="font-size:1.6rem">${q1}%</span> <span class="text-[10px] text-green-500 font-bold">1st</span></div>
+        <div><span class="font-mono font-black text-green-600" style="font-size:1.6rem">${q2}%</span> <span class="text-[10px] text-green-400 font-bold">2nd</span></div>
       </div>
+      <p class="text-[10px] text-green-500 mb-2">1st: ${q1}% | 2nd: ${q2}%</p>
+      <div class="w-full bg-green-100 rounded-full h-1.5 mb-2">
+        <div class="bg-green-500 h-1.5 rounded-full" style="width:${avgQ}%"></div>
+      </div>
+      <p class="text-[10px] text-green-600">🏆 Best: <strong>${bestQ?.name} · ${Math.round((bestQ?.today.q1score+bestQ?.today.q2score)/2)}%</strong></p>
     </div>
   `;
 }
