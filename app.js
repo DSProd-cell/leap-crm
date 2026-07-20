@@ -964,7 +964,7 @@ function bootApp(role, email) {
   const isHeaderMgr = isMgr || role === 'ops_admin';
 
   // Reset all role-gated elements before applying role-specific visibility
-  ['counselorSelectorWrapper', 'managerFilterBar', 'mgrCrmBar', 'mgrCallMergeWrap',
+  ['counselorSelectorWrapper', 'globalFilterBar', 'mgrCrmBar', 'mgrCallMergeWrap',
    'tlCounsellorFilterBar', 'adminTabBtn',
    'leaderViewToggleWrap', 'earnerViewToggleWrap',
    'mgrTab1Panel', 'mgrTab2Panel', 'mgrTab3Panel'].forEach(id => {
@@ -996,21 +996,22 @@ function bootApp(role, email) {
     if (evw) evw.classList.remove('hidden');
   }
 
-  // Manager roles: show CRM bar + call merge widget; keep filter bar hidden
-  if (isMgr) {
+  // TL/POD/SM/Director/Ops Admin: CRM-style header bar (search + view assigned leads + call merge)
+  // and the relocated global filter row (POD/SM/TL/Counsellor) — hide the badge strip to match
+  if (isHeaderMgr) {
     const crmBar = document.getElementById('mgrCrmBar');
     if (crmBar) crmBar.classList.remove('hidden');
     const callMerge = document.getElementById('mgrCallMergeWrap');
     if (callMerge) callMerge.classList.remove('hidden');
-    // managerFilterBar stays hidden (filters still work internally via state.managerFilters)
-    buildMgrFilterBar();
+    const badgeStrip = document.getElementById('badgeStrip');
+    if (badgeStrip) badgeStrip.classList.add('hidden');
 
-  // Manager-tier roles + Ops Admin: show global filter bar (POD/SM/TL/Counsellor — same access as Director)
-  if (isHeaderMgr) {
     const gfb = document.getElementById('globalFilterBar');
-    if (gfb) gfb.classList.remove('hidden');
-    if (gfb) gfb.classList.add('flex');
+    if (gfb) { gfb.classList.remove('hidden'); gfb.classList.add('flex'); }
     buildMgrFilterBar();
+  } else {
+    const badgeStrip = document.getElementById('badgeStrip');
+    if (badgeStrip) badgeStrip.classList.remove('hidden');
   }
 
   // Manager roles: show manager aggregate panels
