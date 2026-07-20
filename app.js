@@ -960,6 +960,8 @@ function bootApp(role, email) {
   document.getElementById('headerName').textContent   = u.name.split(' ')[0];
 
   const isMgr = ['team_lead','pod_leader','senior_manager','director'].includes(role);
+  // Header/filter-bar tier — same top bar + filter access as Director, for TL/POD/SM/Director/Ops Admin
+  const isHeaderMgr = isMgr || role === 'ops_admin';
 
   // Reset all role-gated elements before applying role-specific visibility
   ['counselorSelectorWrapper', 'managerFilterBar', 'mgrCrmBar', 'mgrCallMergeWrap',
@@ -975,7 +977,7 @@ function bootApp(role, email) {
     document.getElementById('adminTabBtn').classList.remove('hidden');
   }
 
-  // Ops admin: show single counsellor selector in header
+  // Ops admin: keep single counsellor drill-down selector, now inside the global filter row
   if (role === 'ops_admin') {
     const wrapper = document.getElementById('counselorSelectorWrapper');
     if (wrapper) wrapper.classList.remove('hidden');
@@ -1003,6 +1005,16 @@ function bootApp(role, email) {
     // managerFilterBar stays hidden (filters still work internally via state.managerFilters)
     buildMgrFilterBar();
 
+  // Manager-tier roles + Ops Admin: show global filter bar (POD/SM/TL/Counsellor — same access as Director)
+  if (isHeaderMgr) {
+    const gfb = document.getElementById('globalFilterBar');
+    if (gfb) gfb.classList.remove('hidden');
+    if (gfb) gfb.classList.add('flex');
+    buildMgrFilterBar();
+  }
+
+  // Manager roles: show manager aggregate panels
+  if (isMgr) {
     // Show manager-specific panels in all tabs
     ['mgrTab1Panel','mgrTab2Panel','mgrTab3Panel'].forEach(id => {
       const el = document.getElementById(id);
@@ -1049,7 +1061,9 @@ function bootApp(role, email) {
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
     if (boostOutputSection) boostOutputSection.classList.add('hidden');
     if (boostInputSection)  boostInputSection.classList.add('hidden');
-    if (standupSection)     standupSection.classList.add('hidden');
+    // Performance Summary scorecard (Target/Achieved/Status, incl. CA->STI/LockIn 14D rows)
+    // stays visible for manager roles too — see index.html:480 "TL: standup only"
+    if (standupSection)     standupSection.classList.remove('hidden');
     if (topPerfSection)     topPerfSection.classList.add('hidden');
   } else if (role === 'counselor') {
     if (reportCardSection) reportCardSection.classList.add('hidden');
@@ -1063,30 +1077,57 @@ function bootApp(role, email) {
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
   }
 
-  // Standup manager-only filters (Counsellor Name + TL Name)
+  // Standup manager-only filters (SM / POD / TL / Counsellor) — same access rules as the global filter bar
   if (role !== 'counselor') {
-    const cfSel = document.getElementById('standupCounsellorFilter');
-    const tlSel = document.getElementById('standupTLFilter');
+    const smSel  = document.getElementById('standupSMFilter');
+    const podSel = document.getElementById('standupPODFilter');
+    const tlSel  = document.getElementById('standupTLFilter');
+    const cfSel  = document.getElementById('standupCounsellorFilter');
+
+    if (smSel) {
+      const showSM = ['director','ops_admin'].includes(role);
+      smSel.classList.toggle('hidden', !showSM);
+      if (showSM) {
+        smSel.innerHTML = '<option value="">All Senior Managers</option>';
+        const mySMIds = role === 'ops_admin' ? SENIOR_MANAGERS.map(s => s.id) : (HIERARCHY.dirToSMs[state.currentUser.id] || []);
+        SENIOR_MANAGERS.filter(s => mySMIds.includes(s.id)).forEach(s => {
+          const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; smSel.appendChild(o);
+        });
+      }
+    }
+
+    if (podSel) {
+      const showPOD = ['senior_manager','director','ops_admin'].includes(role);
+      podSel.classList.toggle('hidden', !showPOD);
+      if (showPOD) {
+        podSel.innerHTML = '<option value="">All PODs</option>';
+        POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).forEach(p => {
+          const o = document.createElement('option'); o.value = p.id; o.textContent = p.name + ' (' + p.pod + ')'; podSel.appendChild(o);
+        });
+      }
+    }
+
+    if (tlSel) {
+      const showTL = role !== 'team_lead';
+      tlSel.classList.toggle('hidden', !showTL);
+      if (showTL) {
+        tlSel.innerHTML = '<option value="">All TLs</option>';
+        TEAM_LEADS.filter(t => getMyTLIds().includes(t.id)).forEach(t => {
+          const o = document.createElement('option'); o.value = t.id; o.textContent = t.name + ' (' + t.team + ')'; tlSel.appendChild(o);
+        });
+      }
+    }
+
     if (cfSel) {
       cfSel.classList.remove('hidden');
       cfSel.innerHTML = '<option value="">All Counsellors</option>';
       const cList = (role === 'team_lead')
         ? COUNSELORS.filter(c => c.team === state.currentUser.team)
-        : COUNSELORS;
+        : COUNSELORS.filter(c => getMyTLIds().some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
       cList.forEach(c => {
         const o = document.createElement('option');
         o.value = c.id; o.textContent = c.name;
         cfSel.appendChild(o);
-      });
-    }
-    if (tlSel && role === 'ops_admin') {
-      tlSel.classList.remove('hidden');
-      tlSel.innerHTML = '<option value="">All TLs</option>';
-      const tlList = COUNSELORS.filter(c => c.designation === 'Team Lead');
-      tlList.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.id; o.textContent = c.name;
-        tlSel.appendChild(o);
       });
     }
   }
@@ -2411,7 +2452,8 @@ function renderMetricCards() {
   const totalStudents = getViewingStudents().length;
 
   const allStudents = getViewingStudents();
-  const unhappyCount = allStudents.filter(s => s.islRating < 8 || s.hasEscalation).length;
+  const customerSupportCount = allStudents.filter(s => s.hasEscalation).length;
+  const lowISLCount = allStudents.filter(s => s.islRating < 8 && !s.hasEscalation).length;
   const deferralCount = getDeferralOpportunityStudents().length;
   const ownCount = state.ownTasks.filter(t => !t.done).length;
   const waStats = getWAGroupStats();
@@ -2432,7 +2474,7 @@ function renderMetricCards() {
       bestLabel: bestISL ? `🏆 Best: ${bestISL.name} · ${bestISL.value.toFixed(1)}/5` : '' },
     { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score,
       bestLabel: bestQ1 ? `🏆 Best: ${bestQ1.name} · ${bestQ1.value}%` : '' },
-    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats, unhappyCount },
+    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats, customerSupportCount, lowISLCount },
   ];
 
   // Own Tasks: Red+First if pending, Green+Last if clear
@@ -2448,7 +2490,10 @@ function renderMetricGrid(elId, metrics) {
     // ── Special: WA Group Details card ──
     if (m.isWAGroups) {
       const ws = m.waStats;
-      const uh = m.unhappyCount || 0;
+      const csCount = m.customerSupportCount || 0;
+      const islCount = m.lowISLCount || 0;
+      const waIssues = ws.inactive + ws.notJoined + ws.notReplied;
+      const breachedCount = 0; // no SLA/breach-tracking system yet
 
       function subRow(label, count, urgency) {
         // urgency: 'good'=green, 'warn'=amber, 'danger'=red, 'info'=blue
@@ -2469,13 +2514,12 @@ function renderMetricGrid(elId, metrics) {
           style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
           onclick="openWAGroupDetailsDrawer()">
           <div class="metric-deco"></div>
-          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">⭐ User Experience <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
+          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">🎯 Potential Escalations <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
           <div class="space-y-0.5">
-            ${subRow('Student Not Happy', uh,          uh > 0 ? 'danger' : 'good')}
-            ${subRow('WA Active',         ws.active,   ws.active > 0 ? 'good' : 'warn')}
-            ${subRow('WA Inactive',       ws.inactive, ws.inactive > 0 ? 'warn' : 'good')}
-            ${subRow('Not Joined',        ws.notJoined,  ws.notJoined > 0 ? 'danger' : 'good')}
-            ${subRow('Not Replied',       ws.notReplied, ws.notReplied > 0 ? 'danger' : 'good')}
+            ${subRow('Customer Support',        csCount,       csCount > 0 ? 'danger' : 'good')}
+            ${subRow('Low ISL Feedback',        islCount,      islCount > 0 ? 'danger' : 'good')}
+            ${subRow('WA Summary',              waIssues,      waIssues > 0 ? 'danger' : 'good')}
+            ${subRow('IS Pending and Breached', breachedCount, breachedCount > 0 ? 'danger' : 'good')}
           </div>
           <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
@@ -6983,43 +7027,26 @@ function renderSummaryScoreStrip() {
    FEATURE F — STAND UP METRICS TABLE
 ═══════════════════════════════════════════════════════ */
 
-const STANDUP_METRICS = [
-  { name:'Total Leads',               key:'leads'             },
-  { name:'ISL in 24 hrs',            key:'isl_24h',  tooltip:'Leads assigned → ISL done within 24 hrs' },
-  { name:'ISL Pending',               key:'isl_pending'       },
-  { name:'Total Lock In',             key:'lockins'           },
-  { name:'Total F2F',                 key:'f2f'               },
-  { name:'Total Walk In',             key:'walkin'            },
-  { name:'Total STI',                 key:'stis'              },
-  { name:'Total Deposits',            key:'deposits'          },
-  { name:'Total Visas',               key:'visas'             },
-  { name:'Revenue Collected',         key:'revenue_collected', isCurrency:true },
-  { name:'Referral % from CA',        key:'referral_pct',      isPctMetric:true, tooltip:'% of assigned students who referred someone' },
-];
+// Deterministic per-counsellor performance weight (~0.35–1.0, org average ≈1) — used to shift
+// filtered Performance Summary figures so filtering down to one person shows whether THEY are
+// hitting the business goal, not just an unchanging org-wide average.
+function counselorPerfWeight(c) {
+  const islN = (c.today.isl || 3.5) / 5;
+  const q1N  = (c.today.q1score || 60) / 100;
+  const q2N  = (c.today.q2score || 60) / 100;
+  return islN * 0.4 + q1N * 0.3 + q2N * 0.3;
+}
+const AVG_COUNSELOR_PERF_WEIGHT = COUNSELORS.reduce((s, c) => s + counselorPerfWeight(c), 0) / COUNSELORS.length;
 
-function generateStandupData(filters) {
-  const c = getCounselorData();
-  // Base daily actuals — use real data where available, mock the rest
-  const leadsBase = 30;
-  // ISL in 24 hrs = ~72% of leads assigned get an ISL call within 24 hours
-  const isl24hBase = Math.round(leadsBase * 0.72);
-  const base = {
-    leads: leadsBase, isl_24h: isl24hBase, isl_pending: Math.round(leadsBase * 0.28),
-    lockins: c.lockins, f2f: c.f2f, walkin: 2,
-    stis: c.stis, deposits: c.deposits, visas: 1,
-    revenue_collected: c.revenueCollected,
-    referral_pct: c.referralPct,
-  };
-  // Apply lightweight filter noise for realism
-  const multiplier  = filters.country    && filters.country    !== '' ? 0.6  : 1;
-  const locMult     = filters.location   === 'online'  ? 0.7  : filters.location === 'branch' ? 0.85 : 1;
-  const counselMult = filters.counsellor && filters.counsellor !== '' ? 0.5  : 1;
-  const tlMult      = filters.tl         && filters.tl         !== '' ? 0.75 : 1;
-  // Servicing type filter — Partner ≈ 55% of pipeline, Non-Partner ≈ 45%
-  const servMult    = filters.servicingType === 'partner'     ? 0.55
-                    : filters.servicingType === 'non-partner' ? 0.45 : 1;
-  // CA date filter — count students within range and scale
-  let caDateMult = 1;
+// Advanced-filter multiplier (Intake / Country / Servicing Type / CA Date Range) — approximates
+// what share of the pipeline matches the selected criteria; used to scale volume counts only
+// (rates/percentages are scaled by performance weight instead, see buildPerfRows).
+function computeExtraFilterMultiplier(filters) {
+  let m = 1;
+  if (filters.intake)  m *= 0.55;
+  if (filters.country) m *= 0.6;
+  if (filters.servicingType === 'partner')          m *= 0.55;
+  else if (filters.servicingType === 'non-partner') m *= 0.45;
   if (filters.caDateFrom || filters.caDateTo) {
     const from = filters.caDateFrom ? new Date(filters.caDateFrom) : new Date('2020-01-01');
     const to   = filters.caDateTo   ? new Date(filters.caDateTo)   : new Date('2099-12-31');
@@ -7028,50 +7055,108 @@ function generateStandupData(filters) {
       const d = new Date(s.caDate);
       return d >= from && d <= to;
     }).length;
-    caDateMult = STUDENTS.length ? matched / STUDENTS.length : 1;
+    m *= STUDENTS.length ? Math.max(0.05, matched / STUDENTS.length) : 1;
+  }
+  return m;
+}
+
+// Narrows a counsellor pool using the Performance Summary's own local Advanced Filters
+// (SM/POD/TL/Counsellor selects), on top of whatever the global top filter bar already applied.
+function narrowPoolByLocalFilters(pool, filters) {
+  let p = pool;
+  if (filters.sm) {
+    const smId = parseInt(filters.sm);
+    const allowedPods = HIERARCHY.smToPods[smId] || [];
+    const allowedTLs  = allowedPods.flatMap(pid => HIERARCHY.podToTLs[pid] || []);
+    p = p.filter(c => allowedTLs.some(tid => (HIERARCHY.tlToCounselors[tid] || []).includes(c.id)));
+  }
+  if (filters.pod) {
+    const podId = parseInt(filters.pod);
+    const allowedTLs = HIERARCHY.podToTLs[podId] || [];
+    p = p.filter(c => allowedTLs.some(tid => (HIERARCHY.tlToCounselors[tid] || []).includes(c.id)));
+  }
+  if (filters.tl) {
+    const tlId = parseInt(filters.tl);
+    p = p.filter(c => (HIERARCHY.tlToCounselors[tlId] || []).includes(c.id));
+  }
+  if (filters.counsellor) {
+    const clId = parseInt(filters.counsellor);
+    p = p.filter(c => c.id === clId);
+  }
+  return p;
+}
+
+const VOLUME_BASE = [
+  { name:'Leads',                      key:'leads',             isCurrency:false, aYTD:342,    aMTD:6,  W01:2,  M01:22    },
+  { name:'ISL Shared within 24 Hours', key:'isl_24h',           isCurrency:false, aYTD:202,    aMTD:2,  W01:2,  M01:14    },
+  { name:'F2F Done',                   key:'f2f',               isCurrency:false, aYTD:20,     aMTD:1,  W01:0,  M01:4     },
+  { name:'Lock In Done',               key:'lockins',           isCurrency:false, aYTD:66,     aMTD:0,  W01:0,  M01:1     },
+  { name:'STI Done',                   key:'stis',              isCurrency:false, aYTD:485,    aMTD:0,  W01:0,  M01:2     },
+  { name:'Admits',                     key:'admits',            isCurrency:false, aYTD:329,    aMTD:1,  W01:0,  M01:1     },
+  { name:'Deposits',                   key:'deposits',          isCurrency:false, aYTD:80,     aMTD:0,  W01:0,  M01:3     },
+  { name:'Visa Approved',              key:'visas',             isCurrency:false, aYTD:39,     aMTD:4,  W01:3,  M01:1     },
+  { name:'Revenue Generated',          key:'revenue_collected', isCurrency:true,  aYTD:272590, aMTD:0,  W01:0,  M01:12799 },
+  { name:'Pre ISL Drop',               key:'pre_isl_drop',      isCurrency:false, aYTD:34,     aMTD:2,  W01:0,  M01:1     },
+  { name:'Total Drop',                 key:'post_isl_drop',     isCurrency:false, aYTD:86,     aMTD:2,  W01:0,  M01:1     },
+];
+
+const FUNNEL_BASE = [
+  { name:'01.ISL Shared (24 hrs)',    tYTD:75, tMTD:80, aYTD:61,  aMTD:41,  Y:46, Y1:53, Y2:66, W0:0, W01:100, M01:40  },
+  { name:'02.CA->ISL (60 mins)',      tYTD:60, tMTD:60, aYTD:5,   aMTD:0,   Y:3,  Y1:23, Y2:14, W0:0, W01:0,   M01:0   },
+  { name:'03.CA->STI (14D)',          tYTD:13, tMTD:13, aYTD:54,  aMTD:0,   Y:7,  Y1:14, Y2:14, W0:0, W01:0,   M01:7   },
+  { name:'04.CA->F2F (14D)',          tYTD:30, tMTD:30, aYTD:53,  aMTD:0,   Y:16, Y1:7,  Y2:0,  W0:0, W01:0,   M01:13  },
+  { name:'05.CA->LockIn (14D)',       tYTD:20, tMTD:20, aYTD:25,  aMTD:0,   Y:5,  Y1:5,  Y2:0,  W0:0, W01:0,   M01:0   },
+  { name:'06.STI->Admit (30D)',       tYTD:85, tMTD:85, aYTD:101, aMTD:0,   Y:86, Y1:86, Y2:60, W0:0, W01:0,   M01:100 },
+  { name:'07.Admit->Deposits (14D)',  tYTD:35, tMTD:35, aYTD:20,  aMTD:0,   Y:7,  Y1:13, Y2:50, W0:0, W01:0,   M01:0   },
+  { name:'08.CA->Pre ISL Drop',       tYTD:5,  tMTD:5,  aYTD:100, aMTD:340, Y:5,  Y1:18, Y2:17, W0:0, W01:0,   M01:0,  isDropRate:true },
+  { name:'09.CA->Total Drop',         tYTD:7,  tMTD:7,  aYTD:200, aMTD:243, Y:14, Y1:40, Y2:55, W0:0, W01:0,   M01:0,  isDropRate:true },
+];
+
+// Builds Volume Metrics + Conversion Funnel rows scoped to the given counsellor pool and extra
+// advanced-filter multiplier. This is what makes the whole Performance Summary respond to the
+// top filters (SM/POD/TL/Counsellor) and Advanced Filters (Intake/Country/Servicing/CA Date):
+// targets stay fixed (they're the business goal, independent of headcount), while achieved
+// figures move with the pool — a stronger cohort/person pulls rates up, a weaker one pulls them down.
+function buildPerfRows(pool, extMult) {
+  const weights   = pool.map(c => counselorPerfWeight(c) / AVG_COUNSELOR_PERF_WEIGHT);
+  const avgWeight = weights.length ? weights.reduce((s, w) => s + w, 0) / weights.length : 1;
+  const volScale  = (pool.length / COUNSELORS.length) * extMult * avgWeight;
+
+  const volumeRows = VOLUME_BASE.map(m => ({
+    name: m.name, key: m.key, isCurrency: m.isCurrency, isPct: false,
+    tYTD: 0, tMTD: 0,
+    aYTD: Math.round(m.aYTD * volScale),
+    aMTD: Math.round(m.aMTD * volScale),
+    Y: 0, Y1: 0, Y2: 0, W0: 0,
+    W01: Math.round(m.W01 * volScale),
+    M01: Math.round(m.M01 * volScale),
+  }));
+
+  function scaledPct(base, isDropRate) {
+    const factor = isDropRate ? Math.max(0.2, 2 - avgWeight) : avgWeight;
+    return Math.max(0, Math.round(base * factor));
   }
 
-  return STANDUP_METRICS.map((m, i) => {
-    // Percentage metrics (e.g. Referral %) — show % directly, not day-multiplied
-    if (m.isPctMetric) {
-      const pctVal  = base[m.key] || 0;
-      const target  = TARGETS.referral;
-      const ytdPct  = target ? Math.round((pctVal / target) * 100) : 0;
-      const mtdPct  = ytdPct;
-      const ytdCls  = ytdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-      const mtdCls  = mtdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-      return { ...m,
-        tYTD: target, tMTD: target, aYTD: pctVal, aMTD: pctVal,
-        Y: pctVal, Y1: pctVal, Y2: pctVal, W0: pctVal, W01: pctVal, M01: pctVal,
-        ytdCls, mtdCls, isPct: true,
-      };
-    }
-    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult * caDateMult * servMult);
-    const tYTD   = daily * 264;   // 264 working days
-    const tMTD   = daily * 22;
-    const aYTD   = Math.round(tYTD * [0.78,0.82,0.65,0.91,0.74,0.88,0.60,0.85,0.93,0.70,0.77][i % 11]);
-    const aMTD   = Math.round(tMTD * [0.82,0.88,0.70,0.95,0.78,0.91,0.65,0.88,0.96,0.74,0.80][i % 11]);
-    const Y      = Math.max(0, daily - Math.floor(Math.random() * 2));
-    const Y1     = Math.max(0, daily - Math.floor(Math.random() * 3));
-    const Y2     = Math.max(0, daily - Math.floor(Math.random() * 4));
-    const W0     = daily * 5;
-    const W01    = Math.round(daily * 5 * 0.9);
-    const M01    = Math.round(daily * 22 * 0.88);
-    const ytdPct = tYTD ? Math.round((aYTD / tYTD) * 100) : 0;
-    const mtdPct = tMTD ? Math.round((aMTD / tMTD) * 100) : 0;
-    const ytdCls = ytdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-    const mtdCls = mtdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-    return { ...m, tYTD, tMTD, aYTD, aMTD, Y, Y1, Y2, W0, W01, M01, ytdCls, mtdCls };
-  });
+  const funnelRows = FUNNEL_BASE.map((m, i) => ({
+    name: m.name, key: `funnel_${i}`, isPct: true, isCurrency: false,
+    isDropRate: m.isDropRate || false,
+    tYTD: m.tYTD, tMTD: m.tMTD,
+    aYTD: scaledPct(m.aYTD, m.isDropRate), aMTD: scaledPct(m.aMTD, m.isDropRate),
+    Y:    scaledPct(m.Y,    m.isDropRate), Y1:   scaledPct(m.Y1,   m.isDropRate), Y2: scaledPct(m.Y2, m.isDropRate),
+    W0:   scaledPct(m.W0,   m.isDropRate), W01:  scaledPct(m.W01,  m.isDropRate), M01: scaledPct(m.M01, m.isDropRate),
+  }));
+
+  return { volumeRows, funnelRows };
 }
 
 function renderStandupTable(filterData) {
   const filters = filterData || {
     intake:         document.getElementById('standupIntake')?.value            || '',
-    location:       document.getElementById('standupLocation')?.value          || '',
     country:        document.getElementById('standupCountry')?.value           || '',
     counsellor:     document.getElementById('standupCounsellorFilter')?.value  || '',
     tl:             document.getElementById('standupTLFilter')?.value           || '',
+    pod:            document.getElementById('standupPODFilter')?.value          || '',
+    sm:             document.getElementById('standupSMFilter')?.value           || '',
     caDateFrom:     document.getElementById('standupCADateFrom')?.value        || '',
     caDateTo:       document.getElementById('standupCADateTo')?.value          || '',
     servicingType:  document.getElementById('standupServicingType')?.value     || '',
@@ -7081,57 +7166,13 @@ function renderStandupTable(filterData) {
   if (!tbody) return;
   if (empty) empty.classList.add('hidden');
 
-  const c = getCounselorData();
-  const allData = generateStandupData(filters);
-
-  // ── SECTION 1: VOLUME METRICS ──────────────────────────────
-  // New order: Leads → ISL 24h → F2F → Lock In → STI → Admits → Deposits → Visa → Revenue → Pre ISL Drop → Total Drop
-  const VOLUME_MAP = {
-    leads:             'Leads',
-    isl_24h:           'ISL Shared within 24 Hours',
-    f2f:               'F2F Done',
-    lockins:           'Lock In Done',
-    stis:              'STI Done',
-    deposits:          'Deposits',
-    visas:             'Visa Approved',
-    revenue_collected: 'Revenue Generated',
-  };
-  const VOLUME_ORDER = ['leads','isl_24h','f2f','lockins','stis','deposits','visas','revenue_collected'];
-
-  // Hardcoded volume actuals (targets not set = 0 for all)
-  const volumeRows = [
-    { name:'Leads',                      key:'leads',            isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:342,   aMTD:6,  Y:0, Y1:0, Y2:0, W0:0, W01:2,  M01:22 },
-    { name:'ISL Shared within 24 Hours', key:'isl_24h',          isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:202,   aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:2,  M01:14 },
-    { name:'F2F Done',                   key:'f2f',              isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:20,    aMTD:1,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:4  },
-    { name:'Lock In Done',               key:'lockins',          isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:66,    aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-    { name:'STI Done',                   key:'stis',             isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:485,   aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:2  },
-    { name:'Admits',                     key:'admits',           isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:329,   aMTD:1,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-    { name:'Deposits',                   key:'deposits',         isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:80,    aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:3  },
-    { name:'Visa Approved',              key:'visas',            isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:39,    aMTD:4,  Y:0, Y1:0, Y2:1, W0:0, W01:3,  M01:1  },
-    { name:'Revenue Generated',          key:'revenue_collected',isCurrency:true,  isPct:false, tYTD:0, tMTD:0, aYTD:272590,aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:12799 },
-    { name:'Pre ISL Drop',               key:'pre_isl_drop',     isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:34,    aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-    { name:'Total Drop',                 key:'post_isl_drop',    isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:86,    aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-  ];
-
-  // ── SECTION 2: CONVERSION FUNNEL ───────────────────────────
-  const FUNNEL_DEF = [
-    { name:'01.ISL Shared (24 hrs)',     tYTD:75, tMTD:80, aYTD:61, aMTD:41, Y:46, Y1:53, Y2:66, W0:0, W01:100, M01:40 },
-    { name:'02.CA->ISL (60 mins)',       tYTD:60, tMTD:60, aYTD:5,  aMTD:0,  Y:3,  Y1:23, Y2:14, W0:0, W01:0,   M01:0  },
-    { name:'03.CA->STI (14D)',           tYTD:13, tMTD:13, aYTD:54, aMTD:0,  Y:7,  Y1:14, Y2:14, W0:0, W01:0,   M01:7  },
-    { name:'04.CA->F2F (14D)',           tYTD:30, tMTD:30, aYTD:53, aMTD:0,  Y:16, Y1:7,  Y2:0,  W0:0, W01:0,   M01:13 },
-    { name:'05.CA->LockIn (14D)',        tYTD:20, tMTD:20, aYTD:25, aMTD:0,  Y:5,  Y1:5,  Y2:0,  W0:0, W01:0,   M01:0  },
-    { name:'06.STI->Admit (30D)',        tYTD:85, tMTD:85, aYTD:101,aMTD:0,  Y:86, Y1:86, Y2:60, W0:0, W01:0,   M01:100},
-    { name:'07.Admit->Deposits (14D)',  tYTD:35, tMTD:35, aYTD:20, aMTD:0,  Y:7,  Y1:13, Y2:50, W0:0, W01:0,   M01:0  },
-    { name:'08.CA->Pre ISL Drop',        tYTD:5,  tMTD:5,  aYTD:100,aMTD:340,Y:5,  Y1:18, Y2:17, W0:0, W01:0,   M01:0,  isDropRate:true },
-    { name:'09.CA->Total Drop',          tYTD:7,  tMTD:7,  aYTD:200,aMTD:243,Y:14, Y1:40, Y2:55, W0:0, W01:0,   M01:0,  isDropRate:true },
-  ];
-  const funnelRows = FUNNEL_DEF.map((m, i) => ({
-    name: m.name, key: `funnel_${i}`, isPct: true, isCurrency: false,
-    isDropRate: m.isDropRate || false,
-    tYTD: m.tYTD, tMTD: m.tMTD,
-    aYTD: m.aYTD, aMTD: m.aMTD,
-    Y: m.Y, Y1: m.Y1, Y2: m.Y2, W0: m.W0, W01: m.W01, M01: m.M01,
-  }));
+  // Counsellor pool: global top filters (SM/POD/TL/Counsellor) narrowed further by this
+  // section's own Advanced Filters, plus Intake/Country/Servicing/CA-Date scaling volume counts.
+  const isMgrRole = ['team_lead','pod_leader','senior_manager','director','ops_admin'].includes(state.role);
+  let pool = isMgrRole ? getFilteredCounselorPool() : [state.currentUser];
+  pool = narrowPoolByLocalFilters(pool, filters);
+  const extMult = computeExtraFilterMultiplier(filters);
+  const { volumeRows, funnelRows } = buildPerfRows(pool, extMult);
 
   // ── STATUS COMPUTATION ─────────────────────────────────────
   function addStatus(rows) {
@@ -7165,25 +7206,60 @@ function renderStandupTable(filterData) {
     lastUpdEl.textContent = `Last updated: ${now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})} at ${now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
   }
 
+  // Business-goal box for CA->STI (14D) and CA->LockIn (14D) — a distinct, highlighted panel
+  // (not just another table row) so it's obvious at a glance whether the filtered person/team
+  // is hitting these two priority targets.
+  function goalBox(row, label) {
+    const isGood    = row.status === 'good';
+    const isOnTrack = row.status === 'ontrack';
+    const bg    = isGood ? 'bg-green-50 border-green-300' : isOnTrack ? 'bg-amber-50 border-amber-300' : 'bg-red-50 border-red-300';
+    const txt   = isGood ? 'text-green-800' : isOnTrack ? 'text-amber-800' : 'text-red-800';
+    const bar   = isGood ? 'bg-success' : isOnTrack ? 'bg-accent' : 'bg-danger';
+    const statusLabel = isGood ? 'Good' : isOnTrack ? 'On Track' : 'Focus';
+    const pct   = row.tYTD > 0 ? Math.min(100, Math.round((row.aYTD / row.tYTD) * 100)) : 0;
+    return `<div class="flex-1 min-w-[170px] h-full flex flex-col justify-center rounded-xl border ${bg} px-3.5 py-3">
+      <div class="text-[11px] font-bold ${txt} text-center whitespace-nowrap">${label}</div>
+      <div class="flex items-baseline justify-center gap-1 mt-1">
+        <span class="text-2xl font-extrabold ${txt} leading-none">${row.aYTD}%</span>
+        <span class="text-[10px] ${txt} opacity-70 font-medium">vs ${row.tYTD}% target <span class="text-sm font-bold opacity-100">(${statusLabel})</span></span>
+      </div>
+      <div class="w-full bg-white/70 rounded-full h-1.5 mt-2 overflow-hidden">
+        <div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }
+  function summaryChip(count, label, colorCls, dotCls, bgCls, borderCls) {
+    return `<div class="h-full flex items-center gap-1.5 rounded-lg border ${bgCls} ${borderCls} px-3 w-full">
+      <span class="w-1.5 h-1.5 rounded-full ${dotCls} inline-block flex-shrink-0"></span>
+      <span class="font-bold ${colorCls} text-sm leading-none">${count}</span>
+      <span class="text-[9px] ${colorCls} font-semibold uppercase tracking-wide">${label}</span>
+    </div>`;
+  }
+  const caSTIRow    = funnelRows.find(r => r.name === '03.CA->STI (14D)');
+  const caLockInRow = funnelRows.find(r => r.name === '05.CA->LockIn (14D)');
+
   const summaryEl = document.getElementById('standupStatusSummary');
   if (summaryEl) {
     summaryEl.innerHTML = `
-      <div class="flex items-center gap-3 flex-wrap">
-        <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Summary:</span>
-        <div class="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
-          <span class="w-2 h-2 rounded-full bg-success inline-block"></span>
-          <span class="font-bold text-success text-sm">${goodCnt}</span>
-          <span class="text-[10px] text-success font-medium ml-0.5">Good</span>
+      <div class="flex flex-col lg:flex-row lg:items-stretch gap-3">
+        <div class="flex-shrink-0 lg:w-36 flex flex-col">
+          <span class="block text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Overall Summary</span>
+          <div class="flex-1 flex flex-col gap-1.5">
+            <div class="flex-1">${summaryChip(goodCnt,    'Good',     'text-success', 'bg-success', 'bg-green-50', 'border-green-200')}</div>
+            <div class="flex-1">${summaryChip(ontrackCnt, 'On Track', 'text-accent',  'bg-accent',  'bg-amber-50', 'border-amber-200')}</div>
+            <div class="flex-1">${summaryChip(focusCnt,   'Focus',    'text-danger',  'bg-danger',  'bg-red-50',   'border-red-200')}</div>
+          </div>
         </div>
-        <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-          <span class="w-2 h-2 rounded-full bg-accent inline-block"></span>
-          <span class="font-bold text-accent text-sm">${ontrackCnt}</span>
-          <span class="text-[10px] text-accent font-medium ml-0.5">On Track</span>
-        </div>
-        <div class="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
-          <span class="w-2 h-2 rounded-full bg-danger inline-block"></span>
-          <span class="font-bold text-danger text-sm">${focusCnt}</span>
-          <span class="text-[10px] text-danger font-medium ml-0.5">Focus</span>
+        <div class="flex-1 rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/5 to-accent/5 px-3.5 py-2.5">
+          <div class="flex items-center justify-center gap-1.5 mb-2">
+            <span class="text-xs">🎯</span>
+            <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Important Business Goal</span>
+            <span class="text-[8px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            ${caSTIRow    ? goalBox(caSTIRow,    'CA > STI (14d)')    : ''}
+            ${caLockInRow ? goalBox(caLockInRow, 'CA > Lockin (14d)') : ''}
+          </div>
         </div>
       </div>`;
   }
@@ -7337,9 +7413,9 @@ function applyStandupFilters() {
 }
 
 function resetStandupFilters() {
-  const fields = ['standupIntake','standupCountry','standupCounsellorFilter','standupTLFilter','standupCADateFrom','standupCADateTo','standupServicingType'];
+  const fields = ['standupIntake','standupCountry','standupCounsellorFilter','standupTLFilter','standupPODFilter','standupSMFilter','standupCADateFrom','standupCADateTo','standupServicingType'];
   fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', caDateFrom:'', caDateTo:'', servicingType:'' });
+  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', pod:'', sm:'', caDateFrom:'', caDateTo:'', servicingType:'' });
 }
 
 /* ── Standup Achv drill-down ── */
@@ -7349,7 +7425,13 @@ function showStandupDrillDown(key, name, period, achv, target, isPct, isCurrency
   const numT = parseFloat(String(target).replace(/[^0-9.]/g,''));
   const pct  = numT > 0 ? Math.round((numA / numT) * 100) : (numA > 0 ? 100 : 0);
   const cls  = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
-  const breakdown = COUNSELORS.slice(0, 5).map((c, i) => {
+
+  // Respect the global manager filters (SM/POD/TL/Counsellor) — same pool as the rest of the manager dashboard
+  const isMgrRole = ['team_lead','pod_leader','senior_manager','director','ops_admin'].includes(state.role);
+  const pool = isMgrRole ? getFilteredCounselorPool() : [state.currentUser];
+  const breakdownPool = pool.slice(0, 5);
+
+  const breakdown = breakdownPool.map((c, i) => {
     const factor = [1, 0.87, 0.72, 0.61, 0.45][i];
     const val = isCurrency ? Math.round(numA * factor) : isPct ? Math.round(numA * factor) : Math.round(numA * factor);
     const pctOf = numT > 0 ? Math.round((val / numT) * 100) : 0;
@@ -7364,14 +7446,16 @@ function showStandupDrillDown(key, name, period, achv, target, isPct, isCurrency
         <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${bc}">${pctOf}%</span>
       </div>
     </div>`;
-  }).join('');
+  }).join('') || '<p class="text-sm text-text-muted text-center py-6 italic">No counsellors match the current filters.</p>';
+
   const content = `
+    ${isMgrRole ? mgrFilterPillsBar() : ''}
     <div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
       <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">${name} — ${period}</p>
       <p class="font-mono text-3xl font-extrabold ${cls}">${fv(achv)}</p>
       <p class="text-xs text-text-muted mt-1">vs Target ${fv(target)} · <span class="${cls} font-semibold">${pct}% achieved</span></p>
     </div>
-    <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Counsellor Breakdown</p>
+    <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Counsellor Breakdown${pool.length > 5 ? ` (top 5 of ${pool.length})` : ''}</p>
     <div>${breakdown}</div>
     <p class="text-[10px] text-text-muted mt-4 text-center italic">* Breakdown is indicative based on proportional distribution</p>`;
   state.drawerMode     = 'standupDrillDown';
@@ -7969,7 +8053,6 @@ function openWAGroupDetailsDrawer() {
   /* ── Student Not Happy sub-card ── */
   const lowRatingStudents  = students.filter(s => s.islRating < 8 && !s.hasEscalation);
   const escalationStudents2 = students.filter(s => s.hasEscalation);
-  const allUnhappy         = students.filter(s => s.islRating < 8 || s.hasEscalation);
 
   function _unhappyStudentCard(s) {
     const hasLowRating  = s.islRating < 8;
@@ -8001,16 +8084,39 @@ function openWAGroupDetailsDrawer() {
     </div>`;
   }
 
-  const unhappyInner = `
-    <p class="text-[11px] text-text-muted mb-2.5">Students who gave a low rating on ISL/F2F or raised a support ticket.</p>
-    ${allUnhappy.length === 0
-      ? `<p class="text-xs text-text-muted italic text-center py-6">No unhappy students right now 🎉</p>`
-      : allUnhappy.map(s => _unhappyStudentCard(s)).join('')}`;
+  const customerSupportInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Students who raised a query via support ticket.</p>
+    ${escalationStudents2.length === 0
+      ? `<p class="text-xs text-text-muted italic text-center py-6">No open support tickets right now 🎉</p>`
+      : escalationStudents2.map(s => _unhappyStudentCard(s)).join('')}`;
+
+  const lowISLInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Students who gave a low rating on ISL/F2F.</p>
+    ${lowRatingStudents.length === 0
+      ? `<p class="text-xs text-text-muted italic text-center py-6">No low ISL ratings right now 🎉</p>`
+      : lowRatingStudents.map(s => _unhappyStudentCard(s)).join('')}`;
+
+  const breachedInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Tasks that have crossed the 24-hour closure window.</p>
+    <p class="text-xs text-text-muted italic text-center py-6">No pending breached tasks right now 🎉</p>`;
+
+  // Card color: red/pink when there's something needing attention, green when clear
+  const statusCls = count => count > 0
+    ? { border: 'border-red-200',     bg: 'bg-red-50',     text: 'text-red-800' }
+    : { border: 'border-emerald-200', bg: 'bg-emerald-50', text: 'text-emerald-800' };
+
+  const waIssueCount = inactiveGroups.length + notJoinedGroups.length + notRepliedStudents.length + groupNotCreatedList.length;
+  const csCls  = statusCls(escalationStudents2.length);
+  const islCls = statusCls(lowRatingStudents.length);
+  const waCls  = statusCls(waIssueCount);
+  const brCls  = statusCls(0);
 
   const content = `
-    <p class="text-xs text-text-muted mb-4">Students who need your immediate attention — unhappy cases and WA group activity.</p>
-    ${channelCard('unhappy',   '🚨', 'Student Not Happy',   `${allUnhappy.length} students need attention`,  'border-red-200',     'bg-red-50',     'text-red-800',     unhappyInner)}
-    ${channelCard('non-voice', '💬', 'WA Summary',          'WhatsApp Group Activity',                       'border-emerald-200', 'bg-emerald-50', 'text-emerald-800', nonVoiceInner)}
+    <p class="text-xs text-text-muted italic mb-3">Note: All task must be closed with in 24 hours</p>
+    ${channelCard('unhappy',   '💬', 'Customer Support',        `${escalationStudents2.length} students need attention`, csCls.border,  csCls.bg,  csCls.text,  customerSupportInner)}
+    ${channelCard('low-isl',   '🚩', 'Low ISL Feedback',        `${lowRatingStudents.length} students need attention`,   islCls.border, islCls.bg, islCls.text, lowISLInner)}
+    ${channelCard('non-voice', '💬', 'WA Summary',              'WhatsApp Group Activity',                                waCls.border,  waCls.bg,  waCls.text,  nonVoiceInner)}
+    ${channelCard('breached',  '🚨', 'IS Pending and Breached', '0 students with pending breached tasks',                 brCls.border,  brCls.bg,  brCls.text,  breachedInner)}
   `;
 
   state.drawerMode = 'waGroup';
@@ -8323,7 +8429,7 @@ function getMyTLIds() {
   if (role === 'team_lead')      return [u.id];
   if (role === 'pod_leader')     return HIERARCHY.podToTLs[u.id] || [];
   if (role === 'senior_manager') return (HIERARCHY.smToPods[u.id]||[]).flatMap(p => HIERARCHY.podToTLs[p]||[]);
-  if (role === 'director')       return TEAM_LEADS.map(t => t.id);
+  if (role === 'director' || role === 'ops_admin') return TEAM_LEADS.map(t => t.id);
   return [];
 }
 
@@ -8331,7 +8437,7 @@ function getMyPodIds() {
   const u = state.currentUser; const role = state.role;
   if (role === 'pod_leader')     return [u.id];
   if (role === 'senior_manager') return HIERARCHY.smToPods[u.id] || [];
-  if (role === 'director')       return POD_LEADERS.map(p => p.id);
+  if (role === 'director' || role === 'ops_admin') return POD_LEADERS.map(p => p.id);
   return [];
 }
 
@@ -8388,16 +8494,16 @@ function buildMgrFilterBar() {
   const smWrap  = document.getElementById('smFilterWrap');
   const podWrap = document.getElementById('podFilterWrap');
   const tlWrap  = document.getElementById('tlFilterWrap');
-  if (smWrap)  smWrap.classList.toggle('hidden',  role !== 'director');
-  if (podWrap) podWrap.classList.toggle('hidden', !['senior_manager','director'].includes(role));
+  if (smWrap)  smWrap.classList.toggle('hidden',  !['director','ops_admin'].includes(role));
+  if (podWrap) podWrap.classList.toggle('hidden', !['senior_manager','director','ops_admin'].includes(role));
   if (tlWrap)  tlWrap.classList.toggle('hidden',  role === 'team_lead');
 
-  // Populate SM list (director only)
-  if (role === 'director') {
+  // Populate SM list (director + ops_admin see all SMs; ops_admin has no single director's hierarchy to scope to)
+  if (['director','ops_admin'].includes(role)) {
     const smList = document.getElementById('smFilterList');
     if (smList) {
       smList.innerHTML = '';
-      const mySMIds = HIERARCHY.dirToSMs[state.currentUser.id] || [];
+      const mySMIds = role === 'ops_admin' ? SENIOR_MANAGERS.map(s => s.id) : (HIERARCHY.dirToSMs[state.currentUser.id] || []);
       SENIOR_MANAGERS.filter(s => mySMIds.includes(s.id)).forEach(s =>
         smList.appendChild(buildMgrCheckbox('sm', s.id, s.name))
       );
@@ -8405,7 +8511,7 @@ function buildMgrFilterBar() {
   }
 
   // Populate POD list
-  if (['senior_manager','director'].includes(role)) {
+  if (['senior_manager','director','ops_admin'].includes(role)) {
     const podList = document.getElementById('podFilterList');
     if (podList) {
       podList.innerHTML = '';
@@ -8475,6 +8581,7 @@ function applyMgrFilter(type) {
   document.getElementById(dropMap[type] || 'clFilterDropdown')?.classList.add('hidden');
   updateMgrFilterLabels();
   renderMgrTab1(); renderMgrTab2(); renderMgrTicketSummary(); renderMgrTraining();
+  renderStandupTable();
 }
 
 function clearMgrFilter(type) {
@@ -8514,7 +8621,6 @@ function renderMgrTab1() {
   renderMgrBoostInput();
   renderMgrLeaderToggle();
   renderMgrLeaderboard();
-  renderMgrPerfTable();
 }
 
 function renderMgrBoostCards() {
@@ -8570,6 +8676,19 @@ function renderMgrBoostCards() {
   }).join('');
 }
 
+/* Builds the "SM: X · POD: Y ..." pills bar reflecting the current global manager filters (or "Viewing all counsellors" when none applied) */
+function mgrFilterPillsBar() {
+  const f = state.managerFilters;
+  const filterPills = [];
+  if (f.sms.length) filterPills.push(`SM: ${f.sms.map(id => SENIOR_MANAGERS.find(s=>s.id===id)?.name||id).join(', ')}`);
+  if (f.pods.length) filterPills.push(`POD: ${f.pods.map(id => POD_LEADERS.find(p=>p.id===id)?.name||id).join(', ')}`);
+  if (f.tls.length) filterPills.push(`TL: ${f.tls.map(id => TEAM_LEADS.find(t=>t.id===id)?.name||id).join(', ')}`);
+  if (f.counselors.length) filterPills.push(`Counsellor: ${f.counselors.map(id => COUNSELORS.find(c=>c.id===id)?.name||id).join(', ')}`);
+  return filterPills.length
+    ? `<div class="flex flex-wrap gap-1.5 px-4 py-2 bg-surface border-b border-border">${filterPills.map(p => `<span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium border border-accent/20">${escHtml(p)}</span>`).join('')}</div>`
+    : `<div class="px-4 py-2 bg-surface border-b border-border"><span class="text-[10px] text-text-muted italic">Viewing all counsellors</span></div>`;
+}
+
 function openMgrBoostPipeline(type) {
   const pool = getFilteredCounselorPool();
   const poolIds = new Set(pool.map(c => c.id));
@@ -8600,18 +8719,8 @@ function openMgrBoostPipeline(type) {
       </div>`;
   }).join('') || '<p class="text-sm text-text-muted text-center py-8">No students in this pipeline.</p>';
 
-  const f = state.managerFilters;
-  const filterPills = [];
-  if (f.sms.length) filterPills.push(`SM: ${f.sms.map(id => SENIOR_MANAGERS.find(s=>s.id===id)?.name||id).join(', ')}`);
-  if (f.pods.length) filterPills.push(`POD: ${f.pods.map(id => POD_LEADERS.find(p=>p.id===id)?.name||id).join(', ')}`);
-  if (f.tls.length) filterPills.push(`TL: ${f.tls.map(id => TEAM_LEADS.find(t=>t.id===id)?.name||id).join(', ')}`);
-  if (f.counselors.length) filterPills.push(`Counsellor: ${f.counselors.map(id => COUNSELORS.find(c=>c.id===id)?.name||id).join(', ')}`);
-  const filterBar = filterPills.length
-    ? `<div class="flex flex-wrap gap-1.5 px-4 py-2 bg-surface border-b border-border">${filterPills.map(p => `<span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium border border-accent/20">${escHtml(p)}</span>`).join('')}</div>`
-    : `<div class="px-4 py-2 bg-surface border-b border-border"><span class="text-[10px] text-text-muted italic">Viewing all counsellors</span></div>`;
-
   openDrawer(`${def.emoji} ${def.label} — ${students.length} students · ${pool.length} counsellors`, `
-    ${filterBar}
+    ${mgrFilterPillsBar()}
     <div class="divide-y divide-border">${rows}</div>`);
 }
 
@@ -8635,10 +8744,11 @@ function renderMgrBoostInput() {
   const avgQ = Math.round(pool.reduce((s,c) => s + ((c.today.q1score+c.today.q2score)/2||0), 0) / pool.length);
   const bestQ = sorted[0];
 
-  // UX aggregation
-  let unhappy = 0, waActive = 0, waInactive = 0, notJoined = 0, studentNotJoined = 0, notReplied = 0;
+  // Potential Escalations aggregation
+  let customerSupport = 0, lowISL = 0, waActive = 0, waInactive = 0, notJoined = 0, studentNotJoined = 0, notReplied = 0;
   poolStudents.forEach(s => {
-    if (s.islRating < 8 || s.hasEscalation) unhappy++;
+    if (s.hasEscalation) customerSupport++;
+    if (s.islRating < 8 && !s.hasEscalation) lowISL++;
     if ((WA_UNANSWERED[s.id] || []).length > 0) notReplied++;
     let hasJoined = false;
     (s.whatsappGroups || []).forEach(g => {
@@ -8680,18 +8790,16 @@ function renderMgrBoostInput() {
       <p class="text-[10px] text-blue-600">🏆 Best: <strong>${bestISL.name} · ${bestISL.today.isl}/5</strong></p>
     </div>
 
-    <!-- User Experience IMP -->
+    <!-- Potential Escalations IMP -->
     <div class="metric-card rounded-xl border p-3 cursor-pointer hover:shadow-md transition-shadow"
       style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
       onclick="openWAGroupDetailsDrawer()">
-      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">⭐ User Experience <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
+      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">🎯 Potential Escalations <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
       <div class="space-y-0.5">
-        ${subRow('Student Not Happy',  unhappy,         unhappy > 0 ? 'danger' : 'good')}
-        ${subRow('WA Active',          waActive,        waActive > 0 ? 'good' : 'warn')}
-        ${subRow('WA Inactive',        waInactive,      waInactive > 0 ? 'warn' : 'good')}
-        ${subRow('Not Joined',         notJoined,       notJoined > 0 ? 'danger' : 'good')}
-        ${subRow('Student Not Joined', studentNotJoined,studentNotJoined > 0 ? 'warn' : 'good')}
-        ${subRow('Not Replied',        notReplied,      notReplied > 0 ? 'danger' : 'good')}
+        ${subRow('Customer Support',        customerSupport, customerSupport > 0 ? 'danger' : 'good')}
+        ${subRow('Low ISL Feedback',        lowISL,          lowISL > 0 ? 'danger' : 'good')}
+        ${subRow('WA Summary',              waInactive + notJoined + notReplied + studentNotJoined, (waInactive + notJoined + notReplied + studentNotJoined) > 0 ? 'danger' : 'good')}
+        ${subRow('IS Pending and Breached', 0,               'good')}
       </div>
       <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
@@ -8851,39 +8959,6 @@ function renderMgrLeaderboard() {
       </div>
     </div>
   `).join('') : '<p class="text-center text-text-muted text-sm py-8">No data for selected filters.</p>';
-}
-
-function renderMgrPerfTable() {
-  const pool = getFilteredCounselorPool();
-  const el = document.getElementById('mgrPerfTable');
-  if (!el || !pool.length) return;
-
-  const metrics = ['calls','leads','stis','applications','deposits','lockins'];
-  const targets = { calls:50, leads:30, stis:10, applications:8, deposits:6, lockins:4 };
-  const labels  = { calls:'Calls', leads:'Leads', stis:'STI', applications:'Application', deposits:'Deposit', lockins:'Lock-in' };
-
-  el.innerHTML = `
-    <table class="w-full text-xs">
-      <thead><tr class="border-b border-border">
-        <th class="text-left py-2 font-semibold text-text-muted">Counsellor</th>
-        ${metrics.map(m => `<th class="text-center py-2 font-semibold text-text-muted">${labels[m]}</th>`).join('')}
-      </tr></thead>
-      <tbody class="divide-y divide-border">
-        ${pool.map(c => `<tr class="hover:bg-surface/50">
-          <td class="py-2 font-medium text-text-main">${escHtml(c.name.split(' ')[0])}</td>
-          ${metrics.map(m => {
-            const val = c.today[m]||0; const tgt = targets[m]||1; const pct = Math.round(val/tgt*100);
-            const color = pct>=80?'text-success':pct>=50?'text-accent':'text-danger';
-            return `<td class="py-2 text-center"><span class="font-semibold ${color}">${val}</span><span class="text-text-muted">/${tgt}</span></td>`;
-          }).join('')}
-        </tr>`).join('')}
-        <tr class="border-t-2 border-border bg-surface/40 font-bold">
-          <td class="py-2 text-text-main">TOTAL</td>
-          ${metrics.map(m => `<td class="py-2 text-center font-mono font-bold text-primary">${pool.reduce((s,c)=>s+(c.today[m]||0),0)}</td>`).join('')}
-        </tr>
-      </tbody>
-    </table>
-  `;
 }
 
 /* ── Tab 2 — Manager Render ── */
