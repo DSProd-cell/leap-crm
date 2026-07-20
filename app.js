@@ -6570,16 +6570,16 @@ function updateActionItemsBadge() {
 ═══════════════════════════════════════════════════════ */
 
 function renderAlertIcon() {
-  const wrap  = document.getElementById('alertIconWrap');
   const badge = document.getElementById('alertBadge');
-  const unresolved = UNHAPPY_ALERTS.filter(a => !a.resolved);
-  if (!unresolved.length) {
-    wrap.classList.add('hidden');
-    return;
-  }
-  wrap.classList.remove('hidden');
-  if (unresolved.length > 1) {
-    badge.textContent = unresolved.length > 9 ? '9+' : String(unresolved.length);
+  if (!badge) return;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const reminderCount = (state.ownTasks || []).filter(t => !t.done && t.date && t.date.slice(0,10) <= todayStr).length;
+  const counselorId = state.currentUser?.id;
+  const myStudents = STUDENTS.filter(s => s.counselorId === counselorId);
+  const unhappyCount = myStudents.filter(s => s.islRating < 8 || s.hasEscalation).length;
+  const total = reminderCount + unhappyCount;
+  if (total > 0) {
+    badge.textContent = total > 9 ? '9+' : String(total);
     badge.classList.remove('hidden');
   } else {
     badge.classList.add('hidden');
@@ -6600,32 +6600,93 @@ function toggleAlertDrawer() {
   }
 }
 
+function toggleNotifSection(id) {
+  const bodyId  = id === 'reminders' ? 'notifRemindersBody' : 'notifUnhappyBody';
+  const body    = document.getElementById(bodyId);
+  const chevron = document.getElementById(`chevron-notif-${id}`);
+  if (!body) return;
+  const isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+}
+
 function renderAlertDrawer() {
-  const el = document.getElementById('alertDrawerList');
-  if (!el) return;
-  const sorted = [...UNHAPPY_ALERTS].sort((a,b) => new Date(b.raisedAt) - new Date(a.raisedAt));
-  if (!sorted.length) {
-    el.innerHTML = '<p class="text-sm text-text-muted text-center py-6">No unhappy cases right now.</p>';
-    return;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const counselorId = state.currentUser?.id;
+
+  // ── Own Reminders ──────────────────────────────────────────
+  const remindersEl  = document.getElementById('notifRemindersBody');
+  const reminderBadge = document.getElementById('notifReminderBadge');
+  if (remindersEl) {
+    const due = (state.ownTasks || []).filter(t => !t.done && t.date && t.date.slice(0,10) <= todayStr);
+    if (reminderBadge) {
+      if (due.length) { reminderBadge.textContent = due.length; reminderBadge.classList.remove('hidden'); }
+      else reminderBadge.classList.add('hidden');
+    }
+    if (!due.length) {
+      remindersEl.innerHTML = '<p class="text-xs text-text-muted text-center py-5 px-4">No reminders due today.</p>';
+    } else {
+      const typeIcon = { call:'📞', message:'💬', payment:'💳', custom:'📌' };
+      remindersEl.innerHTML = due.map(t => {
+        const dt = new Date(t.date);
+        const timeStr = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+        const overdue  = t.date.slice(0,10) < todayStr;
+        return `<div class="flex items-start gap-3 px-4 py-3 hover:bg-surface/40 border-b border-border/50 last:border-0">
+          <span class="text-base flex-shrink-0 mt-0.5">${typeIcon[t.type] || '📌'}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-text-main truncate">${escHtml(t.title)}</p>
+            ${t.notes ? `<p class="text-[11px] text-text-muted truncate">${escHtml(t.notes)}</p>` : ''}
+            <p class="text-[10px] mt-0.5 ${overdue ? 'text-danger font-semibold' : 'text-accent'}">${overdue ? '⚡ Overdue · ' : '🕐 '}${timeStr}</p>
+          </div>
+        </div>`;
+      }).join('');
+    }
   }
-  el.innerHTML = sorted.map(alert => {
-    const d = new Date(alert.raisedAt);
-    const ds = d.toLocaleDateString('en-IN', { day:'numeric', month:'short' }) + ', ' +
-      d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-    const statusCls = alert.resolved ? 'bg-green-100 text-success' : 'bg-red-100 text-danger';
-    const statusTxt = alert.resolved ? 'Resolved' : 'Unresolved';
-    return `<div class="border border-border rounded-xl p-3 ${alert.resolved ? 'opacity-60' : ''}">
-      <div class="flex items-start justify-between gap-2 mb-1">
-        <p class="font-bold text-sm text-text-main">${escHtml(alert.studentName)}</p>
-        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusCls}">${statusTxt}</span>
-      </div>
-      <p class="text-xs text-text-muted mb-2 leading-snug">${escHtml(alert.reason)}</p>
-      <p class="text-[10px] text-text-muted mb-2">Raised: ${ds}</p>
-      <button onclick="openStudentDetail('${alert.leadId}');toggleAlertDrawer()"
-        class="text-xs font-semibold text-primary hover:underline cursor-pointer">View Lead →</button>
-      ${!alert.resolved ? `<button onclick="resolveAlert('${alert.id}')" class="ml-3 text-xs font-semibold text-success hover:underline cursor-pointer">Mark Resolved</button>` : ''}
-    </div>`;
-  }).join('');
+
+  // ── Unhappy Students ───────────────────────────────────────
+  const unhappyEl   = document.getElementById('notifUnhappyBody');
+  const unhappyBadge = document.getElementById('notifUnhappyBadge');
+  if (unhappyEl) {
+    const myStudents   = STUDENTS.filter(s => s.counselorId === counselorId);
+    const unhappyStudents = myStudents.filter(s => s.islRating < 8 || s.hasEscalation)
+      .sort((a,b) => (a.islRating || 10) - (b.islRating || 10));
+    if (unhappyBadge) {
+      if (unhappyStudents.length) { unhappyBadge.textContent = unhappyStudents.length; unhappyBadge.classList.remove('hidden'); }
+      else unhappyBadge.classList.add('hidden');
+    }
+    if (!unhappyStudents.length) {
+      unhappyEl.innerHTML = '<p class="text-xs text-text-muted text-center py-5 px-4">No unhappy students right now 🎉</p>';
+    } else {
+      unhappyEl.innerHTML = unhappyStudents.map(s => {
+        const ratingCls = s.islRating < 6 ? 'text-danger' : 'text-accent';
+        const followupDue = s.followup && s.followup <= todayStr;
+        return `<div class="flex items-start gap-3 px-4 py-3 hover:bg-danger/5 border-b border-danger/10 last:border-0 cursor-pointer"
+          onclick="openStudentDetail('${s.id}');toggleAlertDrawer()">
+          <div class="w-8 h-8 rounded-full bg-danger/10 flex items-center justify-center text-xs font-bold text-danger flex-shrink-0">
+            ${escHtml((s.name || '?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-text-main truncate">${escHtml(s.name)}</p>
+            <p class="text-[11px] text-text-muted">${escHtml(s.course || '—')} · ${escHtml(s.stage || '—')}</p>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-[10px] font-bold ${ratingCls}">ISL ${s.islRating}/10</span>
+              ${s.hasEscalation ? `<span class="text-[10px] font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded-full">Escalation</span>` : ''}
+              ${followupDue ? `<span class="text-[10px] font-bold text-accent">⚡ Follow-up due</span>` : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Total badge in drawer header ───────────────────────────
+  const totalBadge = document.getElementById('notifTotalBadge');
+  if (totalBadge) {
+    const total = ((state.ownTasks||[]).filter(t=>!t.done&&t.date&&t.date.slice(0,10)<=todayStr).length)
+      + (STUDENTS.filter(s=>s.counselorId===counselorId&&(s.islRating<8||s.hasEscalation)).length);
+    if (total) { totalBadge.textContent = total; totalBadge.classList.remove('hidden'); }
+    else totalBadge.classList.add('hidden');
+  }
 }
 
 function resolveAlert(id) {
