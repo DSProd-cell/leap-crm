@@ -1054,18 +1054,60 @@
           </div>
         </div>
 
-        <!-- Training Modules & Completion Reminders -->
+        <!-- Training Modules -->
         <div class="bg-white rounded-xl border border-border overflow-hidden">
           <button onclick="toggleSection('mgrTraining')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
-            <span class="font-bold text-text-main flex items-center gap-2">
-              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-              Training Modules &amp; Completion
-            </span>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-text-main text-sm">Training Modules</p>
+                <p class="text-xs text-text-muted">Videos, documents &amp; platform access</p>
+              </div>
+            </div>
             <svg id="chevron-mgrTraining" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </button>
-          <div id="body-mgrTraining" class="hidden px-5 pb-5">
-            <p class="text-xs text-text-muted mb-4 pt-2">Track lesson progress across your team. Use <strong>Send Reminder</strong> to push notification to reportees with incomplete modules.</p>
-            <div id="mgrTrainingList" class="space-y-3"></div>
+          <div id="body-mgrTraining" class="hidden px-5 pb-5 pt-3">
+            <!-- Module subcards -->
+            <div id="mgrTrainingModules" class="space-y-3"></div>
+
+            <!-- Platform Integrations -->
+            <div class="mt-4 pt-4 border-t border-border">
+              <p class="text-[10px] font-bold text-accent tracking-widest uppercase mb-3 flex items-center gap-1.5 px-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                Platform Integrations
+              </p>
+              <div class="space-y-3">
+                <a href="https://www.smartwinner.in" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-white hover:border-blue-300 hover:shadow-sm transition-all group">
+                  <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg flex-shrink-0">🏆</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="font-bold text-sm text-text-main">Smart Winner</p>
+                    <p class="text-xs text-text-muted">Competitive quiz &amp; ranking platform</p>
+                  </div>
+                  <span class="text-xs font-semibold text-blue-500 group-hover:underline flex items-center gap-1 flex-shrink-0">Open platform
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  </span>
+                </a>
+                <a href="https://www.newtonschool.co" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-white hover:border-purple-300 hover:shadow-sm transition-all group">
+                  <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-lg flex-shrink-0">⚡</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="font-bold text-sm text-text-main">Newton School</p>
+                    <p class="text-xs text-text-muted">Skill development and professional growth courses</p>
+                  </div>
+                  <span class="text-xs font-semibold text-purple-500 group-hover:underline flex items-center gap-1 flex-shrink-0">Open platform
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  </span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Team Completion Tracker -->
+            <div class="mt-4 pt-4 border-t border-border">
+              <p class="text-[10px] font-bold text-text-muted tracking-widest uppercase mb-3 px-1">Team Completion</p>
+              <p class="text-xs text-text-muted mb-3">Track lesson progress across your team. Use <strong>Send Reminder</strong> to push notification to reportees with incomplete modules.</p>
+              <div id="mgrTrainingList" class="space-y-3"></div>
+            </div>
           </div>
         </div>
 
@@ -1343,37 +1385,46 @@
       <div id="counsellorTrainingWrap" class="p-5 pt-0">
         <div class="bg-white rounded-xl border border-border overflow-hidden">
           <button onclick="toggleTrainingModulesSection()" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface transition-colors cursor-pointer">
-            <span class="font-bold text-text-main flex items-center gap-2">
-              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-              Training Modules
-            </span>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-text-main text-sm">Training Modules</p>
+                <p class="text-xs text-text-muted">Videos, documents &amp; platform access</p>
+              </div>
+            </div>
             <svg id="trainingModulesSectionChevron" class="w-4 h-4 text-text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </button>
           <div id="trainingModulesSectionBody" class="hidden px-5 pb-5">
           <div id="trainingModulesLD" class="space-y-3"></div>
 
           <!-- Platform Integrations -->
-          <div class="mt-5 pt-5 border-t border-border" id="platformIntegrations">
-            <p class="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
-              <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <div class="mt-4 pt-4 border-t border-border" id="platformIntegrations">
+            <p class="text-[10px] font-bold text-accent tracking-widest uppercase mb-3 flex items-center gap-1.5 px-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
               Platform Integrations
             </p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <a href="https://www.smartwinner.in" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-gradient-to-r from-blue-50 to-white hover:border-blue-400 hover:shadow-md transition-all group">
-                <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-xl flex-shrink-0">🏆</div>
+            <div class="space-y-3">
+              <a href="https://www.smartwinner.in" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-white hover:border-blue-300 hover:shadow-sm transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg flex-shrink-0">🏆</div>
                 <div class="flex-1 min-w-0">
-                  <p class="font-bold text-sm text-text-main group-hover:text-blue-600 transition-colors">Smart Winner</p>
-                  <p class="text-xs text-text-muted">Click to open platform</p>
+                  <p class="font-bold text-sm text-text-main">Smart Winner</p>
+                  <p class="text-xs text-text-muted">Competitive quiz &amp; ranking platform</p>
                 </div>
-                <svg class="w-4 h-4 text-text-muted group-hover:text-blue-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                <span class="text-xs font-semibold text-blue-500 group-hover:underline flex items-center gap-1 flex-shrink-0">Open platform
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </span>
               </a>
-              <a href="https://www.newtonschool.co" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-gradient-to-r from-purple-50 to-white hover:border-purple-400 hover:shadow-md transition-all group">
-                <div class="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">⚡</div>
+              <a href="https://www.newtonschool.co" target="_blank" rel="noopener" class="flex items-center gap-3 p-4 rounded-xl border border-border bg-white hover:border-purple-300 hover:shadow-sm transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-lg flex-shrink-0">⚡</div>
                 <div class="flex-1 min-w-0">
-                  <p class="font-bold text-sm text-text-main group-hover:text-purple-600 transition-colors">Newton School</p>
-                  <p class="text-xs text-text-muted">Click to open platform</p>
+                  <p class="font-bold text-sm text-text-main">Newton School</p>
+                  <p class="text-xs text-text-muted">Skill development and professional growth courses</p>
                 </div>
-                <svg class="w-4 h-4 text-text-muted group-hover:text-purple-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                <span class="text-xs font-semibold text-purple-500 group-hover:underline flex items-center gap-1 flex-shrink-0">Open platform
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </span>
               </a>
             </div>
           </div>
@@ -2070,6 +2121,6 @@
 <!-- Toast Container -->
 <div id="toastContainer" aria-live="polite" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
 
-<script src="app.js?v=1027"></script>
+<script src="app.js?v=1028"></script>
 </body>
 </html>
