@@ -1147,6 +1147,15 @@ function bootApp(role, email) {
   const standaloneEarners = document.getElementById('standaloneTopEarnersWrap');
   if (standaloneEarners) standaloneEarners.classList.toggle('hidden', isMgr);
 
+  // Earnings Summary: visible for counsellor + TL only; hidden for POD/SM/Director/ops_admin
+  const earningsWrap = document.getElementById('earningsSummaryWrap');
+  const earnedAsCounsellorBanner = document.getElementById('earnedAsCounsellorBanner');
+  if (earningsWrap) {
+    const showEarnings = role === 'counselor' || role === 'team_lead';
+    earningsWrap.classList.toggle('hidden', !showEarnings);
+    if (earnedAsCounsellorBanner) earnedAsCounsellorBanner.classList.toggle('hidden', role !== 'team_lead');
+  }
+
   renderAll();
   switchTab('tab1');
   // Show 10x banner immediately on every page after login

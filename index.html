@@ -768,7 +768,15 @@
       </div><!-- end mgrTab2Panel -->
 
       <!-- Earnings Summary -->
-      <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <section id="earningsSummaryWrap" class="hidden">
+        <!-- EARNED AS COUNSELLOR banner — shown for TL only -->
+        <div id="earnedAsCounsellorBanner" class="hidden mb-1">
+          <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest px-1 mb-2 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Earned as Counsellor
+          </p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <!-- Earned So Far — click to expand Incentive Breakdown -->
         <div class="bg-white rounded-xl border border-border overflow-hidden sm:col-span-2">
           <div class="p-5 cursor-pointer hover:bg-surface/40 transition-colors flex items-center justify-between" onclick="toggleSection('earnedSoFar')">
@@ -810,6 +818,7 @@
           <p class="font-mono text-3xl font-bold">₹85,000</p>
           <p class="text-xs text-white/80 mt-1">Total pipeline value → click to view</p>
         </div>
+        </div><!-- end inner grid -->
       </section>
 
       <!-- On Going Offers — collapsible, collapsed by default -->
@@ -2082,6 +2091,6 @@
 <!-- Toast Container -->
 <div id="toastContainer" aria-live="polite" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
 
-<script src="app.js?v=1029"></script>
+<script src="app.js?v=1030"></script>
 </body>
 </html>
