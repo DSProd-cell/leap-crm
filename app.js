@@ -813,7 +813,7 @@ let state = {
   botOpen: false,
   botActiveTab: 'chat',
   chatPanel: { unreadCount: 0, lastOpenedAt: null },
-  managerFilters: { pods:[], tls:[], counselors:[] },
+  managerFilters: { sms:[], pods:[], tls:[], counselors:[] },
   mgrLeaderView: 'counsellor',
   mgrLeaderPeriod: 'today',
   mgrEarnerView: 'counsellor',
@@ -940,7 +940,7 @@ function bootApp(role, email) {
   }
   state.role = role;
   // Reset manager filters on login
-  state.managerFilters = { pods:[], tls:[], counselors:[] };
+  state.managerFilters = { sms:[], pods:[], tls:[], counselors:[] };
 
   // Restore chat history for this user
   restoreHistory();
@@ -1136,6 +1136,10 @@ function bootApp(role, email) {
     const showMgrOffers = isMgr || role === 'ops_admin';
     mgrOffersWrap.classList.toggle('hidden', !showMgrOffers);
   }
+
+  // Hide standalone Top Earners for manager roles (they have mgrTopEarners in Tab 2)
+  const standaloneEarners = document.getElementById('standaloneTopEarnersWrap');
+  if (standaloneEarners) standaloneEarners.classList.toggle('hidden', isMgr);
 
   renderAll();
   switchTab('tab1');
@@ -8169,6 +8173,11 @@ function getFilteredCounselorPool() {
   const f = state.managerFilters;
   const myTLIds = getMyTLIds();
   let pool = COUNSELORS.filter(c => myTLIds.some(tlId => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id)));
+  if (f.sms.length > 0) {
+    const allowedPods = f.sms.flatMap(smId => HIERARCHY.smToPods[smId]||[]);
+    const allowedTLs  = allowedPods.flatMap(pid => HIERARCHY.podToTLs[pid]||[]);
+    pool = pool.filter(c => allowedTLs.some(tlId => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id)));
+  }
   if (f.pods.length > 0) {
     const allowedTLs = f.pods.flatMap(pid => HIERARCHY.podToTLs[pid]||[]);
     pool = pool.filter(c => allowedTLs.some(tlId => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id)));
@@ -8184,6 +8193,11 @@ function getFilteredTLPool() {
   const f = state.managerFilters;
   const myTLIds = getMyTLIds();
   let pool = TEAM_LEADS.filter(t => myTLIds.includes(t.id));
+  if (f.sms.length > 0) {
+    const allowedPods = f.sms.flatMap(smId => HIERARCHY.smToPods[smId]||[]);
+    const allowedTLs  = allowedPods.flatMap(pid => HIERARCHY.podToTLs[pid]||[]);
+    pool = pool.filter(t => allowedTLs.includes(t.id));
+  }
   if (f.pods.length > 0) {
     const allowedTLs = f.pods.flatMap(pid => HIERARCHY.podToTLs[pid]||[]);
     pool = pool.filter(t => allowedTLs.includes(t.id));
@@ -8205,11 +8219,24 @@ function getReporteeList() {
 
 function buildMgrFilterBar() {
   const role = state.role;
-  // Show/hide filter containers based on role
+  const smWrap  = document.getElementById('smFilterWrap');
   const podWrap = document.getElementById('podFilterWrap');
   const tlWrap  = document.getElementById('tlFilterWrap');
+  if (smWrap)  smWrap.classList.toggle('hidden',  role !== 'director');
   if (podWrap) podWrap.classList.toggle('hidden', !['senior_manager','director'].includes(role));
   if (tlWrap)  tlWrap.classList.toggle('hidden',  role === 'team_lead');
+
+  // Populate SM list (director only)
+  if (role === 'director') {
+    const smList = document.getElementById('smFilterList');
+    if (smList) {
+      smList.innerHTML = '';
+      const mySMIds = HIERARCHY.dirToSMs[state.currentUser.id] || [];
+      SENIOR_MANAGERS.filter(s => mySMIds.includes(s.id)).forEach(s =>
+        smList.appendChild(buildMgrCheckbox('sm', s.id, s.name))
+      );
+    }
+  }
 
   // Populate POD list
   if (['senior_manager','director'].includes(role)) {
@@ -8248,7 +8275,7 @@ function buildMgrCheckbox(type, id, label) {
   const div = document.createElement('div');
   div.className = 'flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface cursor-pointer';
   const f = state.managerFilters;
-  const arr = type === 'pod' ? f.pods : type === 'tl' ? f.tls : f.counselors;
+  const arr = type === 'sm' ? f.sms : type === 'pod' ? f.pods : type === 'tl' ? f.tls : f.counselors;
   const checked = arr.includes(id);
   div.innerHTML = `
     <input type="checkbox" id="mgrChk_${type}_${id}" ${checked ? 'checked' : ''} onchange="onMgrCheckChange('${type}',${id},this.checked)"
@@ -8259,32 +8286,34 @@ function buildMgrCheckbox(type, id, label) {
 
 function onMgrCheckChange(type, id, checked) {
   const f = state.managerFilters;
-  const arr = type === 'pod' ? f.pods : type === 'tl' ? f.tls : f.counselors;
+  const arr = type === 'sm' ? f.sms : type === 'pod' ? f.pods : type === 'tl' ? f.tls : f.counselors;
   if (checked && !arr.includes(id)) arr.push(id);
   else if (!checked) { const i = arr.indexOf(id); if (i > -1) arr.splice(i,1); }
 }
 
 function toggleMgrDropdown(type, e) {
   if (e) e.stopPropagation();
-  const ids = ['podFilterDropdown','tlFilterDropdown','clFilterDropdown'];
-  const map = { pod:'podFilterDropdown', tl:'tlFilterDropdown', cl:'clFilterDropdown' };
+  const ids = ['smFilterDropdown','podFilterDropdown','tlFilterDropdown','clFilterDropdown'];
+  const map = { sm:'smFilterDropdown', pod:'podFilterDropdown', tl:'tlFilterDropdown', cl:'clFilterDropdown' };
   const target = map[type];
   ids.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.classList.toggle('hidden', id !== target || !el.classList.contains('hidden') ? id !== target : false);
+    if (el && id !== target) el.classList.add('hidden');
   });
   const el = document.getElementById(target);
   if (el) el.classList.toggle('hidden');
 }
 
 function applyMgrFilter(type) {
-  document.getElementById(type === 'pod' ? 'podFilterDropdown' : type === 'tl' ? 'tlFilterDropdown' : 'clFilterDropdown')?.classList.add('hidden');
+  const dropMap = { sm:'smFilterDropdown', pod:'podFilterDropdown', tl:'tlFilterDropdown', cl:'clFilterDropdown' };
+  document.getElementById(dropMap[type] || 'clFilterDropdown')?.classList.add('hidden');
   updateMgrFilterLabels();
   renderMgrTab1(); renderMgrTab2(); renderMgrTicketSummary(); renderMgrTraining();
 }
 
 function clearMgrFilter(type) {
-  if (type === 'pod') state.managerFilters.pods = [];
+  if (type === 'sm') state.managerFilters.sms = [];
+  else if (type === 'pod') state.managerFilters.pods = [];
   else if (type === 'tl') state.managerFilters.tls = [];
   else state.managerFilters.counselors = [];
   buildMgrFilterBar();
@@ -8293,19 +8322,21 @@ function clearMgrFilter(type) {
 
 function updateMgrFilterLabels() {
   const f = state.managerFilters;
+  const smLbl  = document.getElementById('smFilterLabel');
   const podLbl = document.getElementById('podFilterLabel');
   const tlLbl  = document.getElementById('tlFilterLabel');
   const clLbl  = document.getElementById('clFilterLabel');
+  if (smLbl)  smLbl.textContent  = f.sms.length  ? `SM: ${f.sms.length} selected`   : 'SM: All';
   if (podLbl) podLbl.textContent = f.pods.length ? `POD: ${f.pods.length} selected` : 'POD: All';
   if (tlLbl)  tlLbl.textContent  = f.tls.length  ? `TL: ${f.tls.length} selected`   : 'TL: All';
   if (clLbl)  clLbl.textContent  = f.counselors.length ? `Counsellor: ${f.counselors.length} selected` : 'Counsellor: All';
   const badge = document.getElementById('mgrViewAllBadge');
-  if (badge) badge.classList.toggle('hidden', f.pods.length + f.tls.length + f.counselors.length > 0);
+  if (badge) badge.classList.toggle('hidden', f.sms.length + f.pods.length + f.tls.length + f.counselors.length > 0);
 }
 
 // Close dropdowns on outside click
 document.addEventListener('click', () => {
-  ['podFilterDropdown','tlFilterDropdown','clFilterDropdown'].forEach(id => {
+  ['smFilterDropdown','podFilterDropdown','tlFilterDropdown','clFilterDropdown'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
 });
@@ -8403,14 +8434,18 @@ function openMgrBoostPipeline(type) {
       </div>`;
   }).join('') || '<p class="text-sm text-text-muted text-center py-8">No students in this pipeline.</p>';
 
-  openDrawer(`
-    <div class="flex items-center gap-3 mb-0">
-      <span class="text-2xl">${def.emoji}</span>
-      <div>
-        <h2 class="text-lg font-bold text-text-main">${def.label}</h2>
-        <p class="text-xs text-text-muted">${students.length} students · ${pool.length} counsellors in view</p>
-      </div>
-    </div>`, `
+  const f = state.managerFilters;
+  const filterPills = [];
+  if (f.sms.length) filterPills.push(`SM: ${f.sms.map(id => SENIOR_MANAGERS.find(s=>s.id===id)?.name||id).join(', ')}`);
+  if (f.pods.length) filterPills.push(`POD: ${f.pods.map(id => POD_LEADERS.find(p=>p.id===id)?.name||id).join(', ')}`);
+  if (f.tls.length) filterPills.push(`TL: ${f.tls.map(id => TEAM_LEADS.find(t=>t.id===id)?.name||id).join(', ')}`);
+  if (f.counselors.length) filterPills.push(`Counsellor: ${f.counselors.map(id => COUNSELORS.find(c=>c.id===id)?.name||id).join(', ')}`);
+  const filterBar = filterPills.length
+    ? `<div class="flex flex-wrap gap-1.5 px-4 py-2 bg-surface border-b border-border">${filterPills.map(p => `<span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium border border-accent/20">${escHtml(p)}</span>`).join('')}</div>`
+    : `<div class="px-4 py-2 bg-surface border-b border-border"><span class="text-[10px] text-text-muted italic">Viewing all counsellors</span></div>`;
+
+  openDrawer(`${def.emoji} ${def.label} — ${students.length} students · ${pool.length} counsellors`, `
+    ${filterBar}
     <div class="divide-y divide-border">${rows}</div>`);
 }
 
