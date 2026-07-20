@@ -6966,43 +6966,26 @@ function renderSummaryScoreStrip() {
    FEATURE F — STAND UP METRICS TABLE
 ═══════════════════════════════════════════════════════ */
 
-const STANDUP_METRICS = [
-  { name:'Total Leads',               key:'leads'             },
-  { name:'ISL in 24 hrs',            key:'isl_24h',  tooltip:'Leads assigned → ISL done within 24 hrs' },
-  { name:'ISL Pending',               key:'isl_pending'       },
-  { name:'Total Lock In',             key:'lockins'           },
-  { name:'Total F2F',                 key:'f2f'               },
-  { name:'Total Walk In',             key:'walkin'            },
-  { name:'Total STI',                 key:'stis'              },
-  { name:'Total Deposits',            key:'deposits'          },
-  { name:'Total Visas',               key:'visas'             },
-  { name:'Revenue Collected',         key:'revenue_collected', isCurrency:true },
-  { name:'Referral % from CA',        key:'referral_pct',      isPctMetric:true, tooltip:'% of assigned students who referred someone' },
-];
+// Deterministic per-counsellor performance weight (~0.35–1.0, org average ≈1) — used to shift
+// filtered Performance Summary figures so filtering down to one person shows whether THEY are
+// hitting the business goal, not just an unchanging org-wide average.
+function counselorPerfWeight(c) {
+  const islN = (c.today.isl || 3.5) / 5;
+  const q1N  = (c.today.q1score || 60) / 100;
+  const q2N  = (c.today.q2score || 60) / 100;
+  return islN * 0.4 + q1N * 0.3 + q2N * 0.3;
+}
+const AVG_COUNSELOR_PERF_WEIGHT = COUNSELORS.reduce((s, c) => s + counselorPerfWeight(c), 0) / COUNSELORS.length;
 
-function generateStandupData(filters) {
-  const c = getCounselorData();
-  // Base daily actuals — use real data where available, mock the rest
-  const leadsBase = 30;
-  // ISL in 24 hrs = ~72% of leads assigned get an ISL call within 24 hours
-  const isl24hBase = Math.round(leadsBase * 0.72);
-  const base = {
-    leads: leadsBase, isl_24h: isl24hBase, isl_pending: Math.round(leadsBase * 0.28),
-    lockins: c.lockins, f2f: c.f2f, walkin: 2,
-    stis: c.stis, deposits: c.deposits, visas: 1,
-    revenue_collected: c.revenueCollected,
-    referral_pct: c.referralPct,
-  };
-  // Apply lightweight filter noise for realism
-  const multiplier  = filters.country    && filters.country    !== '' ? 0.6  : 1;
-  const locMult     = filters.location   === 'online'  ? 0.7  : filters.location === 'branch' ? 0.85 : 1;
-  const counselMult = filters.counsellor && filters.counsellor !== '' ? 0.5  : 1;
-  const tlMult      = filters.tl         && filters.tl         !== '' ? 0.75 : 1;
-  // Servicing type filter — Partner ≈ 55% of pipeline, Non-Partner ≈ 45%
-  const servMult    = filters.servicingType === 'partner'     ? 0.55
-                    : filters.servicingType === 'non-partner' ? 0.45 : 1;
-  // CA date filter — count students within range and scale
-  let caDateMult = 1;
+// Advanced-filter multiplier (Intake / Country / Servicing Type / CA Date Range) — approximates
+// what share of the pipeline matches the selected criteria; used to scale volume counts only
+// (rates/percentages are scaled by performance weight instead, see buildPerfRows).
+function computeExtraFilterMultiplier(filters) {
+  let m = 1;
+  if (filters.intake)  m *= 0.55;
+  if (filters.country) m *= 0.6;
+  if (filters.servicingType === 'partner')          m *= 0.55;
+  else if (filters.servicingType === 'non-partner') m *= 0.45;
   if (filters.caDateFrom || filters.caDateTo) {
     const from = filters.caDateFrom ? new Date(filters.caDateFrom) : new Date('2020-01-01');
     const to   = filters.caDateTo   ? new Date(filters.caDateTo)   : new Date('2099-12-31');
@@ -7011,47 +6994,103 @@ function generateStandupData(filters) {
       const d = new Date(s.caDate);
       return d >= from && d <= to;
     }).length;
-    caDateMult = STUDENTS.length ? matched / STUDENTS.length : 1;
+    m *= STUDENTS.length ? Math.max(0.05, matched / STUDENTS.length) : 1;
+  }
+  return m;
+}
+
+// Narrows a counsellor pool using the Performance Summary's own local Advanced Filters
+// (SM/POD/TL/Counsellor selects), on top of whatever the global top filter bar already applied.
+function narrowPoolByLocalFilters(pool, filters) {
+  let p = pool;
+  if (filters.sm) {
+    const smId = parseInt(filters.sm);
+    const allowedPods = HIERARCHY.smToPods[smId] || [];
+    const allowedTLs  = allowedPods.flatMap(pid => HIERARCHY.podToTLs[pid] || []);
+    p = p.filter(c => allowedTLs.some(tid => (HIERARCHY.tlToCounselors[tid] || []).includes(c.id)));
+  }
+  if (filters.pod) {
+    const podId = parseInt(filters.pod);
+    const allowedTLs = HIERARCHY.podToTLs[podId] || [];
+    p = p.filter(c => allowedTLs.some(tid => (HIERARCHY.tlToCounselors[tid] || []).includes(c.id)));
+  }
+  if (filters.tl) {
+    const tlId = parseInt(filters.tl);
+    p = p.filter(c => (HIERARCHY.tlToCounselors[tlId] || []).includes(c.id));
+  }
+  if (filters.counsellor) {
+    const clId = parseInt(filters.counsellor);
+    p = p.filter(c => c.id === clId);
+  }
+  return p;
+}
+
+const VOLUME_BASE = [
+  { name:'Leads',                      key:'leads',             isCurrency:false, aYTD:342,    aMTD:6,  W01:2,  M01:22    },
+  { name:'ISL Shared within 24 Hours', key:'isl_24h',           isCurrency:false, aYTD:202,    aMTD:2,  W01:2,  M01:14    },
+  { name:'F2F Done',                   key:'f2f',               isCurrency:false, aYTD:20,     aMTD:1,  W01:0,  M01:4     },
+  { name:'Lock In Done',               key:'lockins',           isCurrency:false, aYTD:66,     aMTD:0,  W01:0,  M01:1     },
+  { name:'STI Done',                   key:'stis',              isCurrency:false, aYTD:485,    aMTD:0,  W01:0,  M01:2     },
+  { name:'Admits',                     key:'admits',            isCurrency:false, aYTD:329,    aMTD:1,  W01:0,  M01:1     },
+  { name:'Deposits',                   key:'deposits',          isCurrency:false, aYTD:80,     aMTD:0,  W01:0,  M01:3     },
+  { name:'Visa Approved',              key:'visas',             isCurrency:false, aYTD:39,     aMTD:4,  W01:3,  M01:1     },
+  { name:'Revenue Generated',          key:'revenue_collected', isCurrency:true,  aYTD:272590, aMTD:0,  W01:0,  M01:12799 },
+  { name:'Pre ISL Drop',               key:'pre_isl_drop',      isCurrency:false, aYTD:34,     aMTD:2,  W01:0,  M01:1     },
+  { name:'Total Drop',                 key:'post_isl_drop',     isCurrency:false, aYTD:86,     aMTD:2,  W01:0,  M01:1     },
+];
+
+const FUNNEL_BASE = [
+  { name:'01.ISL Shared (24 hrs)',    tYTD:75, tMTD:80, aYTD:61,  aMTD:41,  Y:46, Y1:53, Y2:66, W0:0, W01:100, M01:40  },
+  { name:'02.CA->ISL (60 mins)',      tYTD:60, tMTD:60, aYTD:5,   aMTD:0,   Y:3,  Y1:23, Y2:14, W0:0, W01:0,   M01:0   },
+  { name:'03.CA->STI (14D)',          tYTD:13, tMTD:13, aYTD:54,  aMTD:0,   Y:7,  Y1:14, Y2:14, W0:0, W01:0,   M01:7   },
+  { name:'04.CA->F2F (14D)',          tYTD:30, tMTD:30, aYTD:53,  aMTD:0,   Y:16, Y1:7,  Y2:0,  W0:0, W01:0,   M01:13  },
+  { name:'05.CA->LockIn (14D)',       tYTD:20, tMTD:20, aYTD:25,  aMTD:0,   Y:5,  Y1:5,  Y2:0,  W0:0, W01:0,   M01:0   },
+  { name:'06.STI->Admit (30D)',       tYTD:85, tMTD:85, aYTD:101, aMTD:0,   Y:86, Y1:86, Y2:60, W0:0, W01:0,   M01:100 },
+  { name:'07.Admit->Deposits (14D)',  tYTD:35, tMTD:35, aYTD:20,  aMTD:0,   Y:7,  Y1:13, Y2:50, W0:0, W01:0,   M01:0   },
+  { name:'08.CA->Pre ISL Drop',       tYTD:5,  tMTD:5,  aYTD:100, aMTD:340, Y:5,  Y1:18, Y2:17, W0:0, W01:0,   M01:0,  isDropRate:true },
+  { name:'09.CA->Total Drop',         tYTD:7,  tMTD:7,  aYTD:200, aMTD:243, Y:14, Y1:40, Y2:55, W0:0, W01:0,   M01:0,  isDropRate:true },
+];
+
+// Builds Volume Metrics + Conversion Funnel rows scoped to the given counsellor pool and extra
+// advanced-filter multiplier. This is what makes the whole Performance Summary respond to the
+// top filters (SM/POD/TL/Counsellor) and Advanced Filters (Intake/Country/Servicing/CA Date):
+// targets stay fixed (they're the business goal, independent of headcount), while achieved
+// figures move with the pool — a stronger cohort/person pulls rates up, a weaker one pulls them down.
+function buildPerfRows(pool, extMult) {
+  const weights   = pool.map(c => counselorPerfWeight(c) / AVG_COUNSELOR_PERF_WEIGHT);
+  const avgWeight = weights.length ? weights.reduce((s, w) => s + w, 0) / weights.length : 1;
+  const volScale  = (pool.length / COUNSELORS.length) * extMult * avgWeight;
+
+  const volumeRows = VOLUME_BASE.map(m => ({
+    name: m.name, key: m.key, isCurrency: m.isCurrency, isPct: false,
+    tYTD: 0, tMTD: 0,
+    aYTD: Math.round(m.aYTD * volScale),
+    aMTD: Math.round(m.aMTD * volScale),
+    Y: 0, Y1: 0, Y2: 0, W0: 0,
+    W01: Math.round(m.W01 * volScale),
+    M01: Math.round(m.M01 * volScale),
+  }));
+
+  function scaledPct(base, isDropRate) {
+    const factor = isDropRate ? Math.max(0.2, 2 - avgWeight) : avgWeight;
+    return Math.max(0, Math.round(base * factor));
   }
 
-  return STANDUP_METRICS.map((m, i) => {
-    // Percentage metrics (e.g. Referral %) — show % directly, not day-multiplied
-    if (m.isPctMetric) {
-      const pctVal  = base[m.key] || 0;
-      const target  = TARGETS.referral;
-      const ytdPct  = target ? Math.round((pctVal / target) * 100) : 0;
-      const mtdPct  = ytdPct;
-      const ytdCls  = ytdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-      const mtdCls  = mtdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-      return { ...m,
-        tYTD: target, tMTD: target, aYTD: pctVal, aMTD: pctVal,
-        Y: pctVal, Y1: pctVal, Y2: pctVal, W0: pctVal, W01: pctVal, M01: pctVal,
-        ytdCls, mtdCls, isPct: true,
-      };
-    }
-    const daily  = Math.round((base[m.key] || 5) * multiplier * locMult * counselMult * tlMult * caDateMult * servMult);
-    const tYTD   = daily * 264;   // 264 working days
-    const tMTD   = daily * 22;
-    const aYTD   = Math.round(tYTD * [0.78,0.82,0.65,0.91,0.74,0.88,0.60,0.85,0.93,0.70,0.77][i % 11]);
-    const aMTD   = Math.round(tMTD * [0.82,0.88,0.70,0.95,0.78,0.91,0.65,0.88,0.96,0.74,0.80][i % 11]);
-    const Y      = Math.max(0, daily - Math.floor(Math.random() * 2));
-    const Y1     = Math.max(0, daily - Math.floor(Math.random() * 3));
-    const Y2     = Math.max(0, daily - Math.floor(Math.random() * 4));
-    const W0     = daily * 5;
-    const W01    = Math.round(daily * 5 * 0.9);
-    const M01    = Math.round(daily * 22 * 0.88);
-    const ytdPct = tYTD ? Math.round((aYTD / tYTD) * 100) : 0;
-    const mtdPct = tMTD ? Math.round((aMTD / tMTD) * 100) : 0;
-    const ytdCls = ytdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-    const mtdCls = mtdPct >= 100 ? 'standup-ach-green' : 'standup-ach-red';
-    return { ...m, tYTD, tMTD, aYTD, aMTD, Y, Y1, Y2, W0, W01, M01, ytdCls, mtdCls };
-  });
+  const funnelRows = FUNNEL_BASE.map((m, i) => ({
+    name: m.name, key: `funnel_${i}`, isPct: true, isCurrency: false,
+    isDropRate: m.isDropRate || false,
+    tYTD: m.tYTD, tMTD: m.tMTD,
+    aYTD: scaledPct(m.aYTD, m.isDropRate), aMTD: scaledPct(m.aMTD, m.isDropRate),
+    Y:    scaledPct(m.Y,    m.isDropRate), Y1:   scaledPct(m.Y1,   m.isDropRate), Y2: scaledPct(m.Y2, m.isDropRate),
+    W0:   scaledPct(m.W0,   m.isDropRate), W01:  scaledPct(m.W01,  m.isDropRate), M01: scaledPct(m.M01, m.isDropRate),
+  }));
+
+  return { volumeRows, funnelRows };
 }
 
 function renderStandupTable(filterData) {
   const filters = filterData || {
     intake:         document.getElementById('standupIntake')?.value            || '',
-    location:       document.getElementById('standupLocation')?.value          || '',
     country:        document.getElementById('standupCountry')?.value           || '',
     counsellor:     document.getElementById('standupCounsellorFilter')?.value  || '',
     tl:             document.getElementById('standupTLFilter')?.value           || '',
@@ -7066,57 +7105,13 @@ function renderStandupTable(filterData) {
   if (!tbody) return;
   if (empty) empty.classList.add('hidden');
 
-  const c = getCounselorData();
-  const allData = generateStandupData(filters);
-
-  // ── SECTION 1: VOLUME METRICS ──────────────────────────────
-  // New order: Leads → ISL 24h → F2F → Lock In → STI → Admits → Deposits → Visa → Revenue → Pre ISL Drop → Total Drop
-  const VOLUME_MAP = {
-    leads:             'Leads',
-    isl_24h:           'ISL Shared within 24 Hours',
-    f2f:               'F2F Done',
-    lockins:           'Lock In Done',
-    stis:              'STI Done',
-    deposits:          'Deposits',
-    visas:             'Visa Approved',
-    revenue_collected: 'Revenue Generated',
-  };
-  const VOLUME_ORDER = ['leads','isl_24h','f2f','lockins','stis','deposits','visas','revenue_collected'];
-
-  // Hardcoded volume actuals (targets not set = 0 for all)
-  const volumeRows = [
-    { name:'Leads',                      key:'leads',            isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:342,   aMTD:6,  Y:0, Y1:0, Y2:0, W0:0, W01:2,  M01:22 },
-    { name:'ISL Shared within 24 Hours', key:'isl_24h',          isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:202,   aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:2,  M01:14 },
-    { name:'F2F Done',                   key:'f2f',              isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:20,    aMTD:1,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:4  },
-    { name:'Lock In Done',               key:'lockins',          isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:66,    aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-    { name:'STI Done',                   key:'stis',             isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:485,   aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:2  },
-    { name:'Admits',                     key:'admits',           isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:329,   aMTD:1,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-    { name:'Deposits',                   key:'deposits',         isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:80,    aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:3  },
-    { name:'Visa Approved',              key:'visas',            isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:39,    aMTD:4,  Y:0, Y1:0, Y2:1, W0:0, W01:3,  M01:1  },
-    { name:'Revenue Generated',          key:'revenue_collected',isCurrency:true,  isPct:false, tYTD:0, tMTD:0, aYTD:272590,aMTD:0,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:12799 },
-    { name:'Pre ISL Drop',               key:'pre_isl_drop',     isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:34,    aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-    { name:'Total Drop',                 key:'post_isl_drop',    isCurrency:false, isPct:false, tYTD:0, tMTD:0, aYTD:86,    aMTD:2,  Y:0, Y1:0, Y2:0, W0:0, W01:0,  M01:1  },
-  ];
-
-  // ── SECTION 2: CONVERSION FUNNEL ───────────────────────────
-  const FUNNEL_DEF = [
-    { name:'01.ISL Shared (24 hrs)',     tYTD:75, tMTD:80, aYTD:61, aMTD:41, Y:46, Y1:53, Y2:66, W0:0, W01:100, M01:40 },
-    { name:'02.CA->ISL (60 mins)',       tYTD:60, tMTD:60, aYTD:5,  aMTD:0,  Y:3,  Y1:23, Y2:14, W0:0, W01:0,   M01:0  },
-    { name:'03.CA->STI (14D)',           tYTD:13, tMTD:13, aYTD:54, aMTD:0,  Y:7,  Y1:14, Y2:14, W0:0, W01:0,   M01:7  },
-    { name:'04.CA->F2F (14D)',           tYTD:30, tMTD:30, aYTD:53, aMTD:0,  Y:16, Y1:7,  Y2:0,  W0:0, W01:0,   M01:13 },
-    { name:'05.CA->LockIn (14D)',        tYTD:20, tMTD:20, aYTD:25, aMTD:0,  Y:5,  Y1:5,  Y2:0,  W0:0, W01:0,   M01:0  },
-    { name:'06.STI->Admit (30D)',        tYTD:85, tMTD:85, aYTD:101,aMTD:0,  Y:86, Y1:86, Y2:60, W0:0, W01:0,   M01:100},
-    { name:'07.Admit->Deposits (14D)',  tYTD:35, tMTD:35, aYTD:20, aMTD:0,  Y:7,  Y1:13, Y2:50, W0:0, W01:0,   M01:0  },
-    { name:'08.CA->Pre ISL Drop',        tYTD:5,  tMTD:5,  aYTD:100,aMTD:340,Y:5,  Y1:18, Y2:17, W0:0, W01:0,   M01:0,  isDropRate:true },
-    { name:'09.CA->Total Drop',          tYTD:7,  tMTD:7,  aYTD:200,aMTD:243,Y:14, Y1:40, Y2:55, W0:0, W01:0,   M01:0,  isDropRate:true },
-  ];
-  const funnelRows = FUNNEL_DEF.map((m, i) => ({
-    name: m.name, key: `funnel_${i}`, isPct: true, isCurrency: false,
-    isDropRate: m.isDropRate || false,
-    tYTD: m.tYTD, tMTD: m.tMTD,
-    aYTD: m.aYTD, aMTD: m.aMTD,
-    Y: m.Y, Y1: m.Y1, Y2: m.Y2, W0: m.W0, W01: m.W01, M01: m.M01,
-  }));
+  // Counsellor pool: global top filters (SM/POD/TL/Counsellor) narrowed further by this
+  // section's own Advanced Filters, plus Intake/Country/Servicing/CA-Date scaling volume counts.
+  const isMgrRole = ['team_lead','pod_leader','senior_manager','director','ops_admin'].includes(state.role);
+  let pool = isMgrRole ? getFilteredCounselorPool() : [state.currentUser];
+  pool = narrowPoolByLocalFilters(pool, filters);
+  const extMult = computeExtraFilterMultiplier(filters);
+  const { volumeRows, funnelRows } = buildPerfRows(pool, extMult);
 
   // ── STATUS COMPUTATION ─────────────────────────────────────
   function addStatus(rows) {
@@ -7150,26 +7145,33 @@ function renderStandupTable(filterData) {
     lastUpdEl.textContent = `Last updated: ${now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})} at ${now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
   }
 
-  // Highlight boxes for CA->STI (14D) and CA->LockIn (14D) — shown alongside the summary
-  function highlightBox(row, label) {
+  // Business-goal box for CA->STI (14D) and CA->LockIn (14D) — a distinct, highlighted panel
+  // (not just another table row) so it's obvious at a glance whether the filtered person/team
+  // is hitting these two priority targets.
+  function goalBox(row, label) {
     const isGood    = row.status === 'good';
     const isOnTrack = row.status === 'ontrack';
-    const bg  = isGood ? 'bg-green-50 border-green-300' : isOnTrack ? 'bg-amber-50 border-amber-300' : 'bg-red-50 border-red-300';
-    const txt = isGood ? 'text-green-800' : isOnTrack ? 'text-amber-800' : 'text-red-800';
+    const bg    = isGood ? 'bg-green-50 border-green-300' : isOnTrack ? 'bg-amber-50 border-amber-300' : 'bg-red-50 border-red-300';
+    const txt   = isGood ? 'text-green-800' : isOnTrack ? 'text-amber-800' : 'text-red-800';
+    const bar   = isGood ? 'bg-success' : isOnTrack ? 'bg-accent' : 'bg-danger';
     const statusLabel = isGood ? 'Good' : isOnTrack ? 'On Track' : 'Focus';
-    return `<div class="flex flex-col items-center justify-center text-center rounded-xl border ${bg} px-4 py-3">
-      <span class="text-xs font-bold ${txt} whitespace-nowrap">${label}</span>
-      <span class="text-[9px] ${txt} opacity-70 font-semibold uppercase tracking-wide mt-0.5">Tgt | Ach | Status</span>
-      <span class="text-base font-extrabold ${txt} mt-0.5">${row.tYTD}% | ${row.aYTD}% | ${statusLabel}</span>
+    const pct   = row.tYTD > 0 ? Math.min(100, Math.round((row.aYTD / row.tYTD) * 100)) : 0;
+    return `<div class="flex-1 min-w-[170px] h-full flex flex-col justify-center rounded-xl border ${bg} px-3.5 py-3">
+      <div class="text-[11px] font-bold ${txt} text-center whitespace-nowrap">${label}</div>
+      <div class="flex items-baseline justify-center gap-1 mt-1">
+        <span class="text-2xl font-extrabold ${txt} leading-none">${row.aYTD}%</span>
+        <span class="text-[10px] ${txt} opacity-70 font-medium">vs ${row.tYTD}% target <span class="text-sm font-bold opacity-100">(${statusLabel})</span></span>
+      </div>
+      <div class="w-full bg-white/70 rounded-full h-1.5 mt-2 overflow-hidden">
+        <div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div>
+      </div>
     </div>`;
   }
   function summaryChip(count, label, colorCls, dotCls, bgCls, borderCls) {
-    return `<div class="flex flex-col items-center justify-center text-center rounded-xl border ${bgCls} ${borderCls} px-4 py-3">
-      <span class="flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full ${dotCls} inline-block"></span>
-        <span class="font-extrabold ${colorCls} text-xl leading-none">${count}</span>
-      </span>
-      <span class="text-[10px] ${colorCls} font-semibold uppercase tracking-wide mt-0.5">${label}</span>
+    return `<div class="h-full flex items-center gap-1.5 rounded-lg border ${bgCls} ${borderCls} px-3 w-full">
+      <span class="w-1.5 h-1.5 rounded-full ${dotCls} inline-block flex-shrink-0"></span>
+      <span class="font-bold ${colorCls} text-sm leading-none">${count}</span>
+      <span class="text-[9px] ${colorCls} font-semibold uppercase tracking-wide">${label}</span>
     </div>`;
   }
   const caSTIRow    = funnelRows.find(r => r.name === '03.CA->STI (14D)');
@@ -7178,13 +7180,26 @@ function renderStandupTable(filterData) {
   const summaryEl = document.getElementById('standupStatusSummary');
   if (summaryEl) {
     summaryEl.innerHTML = `
-      <span class="block text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2 text-center">Summary</span>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        ${summaryChip(goodCnt,    'Good',     'text-success', 'bg-success', 'bg-green-50', 'border-green-200')}
-        ${summaryChip(ontrackCnt, 'On Track', 'text-accent',  'bg-accent',  'bg-amber-50', 'border-amber-200')}
-        ${summaryChip(focusCnt,   'Focus',    'text-danger',  'bg-danger',  'bg-red-50',   'border-red-200')}
-        ${caSTIRow    ? highlightBox(caSTIRow,    'CA > STI (14d)')    : ''}
-        ${caLockInRow ? highlightBox(caLockInRow, 'CA > Lockin (14d)') : ''}
+      <div class="flex flex-col lg:flex-row lg:items-stretch gap-3">
+        <div class="flex-shrink-0 lg:w-36 flex flex-col">
+          <span class="block text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Overall Summary</span>
+          <div class="flex-1 flex flex-col gap-1.5">
+            <div class="flex-1">${summaryChip(goodCnt,    'Good',     'text-success', 'bg-success', 'bg-green-50', 'border-green-200')}</div>
+            <div class="flex-1">${summaryChip(ontrackCnt, 'On Track', 'text-accent',  'bg-accent',  'bg-amber-50', 'border-amber-200')}</div>
+            <div class="flex-1">${summaryChip(focusCnt,   'Focus',    'text-danger',  'bg-danger',  'bg-red-50',   'border-red-200')}</div>
+          </div>
+        </div>
+        <div class="flex-1 rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/5 to-accent/5 px-3.5 py-2.5">
+          <div class="flex items-center justify-center gap-1.5 mb-2">
+            <span class="text-xs">🎯</span>
+            <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Important Business Goal</span>
+            <span class="text-[8px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            ${caSTIRow    ? goalBox(caSTIRow,    'CA > STI (14d)')    : ''}
+            ${caLockInRow ? goalBox(caLockInRow, 'CA > Lockin (14d)') : ''}
+          </div>
+        </div>
       </div>`;
   }
 
