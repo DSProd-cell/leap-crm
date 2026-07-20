@@ -2407,7 +2407,8 @@ function renderMetricCards() {
   const totalStudents = getViewingStudents().length;
 
   const allStudents = getViewingStudents();
-  const unhappyCount = allStudents.filter(s => s.islRating < 8 || s.hasEscalation).length;
+  const customerSupportCount = allStudents.filter(s => s.hasEscalation).length;
+  const lowISLCount = allStudents.filter(s => s.islRating < 8 && !s.hasEscalation).length;
   const deferralCount = getDeferralOpportunityStudents().length;
   const ownCount = state.ownTasks.filter(t => !t.done).length;
   const waStats = getWAGroupStats();
@@ -2428,7 +2429,7 @@ function renderMetricCards() {
       bestLabel: bestISL ? `🏆 Best: ${bestISL.name} · ${bestISL.value.toFixed(1)}/5` : '' },
     { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score,
       bestLabel: bestQ1 ? `🏆 Best: ${bestQ1.name} · ${bestQ1.value}%` : '' },
-    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats, unhappyCount },
+    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats, customerSupportCount, lowISLCount },
   ];
 
   // Own Tasks: Red+First if pending, Green+Last if clear
@@ -2444,7 +2445,10 @@ function renderMetricGrid(elId, metrics) {
     // ── Special: WA Group Details card ──
     if (m.isWAGroups) {
       const ws = m.waStats;
-      const uh = m.unhappyCount || 0;
+      const csCount = m.customerSupportCount || 0;
+      const islCount = m.lowISLCount || 0;
+      const waIssues = ws.inactive + ws.notJoined + ws.notReplied;
+      const breachedCount = 0; // no SLA/breach-tracking system yet
 
       function subRow(label, count, urgency) {
         // urgency: 'good'=green, 'warn'=amber, 'danger'=red, 'info'=blue
@@ -2465,13 +2469,12 @@ function renderMetricGrid(elId, metrics) {
           style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
           onclick="openWAGroupDetailsDrawer()">
           <div class="metric-deco"></div>
-          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">⭐ User Experience <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
+          <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">🎯 Potential Escalations <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
           <div class="space-y-0.5">
-            ${subRow('Student Not Happy', uh,          uh > 0 ? 'danger' : 'good')}
-            ${subRow('WA Active',         ws.active,   ws.active > 0 ? 'good' : 'warn')}
-            ${subRow('WA Inactive',       ws.inactive, ws.inactive > 0 ? 'warn' : 'good')}
-            ${subRow('Not Joined',        ws.notJoined,  ws.notJoined > 0 ? 'danger' : 'good')}
-            ${subRow('Not Replied',       ws.notReplied, ws.notReplied > 0 ? 'danger' : 'good')}
+            ${subRow('Customer Support',        csCount,       csCount > 0 ? 'danger' : 'good')}
+            ${subRow('Low ISL Feedback',        islCount,      islCount > 0 ? 'danger' : 'good')}
+            ${subRow('WA Summary',              waIssues,      waIssues > 0 ? 'danger' : 'good')}
+            ${subRow('IS Pending and Breached', breachedCount, breachedCount > 0 ? 'danger' : 'good')}
           </div>
           <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
@@ -7900,7 +7903,6 @@ function openWAGroupDetailsDrawer() {
   /* ── Student Not Happy sub-card ── */
   const lowRatingStudents  = students.filter(s => s.islRating < 8 && !s.hasEscalation);
   const escalationStudents2 = students.filter(s => s.hasEscalation);
-  const allUnhappy         = students.filter(s => s.islRating < 8 || s.hasEscalation);
 
   function _unhappyStudentCard(s) {
     const hasLowRating  = s.islRating < 8;
@@ -7932,16 +7934,39 @@ function openWAGroupDetailsDrawer() {
     </div>`;
   }
 
-  const unhappyInner = `
-    <p class="text-[11px] text-text-muted mb-2.5">Students who gave a low rating on ISL/F2F or raised a support ticket.</p>
-    ${allUnhappy.length === 0
-      ? `<p class="text-xs text-text-muted italic text-center py-6">No unhappy students right now 🎉</p>`
-      : allUnhappy.map(s => _unhappyStudentCard(s)).join('')}`;
+  const customerSupportInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Students who raised a query via support ticket.</p>
+    ${escalationStudents2.length === 0
+      ? `<p class="text-xs text-text-muted italic text-center py-6">No open support tickets right now 🎉</p>`
+      : escalationStudents2.map(s => _unhappyStudentCard(s)).join('')}`;
+
+  const lowISLInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Students who gave a low rating on ISL/F2F.</p>
+    ${lowRatingStudents.length === 0
+      ? `<p class="text-xs text-text-muted italic text-center py-6">No low ISL ratings right now 🎉</p>`
+      : lowRatingStudents.map(s => _unhappyStudentCard(s)).join('')}`;
+
+  const breachedInner = `
+    <p class="text-[11px] text-text-muted mb-2.5">Tasks that have crossed the 24-hour closure window.</p>
+    <p class="text-xs text-text-muted italic text-center py-6">No pending breached tasks right now 🎉</p>`;
+
+  // Card color: red/pink when there's something needing attention, green when clear
+  const statusCls = count => count > 0
+    ? { border: 'border-red-200',     bg: 'bg-red-50',     text: 'text-red-800' }
+    : { border: 'border-emerald-200', bg: 'bg-emerald-50', text: 'text-emerald-800' };
+
+  const waIssueCount = inactiveGroups.length + notJoinedGroups.length + notRepliedStudents.length + groupNotCreatedList.length;
+  const csCls  = statusCls(escalationStudents2.length);
+  const islCls = statusCls(lowRatingStudents.length);
+  const waCls  = statusCls(waIssueCount);
+  const brCls  = statusCls(0);
 
   const content = `
-    <p class="text-xs text-text-muted mb-4">Students who need your immediate attention — unhappy cases and WA group activity.</p>
-    ${channelCard('unhappy',   '🚨', 'Student Not Happy',   `${allUnhappy.length} students need attention`,  'border-red-200',     'bg-red-50',     'text-red-800',     unhappyInner)}
-    ${channelCard('non-voice', '💬', 'WA Summary',          'WhatsApp Group Activity',                       'border-emerald-200', 'bg-emerald-50', 'text-emerald-800', nonVoiceInner)}
+    <p class="text-xs text-text-muted italic mb-3">Note: All task must be closed with in 24 hours</p>
+    ${channelCard('unhappy',   '💬', 'Customer Support',        `${escalationStudents2.length} students need attention`, csCls.border,  csCls.bg,  csCls.text,  customerSupportInner)}
+    ${channelCard('low-isl',   '🚩', 'Low ISL Feedback',        `${lowRatingStudents.length} students need attention`,   islCls.border, islCls.bg, islCls.text, lowISLInner)}
+    ${channelCard('non-voice', '💬', 'WA Summary',              'WhatsApp Group Activity',                                waCls.border,  waCls.bg,  waCls.text,  nonVoiceInner)}
+    ${channelCard('breached',  '🚨', 'IS Pending and Breached', '0 students with pending breached tasks',                 brCls.border,  brCls.bg,  brCls.text,  breachedInner)}
   `;
 
   state.drawerMode = 'waGroup';
@@ -8566,10 +8591,11 @@ function renderMgrBoostInput() {
   const avgQ = Math.round(pool.reduce((s,c) => s + ((c.today.q1score+c.today.q2score)/2||0), 0) / pool.length);
   const bestQ = sorted[0];
 
-  // UX aggregation
-  let unhappy = 0, waActive = 0, waInactive = 0, notJoined = 0, studentNotJoined = 0, notReplied = 0;
+  // Potential Escalations aggregation
+  let customerSupport = 0, lowISL = 0, waActive = 0, waInactive = 0, notJoined = 0, studentNotJoined = 0, notReplied = 0;
   poolStudents.forEach(s => {
-    if (s.islRating < 8 || s.hasEscalation) unhappy++;
+    if (s.hasEscalation) customerSupport++;
+    if (s.islRating < 8 && !s.hasEscalation) lowISL++;
     if ((WA_UNANSWERED[s.id] || []).length > 0) notReplied++;
     let hasJoined = false;
     (s.whatsappGroups || []).forEach(g => {
@@ -8611,18 +8637,16 @@ function renderMgrBoostInput() {
       <p class="text-[10px] text-blue-600">🏆 Best: <strong>${bestISL.name} · ${bestISL.today.isl}/5</strong></p>
     </div>
 
-    <!-- User Experience IMP -->
+    <!-- Potential Escalations IMP -->
     <div class="metric-card rounded-xl border p-3 cursor-pointer hover:shadow-md transition-shadow"
       style="background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;"
       onclick="openWAGroupDetailsDrawer()">
-      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">⭐ User Experience <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
+      <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-emerald-700">🎯 Potential Escalations <span class="ml-1 text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">IMP</span></p>
       <div class="space-y-0.5">
-        ${subRow('Student Not Happy',  unhappy,         unhappy > 0 ? 'danger' : 'good')}
-        ${subRow('WA Active',          waActive,        waActive > 0 ? 'good' : 'warn')}
-        ${subRow('WA Inactive',        waInactive,      waInactive > 0 ? 'warn' : 'good')}
-        ${subRow('Not Joined',         notJoined,       notJoined > 0 ? 'danger' : 'good')}
-        ${subRow('Student Not Joined', studentNotJoined,studentNotJoined > 0 ? 'warn' : 'good')}
-        ${subRow('Not Replied',        notReplied,      notReplied > 0 ? 'danger' : 'good')}
+        ${subRow('Customer Support',        customerSupport, customerSupport > 0 ? 'danger' : 'good')}
+        ${subRow('Low ISL Feedback',        lowISL,          lowISL > 0 ? 'danger' : 'good')}
+        ${subRow('WA Summary',              waInactive + notJoined + notReplied + studentNotJoined, (waInactive + notJoined + notReplied + studentNotJoined) > 0 ? 'danger' : 'good')}
+        ${subRow('IS Pending and Breached', 0,               'good')}
       </div>
       <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
