@@ -7150,19 +7150,26 @@ function renderStandupTable(filterData) {
     lastUpdEl.textContent = `Last updated: ${now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})} at ${now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
   }
 
-  // Highlight boxes for CA->STI (14D) and CA->LockIn (14D) — shown next to the summary
+  // Highlight boxes for CA->STI (14D) and CA->LockIn (14D) — shown alongside the summary
   function highlightBox(row, label) {
     const isGood    = row.status === 'good';
     const isOnTrack = row.status === 'ontrack';
     const bg  = isGood ? 'bg-green-50 border-green-300' : isOnTrack ? 'bg-amber-50 border-amber-300' : 'bg-red-50 border-red-300';
     const txt = isGood ? 'text-green-800' : isOnTrack ? 'text-amber-800' : 'text-red-800';
     const statusLabel = isGood ? 'Good' : isOnTrack ? 'On Track' : 'Focus';
-    return `<div class="rounded-lg border ${bg} px-3 py-1.5 min-w-[200px]">
-      <div class="flex items-center justify-between gap-3">
-        <span class="text-[11px] font-bold ${txt} whitespace-nowrap">${label}</span>
-        <span class="text-[9px] ${txt} opacity-70 font-semibold whitespace-nowrap">Tgt | Ach | Status</span>
-      </div>
-      <div class="text-xs font-bold ${txt}">${row.tYTD}% | ${row.aYTD}% | ${statusLabel}</div>
+    return `<div class="flex flex-col items-center justify-center text-center rounded-xl border ${bg} px-4 py-3">
+      <span class="text-xs font-bold ${txt} whitespace-nowrap">${label}</span>
+      <span class="text-[9px] ${txt} opacity-70 font-semibold uppercase tracking-wide mt-0.5">Tgt | Ach | Status</span>
+      <span class="text-base font-extrabold ${txt} mt-0.5">${row.tYTD}% | ${row.aYTD}% | ${statusLabel}</span>
+    </div>`;
+  }
+  function summaryChip(count, label, colorCls, dotCls, bgCls, borderCls) {
+    return `<div class="flex flex-col items-center justify-center text-center rounded-xl border ${bgCls} ${borderCls} px-4 py-3">
+      <span class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full ${dotCls} inline-block"></span>
+        <span class="font-extrabold ${colorCls} text-xl leading-none">${count}</span>
+      </span>
+      <span class="text-[10px] ${colorCls} font-semibold uppercase tracking-wide mt-0.5">${label}</span>
     </div>`;
   }
   const caSTIRow    = funnelRows.find(r => r.name === '03.CA->STI (14D)');
@@ -7171,29 +7178,13 @@ function renderStandupTable(filterData) {
   const summaryEl = document.getElementById('standupStatusSummary');
   if (summaryEl) {
     summaryEl.innerHTML = `
-      <div class="flex items-start justify-between gap-3 flex-wrap">
-        <div class="flex items-center gap-3 flex-wrap">
-          <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Summary:</span>
-          <div class="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
-            <span class="w-2 h-2 rounded-full bg-success inline-block"></span>
-            <span class="font-bold text-success text-sm">${goodCnt}</span>
-            <span class="text-[10px] text-success font-medium ml-0.5">Good</span>
-          </div>
-          <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-            <span class="w-2 h-2 rounded-full bg-accent inline-block"></span>
-            <span class="font-bold text-accent text-sm">${ontrackCnt}</span>
-            <span class="text-[10px] text-accent font-medium ml-0.5">On Track</span>
-          </div>
-          <div class="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
-            <span class="w-2 h-2 rounded-full bg-danger inline-block"></span>
-            <span class="font-bold text-danger text-sm">${focusCnt}</span>
-            <span class="text-[10px] text-danger font-medium ml-0.5">Focus</span>
-          </div>
-        </div>
-        <div class="flex flex-col gap-1.5">
-          ${caSTIRow    ? highlightBox(caSTIRow,    'CA > STI (14d)')    : ''}
-          ${caLockInRow ? highlightBox(caLockInRow, 'CA > Lockin (14d)') : ''}
-        </div>
+      <span class="block text-[10px] font-bold text-text-muted uppercase tracking-widest mb-2 text-center">Summary</span>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        ${summaryChip(goodCnt,    'Good',     'text-success', 'bg-success', 'bg-green-50', 'border-green-200')}
+        ${summaryChip(ontrackCnt, 'On Track', 'text-accent',  'bg-accent',  'bg-amber-50', 'border-amber-200')}
+        ${summaryChip(focusCnt,   'Focus',    'text-danger',  'bg-danger',  'bg-red-50',   'border-red-200')}
+        ${caSTIRow    ? highlightBox(caSTIRow,    'CA > STI (14d)')    : ''}
+        ${caLockInRow ? highlightBox(caLockInRow, 'CA > Lockin (14d)') : ''}
       </div>`;
   }
 
