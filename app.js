@@ -960,10 +960,12 @@ function bootApp(role, email) {
   document.getElementById('headerName').textContent   = u.name.split(' ')[0];
 
   const isMgr = ['team_lead','pod_leader','senior_manager','director'].includes(role);
+  // Header/filter-bar tier — same top bar + filter access as Director, for TL/POD/SM/Director/Ops Admin
+  const isHeaderMgr = isMgr || role === 'ops_admin';
 
   // Reset all role-gated elements before applying role-specific visibility
-  ['counselorSelectorWrapper', 'managerFilterBar', 'tlCounsellorFilterBar', 'adminTabBtn',
-   'leaderViewToggleWrap', 'earnerViewToggleWrap',
+  ['counselorSelectorWrapper', 'globalFilterBar', 'tlCounsellorFilterBar', 'adminTabBtn',
+   'leaderViewToggleWrap', 'earnerViewToggleWrap', 'headerSearchBar', 'callMergeStatusWrap',
    'mgrTab1Panel', 'mgrTab2Panel', 'mgrTab3Panel'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
@@ -974,7 +976,7 @@ function bootApp(role, email) {
     document.getElementById('adminTabBtn').classList.remove('hidden');
   }
 
-  // Ops admin: show single counsellor selector in header
+  // Ops admin: keep single counsellor drill-down selector, now inside the global filter row
   if (role === 'ops_admin') {
     const wrapper = document.getElementById('counselorSelectorWrapper');
     if (wrapper) wrapper.classList.remove('hidden');
@@ -993,12 +995,30 @@ function bootApp(role, email) {
     if (evw) evw.classList.remove('hidden');
   }
 
-  // Manager roles: show filter bar + manager panels
-  if (isMgr) {
-    const mfb = document.getElementById('managerFilterBar');
-    if (mfb) mfb.classList.remove('hidden');
-    buildMgrFilterBar();
+  // TL/POD/SM/Director/Ops Admin: new header bar (search + view assigned leads + call merge status)
+  // and hide the gamification badge strip to match the manager-tier header layout
+  const headerSearchBar = document.getElementById('headerSearchBar');
+  const callMergeWrap   = document.getElementById('callMergeStatusWrap');
+  const badgeStrip      = document.getElementById('badgeStrip');
+  if (isHeaderMgr) {
+    if (headerSearchBar) headerSearchBar.classList.remove('hidden');
+    if (headerSearchBar) headerSearchBar.classList.add('flex');
+    if (callMergeWrap)   callMergeWrap.classList.remove('hidden');
+    if (badgeStrip)      badgeStrip.classList.add('hidden');
+  } else {
+    if (badgeStrip) badgeStrip.classList.remove('hidden');
+  }
 
+  // Manager-tier roles + Ops Admin: show global filter bar (POD/SM/TL/Counsellor — same access as Director)
+  if (isHeaderMgr) {
+    const gfb = document.getElementById('globalFilterBar');
+    if (gfb) gfb.classList.remove('hidden');
+    if (gfb) gfb.classList.add('flex');
+    buildMgrFilterBar();
+  }
+
+  // Manager roles: show manager aggregate panels
+  if (isMgr) {
     // Show manager-specific panels in all tabs
     ['mgrTab1Panel','mgrTab2Panel','mgrTab3Panel'].forEach(id => {
       const el = document.getElementById(id);
@@ -1045,7 +1065,9 @@ function bootApp(role, email) {
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
     if (boostOutputSection) boostOutputSection.classList.add('hidden');
     if (boostInputSection)  boostInputSection.classList.add('hidden');
-    if (standupSection)     standupSection.classList.add('hidden');
+    // Performance Summary scorecard (Target/Achieved/Status, incl. CA->STI/LockIn 14D rows)
+    // stays visible for manager roles too — see index.html:480 "TL: standup only"
+    if (standupSection)     standupSection.classList.remove('hidden');
     if (topPerfSection)     topPerfSection.classList.add('hidden');
   } else if (role === 'counselor') {
     if (reportCardSection) reportCardSection.classList.add('hidden');
@@ -1059,30 +1081,57 @@ function bootApp(role, email) {
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
   }
 
-  // Standup manager-only filters (Counsellor Name + TL Name)
+  // Standup manager-only filters (SM / POD / TL / Counsellor) — same access rules as the global filter bar
   if (role !== 'counselor') {
-    const cfSel = document.getElementById('standupCounsellorFilter');
-    const tlSel = document.getElementById('standupTLFilter');
+    const smSel  = document.getElementById('standupSMFilter');
+    const podSel = document.getElementById('standupPODFilter');
+    const tlSel  = document.getElementById('standupTLFilter');
+    const cfSel  = document.getElementById('standupCounsellorFilter');
+
+    if (smSel) {
+      const showSM = ['director','ops_admin'].includes(role);
+      smSel.classList.toggle('hidden', !showSM);
+      if (showSM) {
+        smSel.innerHTML = '<option value="">All Senior Managers</option>';
+        const mySMIds = role === 'ops_admin' ? SENIOR_MANAGERS.map(s => s.id) : (HIERARCHY.dirToSMs[state.currentUser.id] || []);
+        SENIOR_MANAGERS.filter(s => mySMIds.includes(s.id)).forEach(s => {
+          const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; smSel.appendChild(o);
+        });
+      }
+    }
+
+    if (podSel) {
+      const showPOD = ['senior_manager','director','ops_admin'].includes(role);
+      podSel.classList.toggle('hidden', !showPOD);
+      if (showPOD) {
+        podSel.innerHTML = '<option value="">All PODs</option>';
+        POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).forEach(p => {
+          const o = document.createElement('option'); o.value = p.id; o.textContent = p.name + ' (' + p.pod + ')'; podSel.appendChild(o);
+        });
+      }
+    }
+
+    if (tlSel) {
+      const showTL = role !== 'team_lead';
+      tlSel.classList.toggle('hidden', !showTL);
+      if (showTL) {
+        tlSel.innerHTML = '<option value="">All TLs</option>';
+        TEAM_LEADS.filter(t => getMyTLIds().includes(t.id)).forEach(t => {
+          const o = document.createElement('option'); o.value = t.id; o.textContent = t.name + ' (' + t.team + ')'; tlSel.appendChild(o);
+        });
+      }
+    }
+
     if (cfSel) {
       cfSel.classList.remove('hidden');
       cfSel.innerHTML = '<option value="">All Counsellors</option>';
       const cList = (role === 'team_lead')
         ? COUNSELORS.filter(c => c.team === state.currentUser.team)
-        : COUNSELORS;
+        : COUNSELORS.filter(c => getMyTLIds().some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
       cList.forEach(c => {
         const o = document.createElement('option');
         o.value = c.id; o.textContent = c.name;
         cfSel.appendChild(o);
-      });
-    }
-    if (tlSel && role === 'ops_admin') {
-      tlSel.classList.remove('hidden');
-      tlSel.innerHTML = '<option value="">All TLs</option>';
-      const tlList = COUNSELORS.filter(c => c.designation === 'Team Lead');
-      tlList.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.id; o.textContent = c.name;
-        tlSel.appendChild(o);
       });
     }
   }
@@ -7006,6 +7055,8 @@ function renderStandupTable(filterData) {
     country:        document.getElementById('standupCountry')?.value           || '',
     counsellor:     document.getElementById('standupCounsellorFilter')?.value  || '',
     tl:             document.getElementById('standupTLFilter')?.value           || '',
+    pod:            document.getElementById('standupPODFilter')?.value          || '',
+    sm:             document.getElementById('standupSMFilter')?.value           || '',
     caDateFrom:     document.getElementById('standupCADateFrom')?.value        || '',
     caDateTo:       document.getElementById('standupCADateTo')?.value          || '',
     servicingType:  document.getElementById('standupServicingType')?.value     || '',
@@ -7099,25 +7150,49 @@ function renderStandupTable(filterData) {
     lastUpdEl.textContent = `Last updated: ${now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})} at ${now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
   }
 
+  // Highlight boxes for CA->STI (14D) and CA->LockIn (14D) — shown next to the summary
+  function highlightBox(row, label) {
+    const isGood    = row.status === 'good';
+    const isOnTrack = row.status === 'ontrack';
+    const bg  = isGood ? 'bg-green-50 border-green-300' : isOnTrack ? 'bg-amber-50 border-amber-300' : 'bg-red-50 border-red-300';
+    const txt = isGood ? 'text-green-800' : isOnTrack ? 'text-amber-800' : 'text-red-800';
+    const statusLabel = isGood ? 'Good' : isOnTrack ? 'On Track' : 'Focus';
+    return `<div class="rounded-lg border ${bg} px-3 py-1.5 min-w-[200px]">
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-[11px] font-bold ${txt} whitespace-nowrap">${label}</span>
+        <span class="text-[9px] ${txt} opacity-70 font-semibold whitespace-nowrap">Tgt | Ach | Status</span>
+      </div>
+      <div class="text-xs font-bold ${txt}">${row.tYTD}% | ${row.aYTD}% | ${statusLabel}</div>
+    </div>`;
+  }
+  const caSTIRow    = funnelRows.find(r => r.name === '03.CA->STI (14D)');
+  const caLockInRow = funnelRows.find(r => r.name === '05.CA->LockIn (14D)');
+
   const summaryEl = document.getElementById('standupStatusSummary');
   if (summaryEl) {
     summaryEl.innerHTML = `
-      <div class="flex items-center gap-3 flex-wrap">
-        <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Summary:</span>
-        <div class="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
-          <span class="w-2 h-2 rounded-full bg-success inline-block"></span>
-          <span class="font-bold text-success text-sm">${goodCnt}</span>
-          <span class="text-[10px] text-success font-medium ml-0.5">Good</span>
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-[10px] font-bold text-text-muted uppercase tracking-widest">Summary:</span>
+          <div class="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
+            <span class="w-2 h-2 rounded-full bg-success inline-block"></span>
+            <span class="font-bold text-success text-sm">${goodCnt}</span>
+            <span class="text-[10px] text-success font-medium ml-0.5">Good</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+            <span class="w-2 h-2 rounded-full bg-accent inline-block"></span>
+            <span class="font-bold text-accent text-sm">${ontrackCnt}</span>
+            <span class="text-[10px] text-accent font-medium ml-0.5">On Track</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+            <span class="w-2 h-2 rounded-full bg-danger inline-block"></span>
+            <span class="font-bold text-danger text-sm">${focusCnt}</span>
+            <span class="text-[10px] text-danger font-medium ml-0.5">Focus</span>
+          </div>
         </div>
-        <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-          <span class="w-2 h-2 rounded-full bg-accent inline-block"></span>
-          <span class="font-bold text-accent text-sm">${ontrackCnt}</span>
-          <span class="text-[10px] text-accent font-medium ml-0.5">On Track</span>
-        </div>
-        <div class="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
-          <span class="w-2 h-2 rounded-full bg-danger inline-block"></span>
-          <span class="font-bold text-danger text-sm">${focusCnt}</span>
-          <span class="text-[10px] text-danger font-medium ml-0.5">Focus</span>
+        <div class="flex flex-col gap-1.5">
+          ${caSTIRow    ? highlightBox(caSTIRow,    'CA > STI (14d)')    : ''}
+          ${caLockInRow ? highlightBox(caLockInRow, 'CA > Lockin (14d)') : ''}
         </div>
       </div>`;
   }
@@ -7271,9 +7346,9 @@ function applyStandupFilters() {
 }
 
 function resetStandupFilters() {
-  const fields = ['standupIntake','standupCountry','standupCounsellorFilter','standupTLFilter','standupCADateFrom','standupCADateTo','standupServicingType'];
+  const fields = ['standupIntake','standupCountry','standupCounsellorFilter','standupTLFilter','standupPODFilter','standupSMFilter','standupCADateFrom','standupCADateTo','standupServicingType'];
   fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', caDateFrom:'', caDateTo:'', servicingType:'' });
+  renderStandupTable({ intake:'', location:'', country:'', counsellor:'', tl:'', pod:'', sm:'', caDateFrom:'', caDateTo:'', servicingType:'' });
 }
 
 /* ── Standup Achv drill-down ── */
@@ -7283,7 +7358,13 @@ function showStandupDrillDown(key, name, period, achv, target, isPct, isCurrency
   const numT = parseFloat(String(target).replace(/[^0-9.]/g,''));
   const pct  = numT > 0 ? Math.round((numA / numT) * 100) : (numA > 0 ? 100 : 0);
   const cls  = pct >= 80 ? 'text-success' : pct >= 50 ? 'text-accent' : 'text-danger';
-  const breakdown = COUNSELORS.slice(0, 5).map((c, i) => {
+
+  // Respect the global manager filters (SM/POD/TL/Counsellor) — same pool as the rest of the manager dashboard
+  const isMgrRole = ['team_lead','pod_leader','senior_manager','director','ops_admin'].includes(state.role);
+  const pool = isMgrRole ? getFilteredCounselorPool() : [state.currentUser];
+  const breakdownPool = pool.slice(0, 5);
+
+  const breakdown = breakdownPool.map((c, i) => {
     const factor = [1, 0.87, 0.72, 0.61, 0.45][i];
     const val = isCurrency ? Math.round(numA * factor) : isPct ? Math.round(numA * factor) : Math.round(numA * factor);
     const pctOf = numT > 0 ? Math.round((val / numT) * 100) : 0;
@@ -7298,14 +7379,16 @@ function showStandupDrillDown(key, name, period, achv, target, isPct, isCurrency
         <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${bc}">${pctOf}%</span>
       </div>
     </div>`;
-  }).join('');
+  }).join('') || '<p class="text-sm text-text-muted text-center py-6 italic">No counsellors match the current filters.</p>';
+
   const content = `
+    ${isMgrRole ? mgrFilterPillsBar() : ''}
     <div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
       <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">${name} — ${period}</p>
       <p class="font-mono text-3xl font-extrabold ${cls}">${fv(achv)}</p>
       <p class="text-xs text-text-muted mt-1">vs Target ${fv(target)} · <span class="${cls} font-semibold">${pct}% achieved</span></p>
     </div>
-    <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Counsellor Breakdown</p>
+    <p class="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-3">Counsellor Breakdown${pool.length > 5 ? ` (top 5 of ${pool.length})` : ''}</p>
     <div>${breakdown}</div>
     <p class="text-[10px] text-text-muted mt-4 text-center italic">* Breakdown is indicative based on proportional distribution</p>`;
   state.drawerMode     = 'standupDrillDown';
@@ -8279,7 +8362,7 @@ function getMyTLIds() {
   if (role === 'team_lead')      return [u.id];
   if (role === 'pod_leader')     return HIERARCHY.podToTLs[u.id] || [];
   if (role === 'senior_manager') return (HIERARCHY.smToPods[u.id]||[]).flatMap(p => HIERARCHY.podToTLs[p]||[]);
-  if (role === 'director')       return TEAM_LEADS.map(t => t.id);
+  if (role === 'director' || role === 'ops_admin') return TEAM_LEADS.map(t => t.id);
   return [];
 }
 
@@ -8287,7 +8370,7 @@ function getMyPodIds() {
   const u = state.currentUser; const role = state.role;
   if (role === 'pod_leader')     return [u.id];
   if (role === 'senior_manager') return HIERARCHY.smToPods[u.id] || [];
-  if (role === 'director')       return POD_LEADERS.map(p => p.id);
+  if (role === 'director' || role === 'ops_admin') return POD_LEADERS.map(p => p.id);
   return [];
 }
 
@@ -8344,16 +8427,16 @@ function buildMgrFilterBar() {
   const smWrap  = document.getElementById('smFilterWrap');
   const podWrap = document.getElementById('podFilterWrap');
   const tlWrap  = document.getElementById('tlFilterWrap');
-  if (smWrap)  smWrap.classList.toggle('hidden',  role !== 'director');
-  if (podWrap) podWrap.classList.toggle('hidden', !['senior_manager','director'].includes(role));
+  if (smWrap)  smWrap.classList.toggle('hidden',  !['director','ops_admin'].includes(role));
+  if (podWrap) podWrap.classList.toggle('hidden', !['senior_manager','director','ops_admin'].includes(role));
   if (tlWrap)  tlWrap.classList.toggle('hidden',  role === 'team_lead');
 
-  // Populate SM list (director only)
-  if (role === 'director') {
+  // Populate SM list (director + ops_admin see all SMs; ops_admin has no single director's hierarchy to scope to)
+  if (['director','ops_admin'].includes(role)) {
     const smList = document.getElementById('smFilterList');
     if (smList) {
       smList.innerHTML = '';
-      const mySMIds = HIERARCHY.dirToSMs[state.currentUser.id] || [];
+      const mySMIds = role === 'ops_admin' ? SENIOR_MANAGERS.map(s => s.id) : (HIERARCHY.dirToSMs[state.currentUser.id] || []);
       SENIOR_MANAGERS.filter(s => mySMIds.includes(s.id)).forEach(s =>
         smList.appendChild(buildMgrCheckbox('sm', s.id, s.name))
       );
@@ -8361,7 +8444,7 @@ function buildMgrFilterBar() {
   }
 
   // Populate POD list
-  if (['senior_manager','director'].includes(role)) {
+  if (['senior_manager','director','ops_admin'].includes(role)) {
     const podList = document.getElementById('podFilterList');
     if (podList) {
       podList.innerHTML = '';
@@ -8431,6 +8514,7 @@ function applyMgrFilter(type) {
   document.getElementById(dropMap[type] || 'clFilterDropdown')?.classList.add('hidden');
   updateMgrFilterLabels();
   renderMgrTab1(); renderMgrTab2(); renderMgrTicketSummary(); renderMgrTraining();
+  renderStandupTable();
 }
 
 function clearMgrFilter(type) {
@@ -8470,7 +8554,6 @@ function renderMgrTab1() {
   renderMgrBoostInput();
   renderMgrLeaderToggle();
   renderMgrLeaderboard();
-  renderMgrPerfTable();
 }
 
 function renderMgrBoostCards() {
@@ -8526,6 +8609,19 @@ function renderMgrBoostCards() {
   }).join('');
 }
 
+/* Builds the "SM: X · POD: Y ..." pills bar reflecting the current global manager filters (or "Viewing all counsellors" when none applied) */
+function mgrFilterPillsBar() {
+  const f = state.managerFilters;
+  const filterPills = [];
+  if (f.sms.length) filterPills.push(`SM: ${f.sms.map(id => SENIOR_MANAGERS.find(s=>s.id===id)?.name||id).join(', ')}`);
+  if (f.pods.length) filterPills.push(`POD: ${f.pods.map(id => POD_LEADERS.find(p=>p.id===id)?.name||id).join(', ')}`);
+  if (f.tls.length) filterPills.push(`TL: ${f.tls.map(id => TEAM_LEADS.find(t=>t.id===id)?.name||id).join(', ')}`);
+  if (f.counselors.length) filterPills.push(`Counsellor: ${f.counselors.map(id => COUNSELORS.find(c=>c.id===id)?.name||id).join(', ')}`);
+  return filterPills.length
+    ? `<div class="flex flex-wrap gap-1.5 px-4 py-2 bg-surface border-b border-border">${filterPills.map(p => `<span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium border border-accent/20">${escHtml(p)}</span>`).join('')}</div>`
+    : `<div class="px-4 py-2 bg-surface border-b border-border"><span class="text-[10px] text-text-muted italic">Viewing all counsellors</span></div>`;
+}
+
 function openMgrBoostPipeline(type) {
   const pool = getFilteredCounselorPool();
   const poolIds = new Set(pool.map(c => c.id));
@@ -8556,18 +8652,8 @@ function openMgrBoostPipeline(type) {
       </div>`;
   }).join('') || '<p class="text-sm text-text-muted text-center py-8">No students in this pipeline.</p>';
 
-  const f = state.managerFilters;
-  const filterPills = [];
-  if (f.sms.length) filterPills.push(`SM: ${f.sms.map(id => SENIOR_MANAGERS.find(s=>s.id===id)?.name||id).join(', ')}`);
-  if (f.pods.length) filterPills.push(`POD: ${f.pods.map(id => POD_LEADERS.find(p=>p.id===id)?.name||id).join(', ')}`);
-  if (f.tls.length) filterPills.push(`TL: ${f.tls.map(id => TEAM_LEADS.find(t=>t.id===id)?.name||id).join(', ')}`);
-  if (f.counselors.length) filterPills.push(`Counsellor: ${f.counselors.map(id => COUNSELORS.find(c=>c.id===id)?.name||id).join(', ')}`);
-  const filterBar = filterPills.length
-    ? `<div class="flex flex-wrap gap-1.5 px-4 py-2 bg-surface border-b border-border">${filterPills.map(p => `<span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium border border-accent/20">${escHtml(p)}</span>`).join('')}</div>`
-    : `<div class="px-4 py-2 bg-surface border-b border-border"><span class="text-[10px] text-text-muted italic">Viewing all counsellors</span></div>`;
-
   openDrawer(`${def.emoji} ${def.label} — ${students.length} students · ${pool.length} counsellors`, `
-    ${filterBar}
+    ${mgrFilterPillsBar()}
     <div class="divide-y divide-border">${rows}</div>`);
 }
 
@@ -8806,39 +8892,6 @@ function renderMgrLeaderboard() {
       </div>
     </div>
   `).join('') : '<p class="text-center text-text-muted text-sm py-8">No data for selected filters.</p>';
-}
-
-function renderMgrPerfTable() {
-  const pool = getFilteredCounselorPool();
-  const el = document.getElementById('mgrPerfTable');
-  if (!el || !pool.length) return;
-
-  const metrics = ['calls','leads','stis','applications','deposits','lockins'];
-  const targets = { calls:50, leads:30, stis:10, applications:8, deposits:6, lockins:4 };
-  const labels  = { calls:'Calls', leads:'Leads', stis:'STI', applications:'Application', deposits:'Deposit', lockins:'Lock-in' };
-
-  el.innerHTML = `
-    <table class="w-full text-xs">
-      <thead><tr class="border-b border-border">
-        <th class="text-left py-2 font-semibold text-text-muted">Counsellor</th>
-        ${metrics.map(m => `<th class="text-center py-2 font-semibold text-text-muted">${labels[m]}</th>`).join('')}
-      </tr></thead>
-      <tbody class="divide-y divide-border">
-        ${pool.map(c => `<tr class="hover:bg-surface/50">
-          <td class="py-2 font-medium text-text-main">${escHtml(c.name.split(' ')[0])}</td>
-          ${metrics.map(m => {
-            const val = c.today[m]||0; const tgt = targets[m]||1; const pct = Math.round(val/tgt*100);
-            const color = pct>=80?'text-success':pct>=50?'text-accent':'text-danger';
-            return `<td class="py-2 text-center"><span class="font-semibold ${color}">${val}</span><span class="text-text-muted">/${tgt}</span></td>`;
-          }).join('')}
-        </tr>`).join('')}
-        <tr class="border-t-2 border-border bg-surface/40 font-bold">
-          <td class="py-2 text-text-main">TOTAL</td>
-          ${metrics.map(m => `<td class="py-2 text-center font-mono font-bold text-primary">${pool.reduce((s,c)=>s+(c.today[m]||0),0)}</td>`).join('')}
-        </tr>
-      </tbody>
-    </table>
-  `;
 }
 
 /* ── Tab 2 — Manager Render ── */
