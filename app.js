@@ -68,9 +68,10 @@ const MGR_INCENTIVE = {
 };
 
 const MGR_OFFERS = [
-  { id:'m1', title:'Team STI Accelerator', desc:'Close 20+ team STIs this month → unlock ₹15,000 leadership bonus on top of your slab.', expiry:'31 Jul 2026', color:'blue' },
-  { id:'m2', title:'Cluster Revenue Trophy', desc:'Lead the highest revenue cluster this quarter → ₹25,000 bonus + Director\'s Club badge.', expiry:'30 Sep 2026', color:'blue' },
-  { id:'m3', title:'Zero Unhappy Challenge', desc:'Maintain 0 unresolved Unhappy flags for 30 days → ₹10,000 QC premium.', expiry:'31 Jul 2026', color:'blue' },
+  { id:'m1', title:'Team STI Accelerator', desc:'Close 20+ team STIs this month → unlock ₹15,000 leadership bonus on top of your slab.', expiry:'31 Jul 2026', tier:'team_lead' },
+  { id:'m2', title:'POD Revenue Trophy', desc:'Lead the highest revenue POD this quarter → ₹20,000 bonus + POD Excellence badge.', expiry:'30 Sep 2026', tier:'pod_leader' },
+  { id:'m3', title:'Cluster Revenue Trophy', desc:'Lead the highest revenue cluster this quarter → ₹25,000 bonus + Director\'s Club badge.', expiry:'30 Sep 2026', tier:'senior_manager' },
+  { id:'m4', title:'Zero Unhappy Challenge', desc:'Maintain 0 unresolved Unhappy flags for 30 days across your cluster → ₹10,000 QC premium.', expiry:'31 Jul 2026', tier:'senior_manager' },
 ];
 
 // FY 2026-27: Apr 2026 → Mar 2027 (current month = May 2026 = index 1)
@@ -1129,6 +1130,13 @@ function bootApp(role, email) {
     if (subTabBar) subTabBar.classList.remove('hidden');
   }
 
+  // Show Offers for Managers row for all manager roles and ops_admin
+  const mgrOffersWrap = document.getElementById('mgrManagerOffersWrap');
+  if (mgrOffersWrap) {
+    const showMgrOffers = isMgr || role === 'ops_admin';
+    mgrOffersWrap.classList.toggle('hidden', !showMgrOffers);
+  }
+
   renderAll();
   switchTab('tab1');
   // Show 10x banner immediately on every page after login
@@ -1189,6 +1197,9 @@ function renderAll() {
     renderMgrTab2();
     renderMgrTicketSummary();
     renderMgrTraining();
+  }
+  if (state.role === 'ops_admin') {
+    renderMgrManagerOffers();
   }
   renderTeamChat();
   renderWhatsappCoverage();
@@ -3307,10 +3318,6 @@ function renderCounsellorOffersRow() {
   const row = document.getElementById('counsellorOffersRow');
   const section = document.getElementById('counsellorOffersSection');
   if (!row || !section) return;
-
-  // Show section only for counsellors and team leads (not ops)
-  const role = state.user?.role || '';
-  section.classList.toggle('hidden', role === 'ops_admin');
 
   const activeOffers = COUNSELLOR_OFFERS.filter(o => o.active);
   if (!activeOffers.length) {
@@ -8605,31 +8612,32 @@ function renderMgrTab2() {
   setEl('mgrDepositPipeline', depPipe);
   setEl('mgrRevenuePipeline', revPipe);
 
-  // Ongoing Offers
-  const clOffersEl = document.getElementById('mgrCounsellorOffersRow');
-  if (clOffersEl) {
-    clOffersEl.innerHTML = OFFERS.filter(o => o.active).map(o => `
-      <div class="flex-shrink-0 w-64 rounded-xl border-2 border-orange-200 bg-orange-50 p-4">
-        <p class="font-bold text-accent text-sm mb-1">${escHtml(o.title)}</p>
-        <p class="text-xs text-text-muted mb-3 line-clamp-2">${escHtml(o.desc)}</p>
-        <p class="text-[10px] text-accent font-semibold">Expires: ${escHtml(o.expiry)}</p>
-      </div>
-    `).join('');
-  }
-  const mgrOffersEl = document.getElementById('mgrManagerOffersRow');
-  if (mgrOffersEl) {
-    mgrOffersEl.innerHTML = MGR_OFFERS.map(o => `
-      <div class="flex-shrink-0 w-64 rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
-        <p class="font-bold text-primary text-sm mb-1">${escHtml(o.title)}</p>
-        <p class="text-xs text-text-muted mb-3 line-clamp-2">${escHtml(o.desc)}</p>
-        <p class="text-[10px] text-primary font-semibold">Expires: ${escHtml(o.expiry)}</p>
-      </div>
-    `).join('');
-  }
+  // Ongoing Offers — manager row rendered via renderMgrManagerOffers()
+  renderMgrManagerOffers();
 
   // Top Earners
   renderMgrEarnerToggle();
   renderMgrEarnerLists();
+}
+
+function renderMgrManagerOffers() {
+  const el = document.getElementById('mgrManagerOffersRow');
+  if (!el) return;
+  const role = state.role;
+  // Tier visibility: TL sees TL-tier; POD sees TL+POD; SM/Director/OpsAdmin see all
+  const visibleTiers = role === 'team_lead'
+    ? ['team_lead']
+    : role === 'pod_leader'
+      ? ['team_lead', 'pod_leader']
+      : ['team_lead', 'pod_leader', 'senior_manager'];
+  const visible = MGR_OFFERS.filter(o => visibleTiers.includes(o.tier));
+  el.innerHTML = visible.map(o => `
+    <div class="flex-shrink-0 w-64 rounded-xl border-2 border-purple-200 bg-purple-50 p-4">
+      <p class="font-bold text-purple-700 text-sm mb-1">${escHtml(o.title)}</p>
+      <p class="text-xs text-text-muted mb-3 line-clamp-2">${escHtml(o.desc)}</p>
+      <p class="text-[10px] text-purple-600 font-semibold">Expires: ${escHtml(o.expiry)}</p>
+    </div>
+  `).join('') || '<p class="text-sm text-text-muted">No manager offers at the moment.</p>';
 }
 
 function renderMgrEarnerToggle() {

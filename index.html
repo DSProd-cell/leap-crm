@@ -728,40 +728,6 @@
           </div>
         </section>
 
-        <!-- Ongoing Offers — Counsellor + Manager splits -->
-        <section class="bg-white rounded-xl border border-border overflow-hidden">
-          <button onclick="toggleSection('mgrOffers')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
-            <h2 class="font-semibold text-text-main flex items-center gap-2">
-              <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
-              Ongoing Offers
-            </h2>
-            <svg id="chevron-mgrOffers" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <div id="body-mgrOffers" class="hidden px-5 pb-5 space-y-4">
-            <!-- Counsellor Offers (Orange) -->
-            <div class="rounded-xl border border-border overflow-hidden">
-              <div class="px-4 py-3 bg-orange-50 border-b border-orange-100 flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
-                <p class="text-xs font-bold text-accent uppercase tracking-wide">Offers for Counsellors</p>
-                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold text-orange-700 bg-orange-100 border border-orange-200">Active Now</span>
-              </div>
-              <div class="p-3">
-                <div id="mgrCounsellorOffersRow" class="offers-scroll flex gap-4 overflow-x-auto pb-1"></div>
-              </div>
-            </div>
-            <!-- Manager Offers (Blue) -->
-            <div class="rounded-xl border border-border overflow-hidden">
-              <div class="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-                <p class="text-xs font-bold text-primary uppercase tracking-wide">Offers for Managers</p>
-                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold text-primary bg-blue-100 border border-blue-200">Leadership Bonus</span>
-              </div>
-              <div class="p-3">
-                <div id="mgrManagerOffersRow" class="flex gap-4 overflow-x-auto pb-1"></div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <!-- Top Earners — Manager View with Role Toggle -->
         <section class="bg-white rounded-xl border border-border overflow-hidden">
@@ -843,7 +809,7 @@
         <button onclick="toggleSection('ongoingOffers')" class="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/60 transition-colors cursor-pointer">
           <h2 class="font-semibold text-text-main flex items-center gap-2">
             <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>
-            On Going Offers
+            Ongoing Offers
           </h2>
           <svg id="chevron-ongoingOffers" class="w-4 h-4 text-text-muted transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
@@ -867,6 +833,17 @@
             </div>
             <div class="p-3">
               <div id="counsellorOffersRow" class="flex gap-4 overflow-x-auto pb-1"></div>
+            </div>
+          </div>
+          <!-- Offers for Managers sub-card — hidden by default, shown for TL/POD/SM/Director/Ops Admin -->
+          <div id="mgrManagerOffersWrap" class="hidden rounded-xl border border-border overflow-hidden">
+            <div class="px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+              <p class="text-xs font-bold text-purple-600 uppercase tracking-wide">Offers for Managers</p>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold text-purple-700 bg-purple-100 border border-purple-200">Leadership Bonus</span>
+            </div>
+            <div class="p-3">
+              <div id="mgrManagerOffersRow" class="flex gap-4 overflow-x-auto pb-1"></div>
             </div>
           </div>
         </div>
@@ -2009,6 +1986,6 @@
 <!-- Toast Container -->
 <div id="toastContainer" aria-live="polite" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
 
-<script src="app.js?v=1017"></script>
+<script src="app.js?v=1019"></script>
 </body>
 </html>
