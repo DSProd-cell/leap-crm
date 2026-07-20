@@ -1147,6 +1147,14 @@ function bootApp(role, email) {
   const standaloneEarners = document.getElementById('standaloneTopEarnersWrap');
   if (standaloneEarners) standaloneEarners.classList.toggle('hidden', isMgr);
 
+  // My Earnings label — show role type
+  const myEarningsLabel = document.getElementById('mgrMyEarningsLabel');
+  if (myEarningsLabel) {
+    const roleLabels = { team_lead:'Team Lead', pod_leader:'POD Leader', senior_manager:'Senior Manager', director:'Director', ops_admin:'Ops Admin' };
+    const roleTag = roleLabels[role] || '';
+    myEarningsLabel.textContent = roleTag ? `My Earnings as ${roleTag}` : 'My Earnings';
+  }
+
   // Earnings Summary: visible for counsellor + TL only; hidden for POD/SM/Director/ops_admin
   const earningsWrap = document.getElementById('earningsSummaryWrap');
   const earnedAsCounsellorBanner = document.getElementById('earnedAsCounsellorBanner');
