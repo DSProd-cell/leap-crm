@@ -775,8 +775,14 @@ let infoHubState = {
 };
 
 let QUICK_LINK_URLS = {
-  session: 'https://meet.google.com/abc-defg-hij',
-  sheet:   'https://docs.google.com/spreadsheets/d/example',
+  session:      'https://meet.google.com/abc-defg-hij',
+  sheet:        'https://docs.google.com/spreadsheets/d/example',
+  sop:          '',
+  offerfollowup:'',
+  leadtransfer: '',
+  infohub:      '',
+  leappay:      '',
+  premiumpay:   '',
 };
 
 /* ── Stable seeds for leaderboard ── */
@@ -3393,6 +3399,17 @@ function openQuickLink(type) {
   else showToast('URL not configured. Ask your ops admin.', 'warning');
 }
 
+function openImpLink(type) {
+  const labels = {
+    sop: 'Raise SOP Request', offerfollowup: 'Offer Follow up',
+    leadtransfer: 'Raise Lead Transfer Request', infohub: 'Info-Hub',
+    leappay: 'LeapPay Payment Link', premiumpay: 'Premium Payment Links',
+  };
+  const url = QUICK_LINK_URLS[type];
+  if (url) { window.open(url, '_blank'); }
+  else showToast(`"${labels[type] || type}" URL not configured. Ask your ops admin.`, 'warning');
+}
+
 /* ═══════════════ IDLE 10X BANNER ═══════════════ */
 // Banner is shown immediately on login and stays visible on all tabs until dismissed.
 
@@ -3925,6 +3942,15 @@ function renderTrainingModules() {
 function toggleImpSheetSection() {
   const body = document.getElementById('impSheetBody');
   const chev = document.getElementById('impSheetChevron');
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function toggleMgrImpSheetSection() {
+  const body = document.getElementById('mgrImpSheetBody');
+  const chev = document.getElementById('mgrImpSheetChevron');
   if (!body) return;
   const isOpen = !body.classList.contains('hidden');
   body.classList.toggle('hidden', isOpen);
