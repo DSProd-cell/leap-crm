@@ -38,6 +38,41 @@ const OPS_USERS = [
   { id:11, name:'Nisha Agarwal', team:'Ops', role:'ops_admin', email:'nisha@edu.in', avatar:'NA', designation:'Ops Admin', joiningDate:'01 Jun 2020', manager:'—' },
 ];
 
+const POD_LEADERS = [
+  { id:20, name:'Arjun Mehta',  pod:'Alpha POD', role:'pod_leader', email:'arjun.m@edu.in', avatar:'AM', designation:'POD Leader',      joiningDate:'01 Jun 2020', manager:'Nisha Agarwal' },
+  { id:21, name:'Preethi Nair', pod:'Beta POD',  role:'pod_leader', email:'preethi@edu.in',  avatar:'PN', designation:'POD Leader',      joiningDate:'15 Aug 2020', manager:'Nisha Agarwal' },
+];
+const SENIOR_MANAGERS = [
+  { id:30, name:'Nisha Agarwal', role:'senior_manager', email:'nisha.sm@edu.in', avatar:'NA', designation:'Senior Manager', joiningDate:'01 Mar 2019', manager:'Rajesh Sharma' },
+];
+const DIRECTORS = [
+  { id:40, name:'Rajesh Sharma', role:'director', email:'rajesh@edu.in', avatar:'RS', designation:'Director', joiningDate:'01 Jan 2018', manager:'—' },
+];
+
+// Org hierarchy
+const HIERARCHY = {
+  podToTLs:      { 20:[9],    21:[10]   },
+  tlToCounselors:{ 9:[1,2,3,4], 10:[5,6,7,8] },
+  smToPods:      { 30:[20,21] },
+  dirToSMs:      { 40:[30]    },
+};
+
+// Mock manager incentive data
+const MGR_INCENTIVE = {
+  9:  { monthly:52000, alltime:480000, components:[{name:'Team STI Bonus',earned:22000},{name:'Deposit Slab',earned:18000},{name:'Revenue Override',earned:12000}] },
+  10: { monthly:48000, alltime:420000, components:[{name:'Team STI Bonus',earned:20000},{name:'Deposit Slab',earned:16000},{name:'Revenue Override',earned:12000}] },
+  20: { monthly:85000, alltime:920000, components:[{name:'POD Revenue Bonus',earned:40000},{name:'Team Multiplier',earned:30000},{name:'QC Bonus',earned:15000}] },
+  21: { monthly:78000, alltime:840000, components:[{name:'POD Revenue Bonus',earned:36000},{name:'Team Multiplier',earned:28000},{name:'QC Bonus',earned:14000}] },
+  30: { monthly:140000,alltime:1800000,components:[{name:'SM Cluster Bonus',earned:70000},{name:'Org Multiplier',earned:45000},{name:'Leadership Premium',earned:25000}] },
+  40: { monthly:220000,alltime:3200000,components:[{name:'Director Cluster Bonus',earned:120000},{name:'Org Performance',earned:70000},{name:'Strategic Bonus',earned:30000}] },
+};
+
+const MGR_OFFERS = [
+  { id:'m1', title:'Team STI Accelerator', desc:'Close 20+ team STIs this month → unlock ₹15,000 leadership bonus on top of your slab.', expiry:'31 Jul 2026', color:'blue' },
+  { id:'m2', title:'Cluster Revenue Trophy', desc:'Lead the highest revenue cluster this quarter → ₹25,000 bonus + Director\'s Club badge.', expiry:'30 Sep 2026', color:'blue' },
+  { id:'m3', title:'Zero Unhappy Challenge', desc:'Maintain 0 unresolved Unhappy flags for 30 days → ₹10,000 QC premium.', expiry:'31 Jul 2026', color:'blue' },
+];
+
 // FY 2026-27: Apr 2026 → Mar 2027 (current month = May 2026 = index 1)
 const MONTHLY_EARNINGS = [42000, 38400, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -777,6 +812,10 @@ let state = {
   botOpen: false,
   botActiveTab: 'chat',
   chatPanel: { unreadCount: 0, lastOpenedAt: null },
+  managerFilters: { pods:[], tls:[], counselors:[] },
+  mgrLeaderView: 'counsellor',
+  mgrLeaderPeriod: 'today',
+  mgrEarnerView: 'counsellor',
   botConversation: {
     flow: null,
     step: 0,
@@ -885,10 +924,22 @@ function bootApp(role, email) {
   } else if (role === 'team_lead') {
     state.currentUser = TEAM_LEADS.find(u => u.email === email) || TEAM_LEADS[0];
     state.viewingCounselorId = 1;
+  } else if (role === 'pod_leader') {
+    state.currentUser = POD_LEADERS.find(u => u.email === email) || POD_LEADERS[0];
+    state.viewingCounselorId = 1;
+  } else if (role === 'senior_manager') {
+    state.currentUser = SENIOR_MANAGERS.find(u => u.email === email) || SENIOR_MANAGERS[0];
+    state.viewingCounselorId = 1;
+  } else if (role === 'director') {
+    state.currentUser = DIRECTORS.find(u => u.email === email) || DIRECTORS[0];
+    state.viewingCounselorId = 1;
   } else {
     state.currentUser = OPS_USERS.find(u => u.email === email) || OPS_USERS[0];
     state.viewingCounselorId = 1;
   }
+  state.role = role;
+  // Reset manager filters on login
+  state.managerFilters = { pods:[], tls:[], counselors:[] };
 
   // Restore chat history for this user
   restoreHistory();
@@ -901,9 +952,12 @@ function bootApp(role, email) {
   document.getElementById('headerAvatar').textContent = u.avatar || initials(u.name);
   document.getElementById('headerName').textContent   = u.name.split(' ')[0];
 
+  const isMgr = ['team_lead','pod_leader','senior_manager','director'].includes(role);
+
   // Reset all role-gated elements before applying role-specific visibility
-  ['counselorSelectorWrapper', 'tlCounsellorFilterBar', 'adminTabBtn',
-   'leaderViewToggleWrap', 'earnerViewToggleWrap'].forEach(id => {
+  ['counselorSelectorWrapper', 'managerFilterBar', 'tlCounsellorFilterBar', 'adminTabBtn',
+   'leaderViewToggleWrap', 'earnerViewToggleWrap',
+   'mgrTab1Panel', 'mgrTab2Panel', 'mgrTab3Panel'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -913,65 +967,87 @@ function bootApp(role, email) {
     document.getElementById('adminTabBtn').classList.remove('hidden');
   }
 
-  // Counselor selector in header — visible for TL and ops_admin, NEVER for counselor
-  if (role === 'team_lead' || role === 'ops_admin') {
+  // Ops admin: show single counsellor selector in header
+  if (role === 'ops_admin') {
     const wrapper = document.getElementById('counselorSelectorWrapper');
-    wrapper.classList.remove('hidden');
+    if (wrapper) wrapper.classList.remove('hidden');
     const sel = document.getElementById('counselorSelector');
-    sel.innerHTML = '';
-    // TL sees only their team's counsellors; ops_admin sees all
-    const cList = (role === 'team_lead')
-      ? COUNSELORS.filter(c => c.team === state.currentUser.team)
-      : COUNSELORS;
-    cList.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = role === 'ops_admin' ? c.name + ' (' + c.team + ')' : c.name;
-      sel.appendChild(opt);
-    });
-    sel.value = state.viewingCounselorId;
-  }
-
-  // TL: also show the Tab 1 filter bar as a persistent "you are viewing" indicator
-  if (role === 'team_lead') {
-    const bar = document.getElementById('tlCounsellorFilterBar');
-    if (bar) bar.classList.remove('hidden');
-    // Keep the Tab 1 dropdown in sync with the header selector
-    const tlSel = document.getElementById('tlCounsellorSelect');
-    if (tlSel) {
-      tlSel.innerHTML = '';
-      const cList = COUNSELORS.filter(c => c.team === state.currentUser.team);
-      cList.forEach(c => {
+    if (sel) {
+      sel.innerHTML = '';
+      COUNSELORS.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = c.name;
-        tlSel.appendChild(opt);
+        opt.textContent = c.name + ' (' + c.team + ')';
+        sel.appendChild(opt);
       });
-      tlSel.value = state.viewingCounselorId;
+      sel.value = state.viewingCounselorId;
     }
-    // Show the leaderboard view toggle (tab1 Top Performers)
-    const lvw = document.getElementById('leaderViewToggleWrap');
-    if (lvw) lvw.classList.remove('hidden');
-    // Show the earner view toggle (tab2 Top Earners)
     const evw = document.getElementById('earnerViewToggleWrap');
     if (evw) evw.classList.remove('hidden');
   }
 
-  if (role === 'ops_admin') {
-    // Show earner view toggle for ops too
-    const evw = document.getElementById('earnerViewToggleWrap');
-    if (evw) evw.classList.remove('hidden');
+  // Manager roles: show filter bar + manager panels
+  if (isMgr) {
+    const mfb = document.getElementById('managerFilterBar');
+    if (mfb) mfb.classList.remove('hidden');
+    buildMgrFilterBar();
+
+    // Show manager-specific panels in all tabs
+    ['mgrTab1Panel','mgrTab2Panel','mgrTab3Panel'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    });
+
+    // TL: show drill-down counsellor bar in Tab 1
+    if (role === 'team_lead') {
+      const bar = document.getElementById('tlCounsellorFilterBar');
+      if (bar) bar.classList.remove('hidden');
+      const tlSel = document.getElementById('tlCounsellorSelect');
+      if (tlSel) {
+        tlSel.innerHTML = '<option value="">View All (Aggregate)</option>';
+        COUNSELORS.filter(c => c.team === state.currentUser.team).forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id; opt.textContent = c.name;
+          tlSel.appendChild(opt);
+        });
+      }
+    }
+
+    // Populate assignee dropdown for reminders
+    const assignSel = document.getElementById('mgrReminderAssignee');
+    if (assignSel) {
+      assignSel.innerHTML = '<option value="self">Myself</option>';
+      getReporteeList().forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id; opt.textContent = r.name + ' (' + r.designation + ')';
+        assignSel.appendChild(opt);
+      });
+    }
   }
 
   // Role-aware Scorecard & Performance Summary visibility
   const reportCardSection = document.getElementById('reportCardSection');
   const standupScoreStrip = document.getElementById('standupScoreStrip');
-  if (role === 'counselor') {
-    // Counsellor: hide standalone scorecard, show scorecard strip inside Performance Summary
+  // Hide the counsellor-only boost cards section for manager roles
+  const boostOutputSection = document.getElementById('boostCardsGrid')?.closest('section');
+  const boostInputSection  = document.getElementById('volumeMetrics')?.closest('section');
+  const standupSection     = document.getElementById('body-standup')?.closest('section');
+  const topPerfSection     = document.getElementById('body-topPerformers')?.closest('section');
+  if (isMgr) {
+    if (reportCardSection) reportCardSection.classList.add('hidden');
+    if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
+    if (boostOutputSection) boostOutputSection.classList.add('hidden');
+    if (boostInputSection)  boostInputSection.classList.add('hidden');
+    if (standupSection)     standupSection.classList.add('hidden');
+    if (topPerfSection)     topPerfSection.classList.add('hidden');
+  } else if (role === 'counselor') {
     if (reportCardSection) reportCardSection.classList.add('hidden');
     if (standupScoreStrip) standupScoreStrip.classList.remove('hidden');
-  } else if (role === 'team_lead') {
-    // TL: hide scorecard and scorecard strip
+    if (boostOutputSection) boostOutputSection.classList.remove('hidden');
+    if (boostInputSection)  boostInputSection.classList.remove('hidden');
+    if (standupSection)     standupSection.classList.remove('hidden');
+    if (topPerfSection)     topPerfSection.classList.remove('hidden');
+  } else {
     if (reportCardSection) reportCardSection.classList.add('hidden');
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
   }
@@ -1029,7 +1105,7 @@ function bootApp(role, email) {
   if (ldInfoHubBtn) {
     ldInfoHubBtn.textContent = role === 'counselor' ? 'My Tickets' : 'Info Hub';
   }
-  // Ensure correct panel is visible on load for counsellor
+  // Ensure correct panel is visible on load
   const ticketsPanel = document.getElementById('ldPanelCounsellorTickets');
   const infoHubPanel = document.getElementById('ldPanelInfohub');
   const subTabBar    = document.getElementById('ldSubTabBar');
@@ -1038,6 +1114,15 @@ function bootApp(role, email) {
     if (infoHubPanel) infoHubPanel.classList.add('hidden');
     if (subTabBar) subTabBar.classList.add('hidden');
     renderCounsellorTicketSummary();
+  } else if (isMgr) {
+    if (ticketsPanel) ticketsPanel.classList.add('hidden');
+    if (infoHubPanel) infoHubPanel.classList.add('hidden');
+    if (subTabBar) subTabBar.classList.add('hidden');
+    // Hide counsellor-only IMP Sheet and Training Modules
+    const clImpSheet  = document.getElementById('counsellorImpSheetWrap');
+    const clTraining  = document.getElementById('counsellorTrainingWrap');
+    if (clImpSheet)  clImpSheet.classList.add('hidden');
+    if (clTraining)  clTraining.classList.add('hidden');
   } else {
     if (ticketsPanel) ticketsPanel.classList.add('hidden');
     if (infoHubPanel) infoHubPanel.classList.remove('hidden');
@@ -1099,6 +1184,12 @@ function onCounselorChange() {
 function renderAll() {
   renderBadgeStrip();
   renderBoostCards();
+  if (['team_lead','pod_leader','senior_manager','director'].includes(state.role)) {
+    renderMgrTab1();
+    renderMgrTab2();
+    renderMgrTicketSummary();
+    renderMgrTraining();
+  }
   renderTeamChat();
   renderWhatsappCoverage();
   renderMetricCards();
@@ -8039,3 +8130,680 @@ function handleIncentiveDetailsStep(userText) {
     }
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   MANAGER ROLES — Helper functions & Render functions
+══════════════════════════════════════════════════════════════════ */
+
+function isManagerRole(r) {
+  return ['team_lead','pod_leader','senior_manager','director'].includes(r || state.role);
+}
+
+/* ── Hierarchy helpers ── */
+
+function getMyTLIds() {
+  const u = state.currentUser; const role = state.role;
+  if (role === 'team_lead')      return [u.id];
+  if (role === 'pod_leader')     return HIERARCHY.podToTLs[u.id] || [];
+  if (role === 'senior_manager') return (HIERARCHY.smToPods[u.id]||[]).flatMap(p => HIERARCHY.podToTLs[p]||[]);
+  if (role === 'director')       return TEAM_LEADS.map(t => t.id);
+  return [];
+}
+
+function getMyPodIds() {
+  const u = state.currentUser; const role = state.role;
+  if (role === 'pod_leader')     return [u.id];
+  if (role === 'senior_manager') return HIERARCHY.smToPods[u.id] || [];
+  if (role === 'director')       return POD_LEADERS.map(p => p.id);
+  return [];
+}
+
+function getFilteredCounselorPool() {
+  const f = state.managerFilters;
+  const myTLIds = getMyTLIds();
+  let pool = COUNSELORS.filter(c => myTLIds.some(tlId => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id)));
+  if (f.pods.length > 0) {
+    const allowedTLs = f.pods.flatMap(pid => HIERARCHY.podToTLs[pid]||[]);
+    pool = pool.filter(c => allowedTLs.some(tlId => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id)));
+  }
+  if (f.tls.length > 0) {
+    pool = pool.filter(c => f.tls.some(tlId => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id)));
+  }
+  if (f.counselors.length > 0) pool = pool.filter(c => f.counselors.includes(c.id));
+  return pool;
+}
+
+function getFilteredTLPool() {
+  const f = state.managerFilters;
+  const myTLIds = getMyTLIds();
+  let pool = TEAM_LEADS.filter(t => myTLIds.includes(t.id));
+  if (f.pods.length > 0) {
+    const allowedTLs = f.pods.flatMap(pid => HIERARCHY.podToTLs[pid]||[]);
+    pool = pool.filter(t => allowedTLs.includes(t.id));
+  }
+  if (f.tls.length > 0) pool = pool.filter(t => f.tls.includes(t.id));
+  return pool;
+}
+
+function getReporteeList() {
+  const role = state.role; const u = state.currentUser;
+  const counselors = getFilteredCounselorPool();
+  const tls = getFilteredTLPool();
+  if (role === 'team_lead') return counselors;
+  if (role === 'pod_leader') return [...tls, ...counselors];
+  return [...SENIOR_MANAGERS.filter(s => s.id !== u.id), ...POD_LEADERS, ...tls, ...counselors];
+}
+
+/* ── Header Filter Bar ── */
+
+function buildMgrFilterBar() {
+  const role = state.role;
+  // Show/hide filter containers based on role
+  const podWrap = document.getElementById('podFilterWrap');
+  const tlWrap  = document.getElementById('tlFilterWrap');
+  if (podWrap) podWrap.classList.toggle('hidden', !['senior_manager','director'].includes(role));
+  if (tlWrap)  tlWrap.classList.toggle('hidden',  role === 'team_lead');
+
+  // Populate POD list
+  if (['senior_manager','director'].includes(role)) {
+    const podList = document.getElementById('podFilterList');
+    if (podList) {
+      podList.innerHTML = '';
+      const myPods = POD_LEADERS.filter(p => getMyPodIds().includes(p.id));
+      myPods.forEach(p => podList.appendChild(buildMgrCheckbox('pod', p.id, p.name + ' (' + p.pod + ')')));
+    }
+  }
+
+  // Populate TL list
+  if (role !== 'team_lead') {
+    const tlList = document.getElementById('tlFilterList');
+    if (tlList) {
+      tlList.innerHTML = '';
+      TEAM_LEADS.filter(t => getMyTLIds().includes(t.id)).forEach(t =>
+        tlList.appendChild(buildMgrCheckbox('tl', t.id, t.name + ' (' + t.team + ')'))
+      );
+    }
+  }
+
+  // Populate Counsellor list
+  const clList = document.getElementById('clFilterList');
+  if (clList) {
+    clList.innerHTML = '';
+    const myTLIds = getMyTLIds();
+    COUNSELORS.filter(c => myTLIds.some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)))
+      .forEach(c => clList.appendChild(buildMgrCheckbox('cl', c.id, c.name + ' (' + c.team + ')')));
+  }
+
+  updateMgrFilterLabels();
+}
+
+function buildMgrCheckbox(type, id, label) {
+  const div = document.createElement('div');
+  div.className = 'flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface cursor-pointer';
+  const f = state.managerFilters;
+  const arr = type === 'pod' ? f.pods : type === 'tl' ? f.tls : f.counselors;
+  const checked = arr.includes(id);
+  div.innerHTML = `
+    <input type="checkbox" id="mgrChk_${type}_${id}" ${checked ? 'checked' : ''} onchange="onMgrCheckChange('${type}',${id},this.checked)"
+      class="w-3.5 h-3.5 accent-accent cursor-pointer flex-shrink-0" />
+    <label for="mgrChk_${type}_${id}" class="text-xs text-text-main cursor-pointer leading-tight">${escHtml(label)}</label>`;
+  return div;
+}
+
+function onMgrCheckChange(type, id, checked) {
+  const f = state.managerFilters;
+  const arr = type === 'pod' ? f.pods : type === 'tl' ? f.tls : f.counselors;
+  if (checked && !arr.includes(id)) arr.push(id);
+  else if (!checked) { const i = arr.indexOf(id); if (i > -1) arr.splice(i,1); }
+}
+
+function toggleMgrDropdown(type, e) {
+  if (e) e.stopPropagation();
+  const ids = ['podFilterDropdown','tlFilterDropdown','clFilterDropdown'];
+  const map = { pod:'podFilterDropdown', tl:'tlFilterDropdown', cl:'clFilterDropdown' };
+  const target = map[type];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', id !== target || !el.classList.contains('hidden') ? id !== target : false);
+  });
+  const el = document.getElementById(target);
+  if (el) el.classList.toggle('hidden');
+}
+
+function applyMgrFilter(type) {
+  document.getElementById(type === 'pod' ? 'podFilterDropdown' : type === 'tl' ? 'tlFilterDropdown' : 'clFilterDropdown')?.classList.add('hidden');
+  updateMgrFilterLabels();
+  renderMgrTab1(); renderMgrTab2(); renderMgrTicketSummary(); renderMgrTraining();
+}
+
+function clearMgrFilter(type) {
+  if (type === 'pod') state.managerFilters.pods = [];
+  else if (type === 'tl') state.managerFilters.tls = [];
+  else state.managerFilters.counselors = [];
+  buildMgrFilterBar();
+  applyMgrFilter(type);
+}
+
+function updateMgrFilterLabels() {
+  const f = state.managerFilters;
+  const podLbl = document.getElementById('podFilterLabel');
+  const tlLbl  = document.getElementById('tlFilterLabel');
+  const clLbl  = document.getElementById('clFilterLabel');
+  if (podLbl) podLbl.textContent = f.pods.length ? `POD: ${f.pods.length} selected` : 'POD: All';
+  if (tlLbl)  tlLbl.textContent  = f.tls.length  ? `TL: ${f.tls.length} selected`   : 'TL: All';
+  if (clLbl)  clLbl.textContent  = f.counselors.length ? `Counsellor: ${f.counselors.length} selected` : 'Counsellor: All';
+  const badge = document.getElementById('mgrViewAllBadge');
+  if (badge) badge.classList.toggle('hidden', f.pods.length + f.tls.length + f.counselors.length > 0);
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', () => {
+  ['podFilterDropdown','tlFilterDropdown','clFilterDropdown'].forEach(id => {
+    document.getElementById(id)?.classList.add('hidden');
+  });
+});
+
+/* ── Tab 1 — Manager Render ── */
+
+function renderMgrTab1() {
+  renderMgrBoostCards();
+  renderMgrBoostInput();
+  renderMgrLeaderToggle();
+  renderMgrLeaderboard();
+  renderMgrPerfTable();
+}
+
+function renderMgrBoostCards() {
+  const pool = getFilteredCounselorPool();
+  const grid = document.getElementById('mgrBoostCards');
+  if (!grid) return;
+
+  const totals = pool.reduce((acc, c) => {
+    acc.stis       += c.today.stis || 0;
+    acc.deposits   += c.today.deposits || 0;
+    acc.revenue    += c.today.revenue || 0;
+    acc.referrals  += c.today.referralPct ? Math.round(c.today.referralPct / 10) : 0;
+    return acc;
+  }, { stis:0, deposits:0, revenue:0, referrals:0 });
+
+  const cards = [
+    { label:'Boost Referrals', value:totals.referrals, unit:'students', color:'bg-orange-50 border-orange-200', textColor:'text-accent', icon:'🤝', type:'referrals' },
+    { label:'Boost STI',       value:totals.stis,      unit:'students', color:'bg-blue-50 border-blue-200',   textColor:'text-primary', icon:'🔁', type:'sti' },
+    { label:'Boost Deposit',   value:totals.deposits,  unit:'students', color:'bg-green-50 border-green-200', textColor:'text-success', icon:'📦', type:'deposit' },
+    { label:'Boost Revenue',   value:Math.round(totals.revenue/1000), unit:'K pipeline', color:'bg-purple-50 border-purple-200', textColor:'text-purple-700', icon:'💰', type:'revenue' },
+  ];
+
+  grid.innerHTML = cards.map(c => `
+    <div class="bg-white rounded-xl border-2 ${c.color} p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="openBoostDrawer('${c.type}')">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-lg">${c.icon}</span>
+        <span class="text-[10px] text-text-muted font-semibold uppercase">${pool.length} CL</span>
+      </div>
+      <p class="${c.textColor} text-3xl font-black">${c.value}</p>
+      <p class="text-xs text-text-muted mt-1">${c.unit} across team</p>
+      <p class="text-xs font-semibold text-text-main mt-2">${c.label}</p>
+      <p class="text-[10px] text-text-muted mt-0.5">View Pipeline →</p>
+    </div>
+  `).join('');
+}
+
+function renderMgrBoostInput() {
+  const pool = getFilteredCounselorPool();
+  const grid = document.getElementById('mgrBoostInput');
+  if (!grid || !pool.length) return;
+
+  const avgISL = (pool.reduce((s,c) => s + (c.today.isl||0), 0) / pool.length).toFixed(1);
+  const avgQuality = Math.round(pool.reduce((s,c) => s + ((c.today.q1score + c.today.q2score)/2||0), 0) / pool.length);
+  const bestISL = pool.reduce((best,c) => (c.today.isl||0) > (best.today.isl||0) ? c : best, pool[0]);
+  const bestQ   = pool.reduce((best,c) => ((c.today.q1score+c.today.q2score)/2||0) > ((best.today.q1score+best.today.q2score)/2||0) ? c : best, pool[0]);
+  const orgBestISL = COUNSELORS.reduce((b,c) => (c.today.isl||0) > (b.today.isl||0) ? c : b, COUNSELORS[0]);
+
+  const uxTotal = pool.reduce((s,c) => {
+    const st = STUDENTS.filter(u => u.counselorId === c.id);
+    return s + st.filter(u => u.qualityScore < 50 || u.lastCallOutcome === 'Not Reachable').length;
+  }, 0);
+
+  grid.innerHTML = `
+    <div class="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">📞 ISL Feedback Rating</p>
+      <p class="text-3xl font-black text-primary">${avgISL} <span class="text-sm text-text-muted font-normal">/ 5</span></p>
+      <p class="text-xs text-text-muted mt-2">Team weighted avg</p>
+      <div class="mt-2 pt-2 border-t border-border space-y-1">
+        <p class="text-xs text-text-muted">🏆 Team Best: <strong class="text-text-main">${bestISL.name.split(' ')[0]} · ${bestISL.today.isl}</strong></p>
+        <p class="text-xs text-text-muted">🌐 Org Best: <strong class="text-text-main">${orgBestISL.name.split(' ')[0]} · ${orgBestISL.today.isl}</strong></p>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">⭐ Quality Score</p>
+      <p class="text-3xl font-black text-success">${avgQuality}<span class="text-sm text-text-muted font-normal">%</span></p>
+      <p class="text-xs text-text-muted mt-2">Team weighted avg</p>
+      <div class="mt-2 pt-2 border-t border-border space-y-1">
+        <p class="text-xs text-text-muted">🏆 Team Best: <strong class="text-text-main">${bestQ.name.split(' ')[0]} · ${Math.round((bestQ.today.q1score+bestQ.today.q2score)/2)}%</strong></p>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-border p-4 shadow-sm">
+      <p class="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">⚠️ User Experience Flags</p>
+      <p class="text-3xl font-black text-danger">${uxTotal}</p>
+      <p class="text-xs text-text-muted mt-2">Total flags across ${pool.length} counsellors</p>
+      <div class="mt-2 pt-2 border-t border-border">
+        <p class="text-xs text-text-muted">Includes: Not Reachable, Low QC Score cases</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderMgrLeaderToggle() {
+  const role = state.role;
+  const toggleWrap = document.getElementById('mgrLeaderToggle');
+  if (!toggleWrap) return;
+
+  const tiers = [{ id:'counsellor', label:'Counsellor' }];
+  if (['pod_leader','senior_manager','director'].includes(role)) tiers.push({ id:'teamlead', label:'Team Lead' });
+  if (['senior_manager','director'].includes(role)) tiers.push({ id:'pod', label:'POD' });
+  if (role === 'director') tiers.push({ id:'sm', label:'Sr. Manager' });
+
+  toggleWrap.innerHTML = tiers.map(t => `
+    <button class="mgr-leader-btn ${state.mgrLeaderView === t.id ? 'active bg-white shadow-sm text-primary' : 'text-text-muted hover:text-text-main'} text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+      onclick="switchMgrLeaderView('${t.id}',this)">${t.label}</button>
+  `).join('');
+
+  // Update drill-down dropdown
+  updateMgrLeaderDrillDown();
+}
+
+function updateMgrLeaderDrillDown() {
+  const sel = document.getElementById('mgrLeaderDrillDown');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">View All</option>';
+
+  const view = state.mgrLeaderView;
+  const role = state.role;
+  let items = [];
+
+  if (view === 'counsellor') {
+    // Show TLs as drill-down (to filter by team)
+    if (['pod_leader','senior_manager','director'].includes(role)) {
+      items = TEAM_LEADS.filter(t => getMyTLIds().includes(t.id)).map(t => ({ id:'tl:'+t.id, label:t.name + ' team' }));
+    } else {
+      sel.disabled = true; return;
+    }
+  } else if (view === 'teamlead') {
+    // Show PODs as drill-down
+    if (['senior_manager','director'].includes(role)) {
+      items = POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).map(p => ({ id:'pod:'+p.id, label:p.pod }));
+    } else {
+      sel.disabled = true; return;
+    }
+  } else {
+    sel.disabled = true; return;
+  }
+
+  sel.disabled = false;
+  items.forEach(it => {
+    const o = document.createElement('option');
+    o.value = it.id; o.textContent = it.label;
+    sel.appendChild(o);
+  });
+}
+
+function switchMgrLeaderView(view, btn) {
+  state.mgrLeaderView = view;
+  document.querySelectorAll('.mgr-leader-btn').forEach(b => {
+    b.classList.remove('active','bg-white','shadow-sm','text-primary');
+    b.classList.add('text-text-muted');
+  });
+  if (btn) { btn.classList.add('active','bg-white','shadow-sm','text-primary'); btn.classList.remove('text-text-muted'); }
+  updateMgrLeaderDrillDown();
+  renderMgrLeaderboard();
+}
+
+function switchMgrLeaderPeriod(period, btn) {
+  state.mgrLeaderPeriod = period;
+  document.querySelectorAll('#body-mgrTopPerf .period-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderMgrLeaderboard();
+}
+
+function renderMgrLeaderboard() {
+  const grid = document.getElementById('mgrLeaderboardGrid');
+  if (!grid) return;
+
+  const view = state.mgrLeaderView;
+  let items = [];
+  const drillSel = document.getElementById('mgrLeaderDrillDown');
+  const drillVal = drillSel ? drillSel.value : '';
+
+  if (view === 'counsellor') {
+    let pool = getFilteredCounselorPool();
+    if (drillVal.startsWith('tl:')) {
+      const tlId = parseInt(drillVal.split(':')[1]);
+      pool = pool.filter(c => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id));
+    }
+    items = pool.sort((a,b) => (b.today.revenue||0) - (a.today.revenue||0))
+      .map((c,i) => ({ name:c.name, avatar:c.avatar, sub:c.designation, metric:`₹${((c.today.revenue||0)/1000).toFixed(0)}K`, score:c.today.isl||0 }));
+  } else if (view === 'teamlead') {
+    let pool = getFilteredTLPool();
+    if (drillVal.startsWith('pod:')) {
+      const podId = parseInt(drillVal.split(':')[1]);
+      const tlIds = HIERARCHY.podToTLs[podId]||[];
+      pool = pool.filter(t => tlIds.includes(t.id));
+    }
+    items = pool.map((t,i) => {
+      const tCounselors = COUNSELORS.filter(c => (HIERARCHY.tlToCounselors[t.id]||[]).includes(c.id));
+      const revenue = tCounselors.reduce((s,c) => s + (c.today.revenue||0), 0);
+      return { name:t.name, avatar:t.avatar, sub:'Team Lead · ' + t.team, metric:`₹${(revenue/1000).toFixed(0)}K`, score: Math.round(tCounselors.reduce((s,c)=>s+(c.today.isl||0),0)/Math.max(1,tCounselors.length)*10)/10 };
+    }).sort((a,b) => parseFloat(b.metric) - parseFloat(a.metric));
+  } else if (view === 'pod') {
+    items = POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).map(p => {
+      const tlIds = HIERARCHY.podToTLs[p.id]||[];
+      const cs = COUNSELORS.filter(c => tlIds.some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
+      const rev = cs.reduce((s,c) => s + (c.today.revenue||0), 0);
+      return { name:p.name, avatar:p.avatar, sub:p.pod, metric:`₹${(rev/1000).toFixed(0)}K`, score:Math.round(cs.reduce((s,c)=>s+(c.today.isl||0),0)/Math.max(1,cs.length)*10)/10 };
+    }).sort((a,b) => parseFloat(b.metric) - parseFloat(a.metric));
+  } else if (view === 'sm') {
+    items = SENIOR_MANAGERS.map(s => ({ name:s.name, avatar:s.avatar, sub:'Senior Manager', metric:`₹${(COUNSELORS.reduce((t,c)=>t+(c.today.revenue||0),0)/1000).toFixed(0)}K`, score:4.1 }));
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  grid.innerHTML = items.length ? items.map((item,i) => `
+    <div class="flex items-center gap-3 p-3 rounded-xl ${i===0?'bg-gold/5 border border-gold/20':'bg-surface/50'} hover:bg-surface transition-colors">
+      <span class="text-lg w-6 text-center">${medals[i] || (i+1)}</span>
+      <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">${escHtml(item.avatar)}</div>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-text-main text-sm truncate">${escHtml(item.name)}</p>
+        <p class="text-xs text-text-muted">${escHtml(item.sub)}</p>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <p class="font-mono font-bold text-success text-sm">${escHtml(item.metric)}</p>
+        <p class="text-[10px] text-text-muted">ISL ${item.score}</p>
+      </div>
+    </div>
+  `).join('') : '<p class="text-center text-text-muted text-sm py-8">No data for selected filters.</p>';
+}
+
+function renderMgrPerfTable() {
+  const pool = getFilteredCounselorPool();
+  const el = document.getElementById('mgrPerfTable');
+  if (!el || !pool.length) return;
+
+  const metrics = ['calls','leads','stis','applications','deposits','lockins'];
+  const targets = { calls:50, leads:30, stis:10, applications:8, deposits:6, lockins:4 };
+  const labels  = { calls:'Calls', leads:'Leads', stis:'STI', applications:'Application', deposits:'Deposit', lockins:'Lock-in' };
+
+  el.innerHTML = `
+    <table class="w-full text-xs">
+      <thead><tr class="border-b border-border">
+        <th class="text-left py-2 font-semibold text-text-muted">Counsellor</th>
+        ${metrics.map(m => `<th class="text-center py-2 font-semibold text-text-muted">${labels[m]}</th>`).join('')}
+      </tr></thead>
+      <tbody class="divide-y divide-border">
+        ${pool.map(c => `<tr class="hover:bg-surface/50">
+          <td class="py-2 font-medium text-text-main">${escHtml(c.name.split(' ')[0])}</td>
+          ${metrics.map(m => {
+            const val = c.today[m]||0; const tgt = targets[m]||1; const pct = Math.round(val/tgt*100);
+            const color = pct>=80?'text-success':pct>=50?'text-accent':'text-danger';
+            return `<td class="py-2 text-center"><span class="font-semibold ${color}">${val}</span><span class="text-text-muted">/${tgt}</span></td>`;
+          }).join('')}
+        </tr>`).join('')}
+        <tr class="border-t-2 border-border bg-surface/40 font-bold">
+          <td class="py-2 text-text-main">TOTAL</td>
+          ${metrics.map(m => `<td class="py-2 text-center font-mono font-bold text-primary">${pool.reduce((s,c)=>s+(c.today[m]||0),0)}</td>`).join('')}
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
+/* ── Tab 2 — Manager Render ── */
+
+function renderMgrTab2() {
+  const u = state.currentUser;
+  const inc = MGR_INCENTIVE[u.id] || { monthly:0, alltime:0, components:[] };
+  const pool = getFilteredCounselorPool();
+
+  // My Earnings
+  const myEl = document.getElementById('mgrMyEarningsAmt');
+  if (myEl) myEl.textContent = `₹${(inc.monthly/1000).toFixed(0)}K`;
+
+  const myBreakdown = document.getElementById('mgrMyEarningsBreakdown');
+  if (myBreakdown) {
+    myBreakdown.innerHTML = inc.components.map(comp => `
+      <div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+        <span class="text-sm text-text-main">${escHtml(comp.name)}</span>
+        <span class="font-mono font-bold text-success text-sm">₹${(comp.earned/1000).toFixed(0)}K</span>
+      </div>
+    `).join('') || '<p class="text-sm text-text-muted">No breakdown available.</p>';
+  }
+
+  // Reportees' Earnings
+  const teamTotal = pool.reduce((s,c) => s + ((MGR_INCENTIVE[c.id]?.monthly) || 38000), 0);
+  const teamEl = document.getElementById('mgrTeamEarningsAmt');
+  if (teamEl) teamEl.textContent = `₹${(teamTotal/1000).toFixed(0)}K`;
+
+  const teamBreakdown = document.getElementById('mgrTeamEarningsBreakdown');
+  if (teamBreakdown) {
+    teamBreakdown.innerHTML = pool.slice(0,6).map(c => `
+      <div class="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">${escHtml(c.avatar)}</div>
+          <span class="text-sm text-text-main">${escHtml(c.name.split(' ')[0])}</span>
+        </div>
+        <span class="font-mono font-bold text-primary text-sm">₹${(((MGR_INCENTIVE[c.id]?.monthly) || 38000)/1000).toFixed(0)}K</span>
+      </div>
+    `).join('') || '<p class="text-sm text-text-muted">No reportees found.</p>';
+  }
+
+  // Opportunity Size
+  const stiPipe    = pool.reduce((s,c) => s + (c.today.stis||0) * 45000, 0);
+  const depPipe    = pool.reduce((s,c) => s + (c.today.deposits||0) * 80000, 0);
+  const revPipe    = pool.reduce((s,c) => s + (c.today.revenue||0) * 0.01, 0);
+  const totalPipe  = stiPipe + depPipe + revPipe;
+  const fmt = v => `₹${v>=100000?(v/100000).toFixed(1)+'L':(v/1000).toFixed(0)+'K'}`;
+  const setEl = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = fmt(v); };
+  setEl('mgrTotalOpportunity', totalPipe);
+  setEl('mgrStiPipeline', stiPipe);
+  setEl('mgrDepositPipeline', depPipe);
+  setEl('mgrRevenuePipeline', revPipe);
+
+  // Ongoing Offers
+  const clOffersEl = document.getElementById('mgrCounsellorOffersRow');
+  if (clOffersEl) {
+    clOffersEl.innerHTML = OFFERS.filter(o => o.active).map(o => `
+      <div class="flex-shrink-0 w-64 rounded-xl border-2 border-orange-200 bg-orange-50 p-4">
+        <p class="font-bold text-accent text-sm mb-1">${escHtml(o.title)}</p>
+        <p class="text-xs text-text-muted mb-3 line-clamp-2">${escHtml(o.desc)}</p>
+        <p class="text-[10px] text-accent font-semibold">Expires: ${escHtml(o.expiry)}</p>
+      </div>
+    `).join('');
+  }
+  const mgrOffersEl = document.getElementById('mgrManagerOffersRow');
+  if (mgrOffersEl) {
+    mgrOffersEl.innerHTML = MGR_OFFERS.map(o => `
+      <div class="flex-shrink-0 w-64 rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
+        <p class="font-bold text-primary text-sm mb-1">${escHtml(o.title)}</p>
+        <p class="text-xs text-text-muted mb-3 line-clamp-2">${escHtml(o.desc)}</p>
+        <p class="text-[10px] text-primary font-semibold">Expires: ${escHtml(o.expiry)}</p>
+      </div>
+    `).join('');
+  }
+
+  // Top Earners
+  renderMgrEarnerToggle();
+  renderMgrEarnerLists();
+}
+
+function renderMgrEarnerToggle() {
+  const role = state.role;
+  const wrap = document.getElementById('mgrEarnerToggle');
+  if (!wrap) return;
+  const tiers = [{ id:'counsellor', label:'Counsellor' }];
+  if (['pod_leader','senior_manager','director'].includes(role)) tiers.push({ id:'teamlead', label:'Team Lead' });
+  if (['senior_manager','director'].includes(role)) tiers.push({ id:'pod', label:'POD' });
+  wrap.innerHTML = tiers.map(t => `
+    <button class="mgr-earner-btn ${state.mgrEarnerView===t.id?'active bg-white shadow-sm text-primary':'text-text-muted hover:text-text-main'} text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
+      onclick="switchMgrEarnerView('${t.id}',this)">${t.label}</button>
+  `).join('');
+}
+
+function switchMgrEarnerView(view, btn) {
+  state.mgrEarnerView = view;
+  document.querySelectorAll('.mgr-earner-btn').forEach(b => {
+    b.classList.remove('active','bg-white','shadow-sm','text-primary');
+    b.classList.add('text-text-muted');
+  });
+  if (btn) { btn.classList.add('active','bg-white','shadow-sm','text-primary'); btn.classList.remove('text-text-muted'); }
+  renderMgrEarnerLists();
+}
+
+function renderMgrEarnerLists() {
+  const view = state.mgrEarnerView;
+  let items = [];
+
+  if (view === 'counsellor') {
+    items = getFilteredCounselorPool().map(c => ({
+      name:c.name, avatar:c.avatar, monthPct:Math.round(((MGR_INCENTIVE[c.id]?.monthly||38000)/72000)*100), allTimePct:Math.round(((MGR_INCENTIVE[c.id]?.alltime||480000)/1200000)*100)
+    })).sort((a,b) => b.monthPct - a.monthPct);
+  } else if (view === 'teamlead') {
+    items = getFilteredTLPool().map(t => ({
+      name:t.name, avatar:t.avatar, monthPct:Math.round(((MGR_INCENTIVE[t.id]?.monthly||50000)/120000)*100), allTimePct:Math.round(((MGR_INCENTIVE[t.id]?.alltime||480000)/1200000)*100)
+    })).sort((a,b) => b.monthPct - a.monthPct);
+  } else {
+    items = POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).map(p => ({
+      name:p.name, avatar:p.avatar, monthPct:Math.round(((MGR_INCENTIVE[p.id]?.monthly||80000)/200000)*100), allTimePct:Math.round(((MGR_INCENTIVE[p.id]?.alltime||900000)/2000000)*100)
+    })).sort((a,b) => b.monthPct - a.monthPct);
+  }
+
+  const renderList = (containerId, pctKey) => {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = items.slice(0,5).map((item,i) => {
+      const pct = item[pctKey];
+      const bar = pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-accent' : 'bg-danger';
+      return `
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-text-muted w-4 flex-shrink-0">${i+1}</span>
+          <div class="w-7 h-7 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">${escHtml(item.avatar)}</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold text-text-main truncate">${escHtml(item.name.split(' ')[0])}</p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <div class="flex-1 h-1.5 bg-surface rounded-full overflow-hidden">
+                <div class="${bar} h-full rounded-full transition-all" style="width:${pct}%"></div>
+              </div>
+              <span class="text-[10px] text-text-muted w-8 flex-shrink-0">${pct}%</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  };
+  renderList('mgrEarnerMonthList', 'monthPct');
+  renderList('mgrEarnerAllList', 'allTimePct');
+}
+
+/* ── Tab 3 — Manager Render ── */
+
+function renderMgrTicketSummary() {
+  const pool = getFilteredCounselorPool();
+  // Aggregate counsellor ticket data (using mock COUNSELLOR_TICKETS)
+  const allTickets = typeof COUNSELLOR_TICKETS !== 'undefined' ? COUNSELLOR_TICKETS : [];
+  const teamCLIds = pool.map(c => c.id);
+
+  // Since COUNSELLOR_TICKETS doesn't have counselorId, use mock multiplied totals
+  const total    = allTickets.length + pool.length * 2;
+  const resolved = allTickets.filter(t => t.status === 'Resolved').length + pool.length;
+  const open     = total - resolved;
+  const avgTat   = resolved > 0 ? Math.round(allTickets.filter(t=>t.status==='Resolved').reduce((s,t)=>s+(t.tat||6),0)/Math.max(1,resolved)) : 0;
+
+  const setEl = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  setEl('mgrTicketAll', total);
+  setEl('mgrTicketResolved', resolved);
+  setEl('mgrTicketOpen', open);
+  const tatEl = document.getElementById('mgrTicketAvgTat');
+  if (tatEl) tatEl.textContent = resolved > 0 ? `Avg TAT: ${avgTat} days` : '';
+}
+
+function openMgrTicketList(filter) {
+  const allTickets = typeof COUNSELLOR_TICKETS !== 'undefined' ? COUNSELLOR_TICKETS : [];
+  const page = document.getElementById('mgrTicketListPage');
+  const title = document.getElementById('mgrTicketListTitle');
+  const body  = document.getElementById('mgrTicketListBody');
+  if (!page || !body) return;
+
+  const filtered = filter === 'all' ? allTickets : allTickets.filter(t => t.status === filter);
+  const titleMap = { all:'All Tickets', Resolved:'Resolved Tickets', Open:'Open Tickets' };
+  if (title) title.textContent = titleMap[filter] || 'Tickets';
+
+  body.innerHTML = filtered.length ? filtered.map(t => `
+    <div class="px-5 py-3 flex items-start justify-between gap-4 hover:bg-surface/50 transition-colors">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-text-main truncate">${escHtml(t.subject||t.id)}</p>
+        <p class="text-xs text-text-muted mt-0.5">${escHtml(t.counselor||'—')} · ${escHtml(t.category||'—')}</p>
+        ${t.resolvedDate ? `<p class="text-xs text-text-muted mt-0.5">Resolved: ${escHtml(t.resolvedDate)} · TAT: ${t.tat||'—'} days</p>` : ''}
+      </div>
+      <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${t.status==='Resolved'?'bg-green-100 text-green-700':'bg-red-100 text-red-600'}">${escHtml(t.status)}</span>
+    </div>
+  `).join('') : '<p class="text-center text-text-muted text-sm py-10">No tickets in this category.</p>';
+
+  page.classList.remove('hidden');
+}
+
+function renderMgrTraining() {
+  const pool = getFilteredCounselorPool();
+  const el = document.getElementById('mgrTrainingList');
+  if (!el || !pool.length) return;
+
+  const modules = ['Soft Training','Domain Training','System Training','New Features'];
+  const completions = { 1:[1,1,1,0], 2:[1,1,0,0], 3:[1,0,0,0], 4:[1,1,1,1], 5:[1,1,0,0], 6:[1,1,1,0], 7:[1,0,0,0], 8:[1,1,0,0] };
+
+  el.innerHTML = pool.map(c => {
+    const done = completions[c.id] || [1,0,0,0];
+    const pct = Math.round(done.filter(Boolean).length / modules.length * 100);
+    return `
+      <div class="rounded-xl border border-border overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 bg-surface/40 border-b border-border">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">${escHtml(c.avatar)}</div>
+            <div>
+              <p class="text-sm font-semibold text-text-main">${escHtml(c.name)}</p>
+              <p class="text-xs text-text-muted">${escHtml(c.designation)}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <div class="w-24 h-1.5 bg-border rounded-full overflow-hidden">
+                <div class="${pct===100?'bg-success':pct>=50?'bg-accent':'bg-danger'} h-full rounded-full" style="width:${pct}%"></div>
+              </div>
+              <span class="text-xs font-semibold text-text-muted">${pct}%</span>
+            </div>
+            ${pct < 100 ? `<button onclick="sendTrainingReminder(${c.id},'${escHtml(c.name)}')" class="text-xs px-3 py-1 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-colors cursor-pointer font-medium flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              Send Reminder
+            </button>` : '<span class="text-xs text-success font-semibold">✓ Complete</span>'}
+          </div>
+        </div>
+        <div class="grid grid-cols-4 divide-x divide-border">
+          ${modules.map((m,i) => `
+            <div class="px-3 py-2 text-center">
+              <p class="text-[10px] text-text-muted font-semibold">${m}</p>
+              <span class="text-sm">${done[i] ? '✅' : '⬜'}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function sendTrainingReminder(counselorId, counselorName) {
+  showToast(`📩 Training reminder sent to ${counselorName.split(' ')[0]}!`);
+}
+
+function saveMgrReminder() {
+  const title = document.getElementById('mgrReminderTitle')?.value.trim();
+  const assignee = document.getElementById('mgrReminderAssignee')?.value;
+  if (!title) { showToast('Please enter a reminder title.'); return; }
+  const assigneeName = assignee === 'self' ? 'yourself' :
+    (getReporteeList().find(r => String(r.id) === assignee)?.name?.split(' ')[0] || 'the assignee');
+  showToast(`✅ Reminder saved & sent to ${assigneeName}!`);
+  document.getElementById('mgrReminderTitle').value = '';
+}
+
