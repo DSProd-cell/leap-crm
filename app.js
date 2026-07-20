@@ -962,7 +962,8 @@ function bootApp(role, email) {
   const isMgr = ['team_lead','pod_leader','senior_manager','director'].includes(role);
 
   // Reset all role-gated elements before applying role-specific visibility
-  ['counselorSelectorWrapper', 'managerFilterBar', 'tlCounsellorFilterBar', 'adminTabBtn',
+  ['counselorSelectorWrapper', 'managerFilterBar', 'mgrCrmBar', 'mgrCallMergeWrap',
+   'tlCounsellorFilterBar', 'adminTabBtn',
    'leaderViewToggleWrap', 'earnerViewToggleWrap',
    'mgrTab1Panel', 'mgrTab2Panel', 'mgrTab3Panel'].forEach(id => {
     const el = document.getElementById(id);
@@ -993,10 +994,13 @@ function bootApp(role, email) {
     if (evw) evw.classList.remove('hidden');
   }
 
-  // Manager roles: show filter bar + manager panels
+  // Manager roles: show CRM bar + call merge widget; keep filter bar hidden
   if (isMgr) {
-    const mfb = document.getElementById('managerFilterBar');
-    if (mfb) mfb.classList.remove('hidden');
+    const crmBar = document.getElementById('mgrCrmBar');
+    if (crmBar) crmBar.classList.remove('hidden');
+    const callMerge = document.getElementById('mgrCallMergeWrap');
+    if (callMerge) callMerge.classList.remove('hidden');
+    // managerFilterBar stays hidden (filters still work internally via state.managerFilters)
     buildMgrFilterBar();
 
     // Show manager-specific panels in all tabs
@@ -3414,6 +3418,71 @@ function openQuickLink(type) {
   const url = QUICK_LINK_URLS[type];
   if (url) showToast(`Opening ${type === 'session' ? 'video session' : 'templates sheet'}…`, 'info');
   else showToast('URL not configured. Ask your ops admin.', 'warning');
+}
+
+/* ═══════════════ MGR CRM BAR ═══════════════ */
+
+function handleMgrGlobalSearch(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return;
+  const pool = getFilteredCounselorPool();
+  const matchedStudents = STUDENTS.filter(s =>
+    pool.some(c => c.id === s.counselorId) &&
+    (String(s.id).toLowerCase().includes(q) ||
+     (s.phone && s.phone.toLowerCase().includes(q)) ||
+     (s.email && s.email.toLowerCase().includes(q)) ||
+     (s.name  && s.name.toLowerCase().includes(q)))
+  );
+  if (!matchedStudents.length) {
+    showToast('No student found matching that search.', 'warning');
+    return;
+  }
+  if (matchedStudents.length === 1) {
+    openStudentDetail(matchedStudents[0].id);
+    document.getElementById('mgrGlobalSearch').value = '';
+    return;
+  }
+  const rows = matchedStudents.slice(0, 20).map(s => {
+    const cl = getFilteredCounselorPool().find(c => c.id === s.counselorId);
+    return `<div class="flex items-center justify-between px-4 py-3 hover:bg-surface/60 border-b border-border/50 last:border-0 cursor-pointer" onclick="openStudentDetail('${s.id}');closeDrawer()">
+      <div>
+        <p class="text-sm font-semibold text-text-main">${escHtml(s.name)}</p>
+        <p class="text-xs text-text-muted">${escHtml(s.course||'—')} · ${escHtml(cl?.name||'—')}</p>
+      </div>
+      <svg class="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </div>`;
+  }).join('');
+  openDrawer(`🔍 Search results — ${matchedStudents.length} found`, `<div class="divide-y divide-border">${rows}</div>`);
+  document.getElementById('mgrGlobalSearch').value = '';
+}
+
+function openAssignedLeadsDrawer() {
+  const pool = getFilteredCounselorPool();
+  const students = STUDENTS.filter(s => pool.some(c => c.id === s.counselorId));
+  if (!students.length) { showToast('No leads in your assigned pool.', 'info'); return; }
+  const rows = students.slice(0, 50).map(s => {
+    const cl = pool.find(c => c.id === s.counselorId);
+    const stageCls = { sti:'bg-blue-100 text-primary', deposit:'bg-yellow-100 text-yellow-700', lockin:'bg-green-100 text-success', application:'bg-purple-100 text-purple-700' };
+    const sc = stageCls[s.stage] || 'bg-gray-100 text-gray-600';
+    return `<div class="flex items-center gap-3 px-4 py-3 hover:bg-surface/60 border-b border-border/50 last:border-0 cursor-pointer" onclick="openStudentDetail('${s.id}');closeDrawer()">
+      <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+        ${escHtml((s.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-text-main truncate">${escHtml(s.name)}</p>
+        <p class="text-xs text-text-muted truncate">${escHtml(cl?.name||'—')} · ${escHtml(s.course||'—')}</p>
+      </div>
+      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc} flex-shrink-0">${escHtml(s.stage||'—')}</span>
+    </div>`;
+  }).join('');
+  openDrawer(`📋 Assigned Leads — ${students.length} students`, `<div class="divide-y divide-border">${rows}</div>`);
+}
+
+function updateCallMergeStatus(val) {
+  const dot = document.getElementById('callMergeDot');
+  if (!dot) return;
+  const colors = { active: 'bg-success', busy: 'bg-danger', away: 'bg-accent' };
+  dot.className = `w-2 h-2 rounded-full flex-shrink-0 ${colors[val] || 'bg-success'}`;
 }
 
 function openImpLink(type) {
