@@ -2448,6 +2448,20 @@ function getWAGroupStats() {
   return { active, inactive, notJoined, notReplied };
 }
 
+// Same aggregate the "WA Summary" panel inside the WA group details drawer uses to color itself —
+// used so the Potential Escalations tile's "Messages Not Replied" row is colored consistently.
+function computeWAIssueCount(students) {
+  const pairs = [];
+  students.forEach(s => (s.whatsappGroups || []).forEach(g => pairs.push({ student: s, group: g })));
+  const inactiveCount     = pairs.filter(p => !p.group.counselorJoined).length;
+  const notJoinedCount    = pairs.filter(p => !p.group.studentJoined).length;
+  const notRepliedCount   = students.filter(s => (WA_UNANSWERED[s.id] || []).length > 0).length;
+  const groupNotCreatedIds = new Set();
+  students.filter(s => (s.whatsappGroups || []).length === 0).forEach(s => groupNotCreatedIds.add(s.id));
+  pairs.filter(p => !p.group.counselorJoined).forEach(p => groupNotCreatedIds.add(p.student.id));
+  return inactiveCount + notJoinedCount + notRepliedCount + groupNotCreatedIds.size;
+}
+
 function renderMetricCards() {
   const c = getCounselorData();
   const totalStudents = getViewingStudents().length;
@@ -2475,7 +2489,7 @@ function renderMetricCards() {
       bestLabel: bestISL ? `🏆 Best: ${bestISL.name} · ${bestISL.value.toFixed(1)}/5` : '' },
     { label:'Quality Score',             value:null,              target:100,                extra:'', unit:'', isDual:true, q1:c.q1score, q2:c.q2score,
       bestLabel: bestQ1 ? `🏆 Best: ${bestQ1.name} · ${bestQ1.value}%` : '' },
-    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats, customerSupportCount, lowISLCount },
+    { label:'WA Group Details',          value:null,              target:0,                  extra:'', unit:'', isWAGroups:true, waStats, customerSupportCount, lowISLCount, waIssueCount: computeWAIssueCount(allStudents) },
   ];
 
   // Own Tasks: Red+First if pending, Green+Last if clear
@@ -2493,7 +2507,7 @@ function renderMetricGrid(elId, metrics) {
       const ws = m.waStats;
       const csCount = m.customerSupportCount || 0;
       const islCount = m.lowISLCount || 0;
-      const waIssues = ws.inactive + ws.notJoined + ws.notReplied;
+      const waIssues = m.waIssueCount || 0; // same aggregate the WA Summary drawer panel uses to color itself
       const breachedCount = 0; // no SLA/breach-tracking system yet
 
       function subRow(label, count, urgency) {
@@ -2519,7 +2533,7 @@ function renderMetricGrid(elId, metrics) {
           <div class="space-y-0.5">
             ${subRow('Customer Support',        csCount,       csCount > 0 ? 'danger' : 'good')}
             ${subRow('Low ISL Feedback',        islCount,      islCount > 0 ? 'danger' : 'good')}
-            ${subRow('WA Summary',              waIssues,      waIssues > 0 ? 'danger' : 'good')}
+            ${subRow('Messages Not Replied',    ws.notReplied, waIssues > 0 ? 'danger' : 'good')}
             ${subRow('IS Pending and Breached', breachedCount, breachedCount > 0 ? 'danger' : 'good')}
           </div>
           <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
@@ -7104,9 +7118,9 @@ const VOLUME_BASE = [
 const FUNNEL_BASE = [
   { name:'01.ISL Shared (24 hrs)',    tYTD:75, tMTD:80, aYTD:61,  aMTD:41,  Y:46, Y1:53, Y2:66, W0:0, W01:100, M01:40  },
   { name:'02.CA->ISL (60 mins)',      tYTD:60, tMTD:60, aYTD:5,   aMTD:0,   Y:3,  Y1:23, Y2:14, W0:0, W01:0,   M01:0   },
-  { name:'03.CA->STI (14D)',          tYTD:13, tMTD:13, aYTD:54,  aMTD:0,   Y:7,  Y1:14, Y2:14, W0:0, W01:0,   M01:7   },
+  { name:'03.CA->STI (14D)',          tYTD:20, tMTD:20, aYTD:54,  aMTD:0,   Y:7,  Y1:14, Y2:14, W0:0, W01:0,   M01:7   },
   { name:'04.CA->F2F (14D)',          tYTD:30, tMTD:30, aYTD:53,  aMTD:0,   Y:16, Y1:7,  Y2:0,  W0:0, W01:0,   M01:13  },
-  { name:'05.CA->LockIn (14D)',       tYTD:20, tMTD:20, aYTD:25,  aMTD:0,   Y:5,  Y1:5,  Y2:0,  W0:0, W01:0,   M01:0   },
+  { name:'05.CA->LockIn (14D)',       tYTD:35, tMTD:35, aYTD:25,  aMTD:0,   Y:5,  Y1:5,  Y2:0,  W0:0, W01:0,   M01:0   },
   { name:'06.STI->Admit (30D)',       tYTD:85, tMTD:85, aYTD:101, aMTD:0,   Y:86, Y1:86, Y2:60, W0:0, W01:0,   M01:100 },
   { name:'07.Admit->Deposits (14D)',  tYTD:35, tMTD:35, aYTD:20,  aMTD:0,   Y:7,  Y1:13, Y2:50, W0:0, W01:0,   M01:0   },
   { name:'08.CA->Pre ISL Drop',       tYTD:5,  tMTD:5,  aYTD:100, aMTD:340, Y:5,  Y1:18, Y2:17, W0:0, W01:0,   M01:0,  isDropRate:true },
@@ -8033,14 +8047,24 @@ function openWAGroupDetailsDrawer() {
   const bannerReplied    = waBanner('Student sent a message in the group but neither the counsellor nor the TL/Manager replied within <strong>1 hour</strong>.', 'When either the counsellor or Manager replies to the student\'s query.');
   const bannerGroupNC    = waBanner('Counsellor is assigned for a lead but the counsellor hasn\'t joined the WhatsApp group yet, or no group has been created.', 'Group is created and the Counsellor has joined.');
 
+  // Sub-item accordions are "problem" categories — show green (no issue) when the count is 0,
+  // and only switch to their warning color once there's an actual issue to look at.
+  function issueColor(count, textCls, bgCls, borderCls) {
+    return count > 0 ? [textCls, bgCls, borderCls] : ['text-emerald-700', 'bg-emerald-50', 'border-emerald-200'];
+  }
+  const [inactiveText, inactiveBg, inactiveBorder]       = issueColor(inactiveGroups.length,      'text-amber-700',  'bg-amber-50',  'border-amber-200');
+  const [notJoinedText, notJoinedBg, notJoinedBorder]    = issueColor(notJoinedGroups.length,      'text-orange-700', 'bg-orange-50', 'border-orange-200');
+  const [repliedText, repliedBg, repliedBorder]          = issueColor(notRepliedStudents.length,   'text-red-700',    'bg-red-50',    'border-red-200');
+  const [groupNCText, groupNCBg, groupNCBorder]          = issueColor(groupNotCreatedList.length,  'text-red-800',    'bg-red-100',   'border-red-400');
+
   /* ── Non Voice: WA Group inner content ── */
   const nonVoiceInner = `
     <p class="text-[11px] text-text-muted mb-2.5">WhatsApp group activity across your student cohort.</p>
     ${accordion('active',    '✅', 'Active Groups',                         activeGroups.length,        'text-emerald-700', 'bg-emerald-50',  'border-emerald-200', bannerActive  + (activeGroups.length      ? activeGroups.map(p => waGroupRow(p)).join('')      : '<p class="text-xs text-text-muted italic text-center py-2">No active groups yet.</p>'))}
-    ${accordion('inactive',  '⚠️', 'Inactive Groups',                       inactiveGroups.length,      'text-amber-700',   'bg-amber-50',    'border-amber-200',   bannerInactive + (inactiveGroups.length    ? inactiveGroups.map(p => waGroupRow(p)).join('')    : '<p class="text-xs text-text-muted italic text-center py-2">All groups are active! 🎉</p>'))}
-    ${accordion('notjoined', '🚫', 'Students Not Joined Groups',            notJoinedGroups.length,     'text-orange-700',  'bg-orange-50',   'border-orange-200',  bannerNotJoined + (notJoinedGroups.length  ? notJoinedGroups.map(p => waGroupRow(p)).join('')  : '<p class="text-xs text-text-muted italic text-center py-2">All students have joined! 🎉</p>'))}
-    ${accordion('replied',   '💬', 'Messages Not Replied',                  notRepliedStudents.length,  'text-red-700',     'bg-red-50',      'border-red-200',     bannerReplied   + (notRepliedStudents.length ? notRepliedStudents.map(s => waRepliedRow(s)).join('') : '<p class="text-xs text-text-muted italic text-center py-2">All messages replied! 🎉</p>'))}
-    ${accordion('group-not-created', '🚨', 'Group Not Created / Counsellors Not Joined', groupNotCreatedList.length, 'text-red-800', 'bg-red-100', 'border-red-400', bannerGroupNC + (groupNotCreatedList.length ? groupNotCreatedRows : '<p class="text-xs text-text-muted italic text-center py-2">All counsellors have joined! 🎉</p>'))}`;
+    ${accordion('inactive',  '⚠️', 'Inactive Groups',                       inactiveGroups.length,      inactiveText,  inactiveBg,   inactiveBorder,   bannerInactive + (inactiveGroups.length    ? inactiveGroups.map(p => waGroupRow(p)).join('')    : '<p class="text-xs text-text-muted italic text-center py-2">All groups are active! 🎉</p>'))}
+    ${accordion('notjoined', '🚫', 'Students Not Joined Groups',            notJoinedGroups.length,     notJoinedText, notJoinedBg,  notJoinedBorder,  bannerNotJoined + (notJoinedGroups.length  ? notJoinedGroups.map(p => waGroupRow(p)).join('')  : '<p class="text-xs text-text-muted italic text-center py-2">All students have joined! 🎉</p>'))}
+    ${accordion('replied',   '💬', 'Messages Not Replied',                  notRepliedStudents.length,  repliedText,   repliedBg,    repliedBorder,    bannerReplied   + (notRepliedStudents.length ? notRepliedStudents.map(s => waRepliedRow(s)).join('') : '<p class="text-xs text-text-muted italic text-center py-2">All messages replied! 🎉</p>'))}
+    ${accordion('group-not-created', '🚨', 'Group Not Created / Counsellors Not Joined', groupNotCreatedList.length, groupNCText, groupNCBg, groupNCBorder, bannerGroupNC + (groupNotCreatedList.length ? groupNotCreatedRows : '<p class="text-xs text-text-muted italic text-center py-2">All counsellors have joined! 🎉</p>'))}`;
 
 
   /* ── Voice: Jerry Call inner content ── */
@@ -8759,6 +8783,8 @@ function renderMgrBoostInput() {
     });
     if (!hasJoined && (s.whatsappGroups||[]).length > 0) studentNotJoined++;
   });
+  // Same aggregate the WA Summary drawer panel uses to color itself
+  const waIssueCount = computeWAIssueCount(poolStudents);
 
   // Own tasks
   const ownCount = (state.ownTasks || []).filter(t => !t.done).length;
@@ -8799,7 +8825,7 @@ function renderMgrBoostInput() {
       <div class="space-y-0.5">
         ${subRow('Customer Support',        customerSupport, customerSupport > 0 ? 'danger' : 'good')}
         ${subRow('Low ISL Feedback',        lowISL,          lowISL > 0 ? 'danger' : 'good')}
-        ${subRow('WA Summary',              waInactive + notJoined + notReplied + studentNotJoined, (waInactive + notJoined + notReplied + studentNotJoined) > 0 ? 'danger' : 'good')}
+        ${subRow('Messages Not Replied',    notReplied,      waIssueCount > 0 ? 'danger' : 'good')}
         ${subRow('IS Pending and Breached', 0,               'good')}
       </div>
       <div class="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
