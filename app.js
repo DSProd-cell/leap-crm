@@ -8593,14 +8593,26 @@ const OWN_TASK_TYPES = [
 /* Which TL/POD entities' own-task counts should roll up into the current user's view */
 function getOwnTaskScopeEntities() {
   const role = state.role; const u = state.currentUser;
-  if (role === 'team_lead')  return TEAM_LEADS.filter(t => t.id === u.id);
-  if (role === 'pod_leader') return POD_LEADERS.filter(p => p.id === u.id);
-  // senior_manager & director: roll up every TL and POD leader within their managed scope
-  const tlIds = getMyTLIds(); const podIds = getMyPodIds();
-  return [
-    ...TEAM_LEADS.filter(t => tlIds.includes(t.id)),
-    ...POD_LEADERS.filter(p => podIds.includes(p.id)),
-  ];
+
+  if (role === 'team_lead') return TEAM_LEADS.filter(t => t.id === u.id);
+
+  // getFilteredTLPool() already applies the header's "PL"/"TL" filters with the same
+  // POD -> TL cascading used by the rest of the dashboard (a POD filter narrows which
+  // TLs are included, further narrowed by an explicit TL filter).
+  const tls = getFilteredTLPool();
+
+  if (role === 'pod_leader') {
+    // POD leader always sees their own tasks, plus their reporting TLs' tasks.
+    const own = POD_LEADERS.filter(p => p.id === u.id);
+    return [...own, ...tls];
+  }
+
+  // senior_manager & director: roll up every TL and POD leader within their managed
+  // scope, narrowed by the existing "PL" filter in the header bar.
+  const f = state.managerFilters;
+  const myPodIds = getMyPodIds();
+  const podIds = f.pods.length ? myPodIds.filter(id => f.pods.includes(id)) : myPodIds;
+  return [...tls, ...POD_LEADERS.filter(p => podIds.includes(p.id))];
 }
 
 function getReporteeList() {
@@ -8774,9 +8786,10 @@ function renderMgrOwnTasks() {
   const entities = getOwnTaskScopeEntities();
   const heading = document.getElementById('mgrOwnTasksHeading');
   if (heading) {
-    heading.textContent = state.role === 'team_lead' || state.role === 'pod_leader'
-      ? '📋 Important Business Tasks'
-      : '📋 Important Business Tasks — TL & POD Rollup';
+    const suffix = state.role === 'team_lead' ? ''
+      : state.role === 'pod_leader' ? ' — TL Rollup'
+      : ' — TL & POD Rollup';
+    heading.textContent = `📋 Important Business Tasks${suffix}`;
   }
 
   const rows = OWN_TASK_TYPES.map(tt => ({ ...tt, ..._ownTaskCounts(tt, entities) }));
@@ -8838,7 +8851,8 @@ function openMgrOwnTasksDrawer(focusKey) {
   const totalDue      = rows.reduce((s, r) => s + r.due, 0);
 
   let content = `
-    <div class="mb-4 p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+    ${state.role !== 'team_lead' ? mgrFilterPillsBar() : ''}
+    <div class="mb-4 mt-4 p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl">
       <div class="flex items-center gap-2 mb-1">
         <span class="text-lg">📋</span>
         <p class="font-bold text-sm text-indigo-800">Important Business Tasks</p>
