@@ -30,8 +30,10 @@ const COUNSELORS = [
 ];
 
 const TEAM_LEADS = [
-  { id:9,  name:'Sneha Kapoor', team:'Alpha', role:'team_lead', email:'sneha@edu.in',  avatar:'SK', designation:'Team Lead', joiningDate:'01 Jan 2021', manager:'Nisha Agarwal' },
-  { id:10, name:'Vijay Kumar',  team:'Beta',  role:'team_lead', email:'vijay@edu.in',  avatar:'VK', designation:'Team Lead', joiningDate:'15 Mar 2021', manager:'Nisha Agarwal' },
+  { id:9,  name:'Sneha Kapoor', team:'Alpha', role:'team_lead', email:'sneha@edu.in',  avatar:'SK', designation:'Team Lead', joiningDate:'01 Jan 2021', manager:'Nisha Agarwal',
+    ownTaskCounts:{ islReviews:{due:0,total:1}, docsConditionalAdmit:{due:0,total:2}, verifyProbableConditions:{due:0,total:1}, depositPaymentVerification:{due:0,total:1}, applicantFeedback:{due:0,total:5}, usaSecondMockInterview:{due:0,total:0}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:9} } },
+  { id:10, name:'Vijay Kumar',  team:'Beta',  role:'team_lead', email:'vijay@edu.in',  avatar:'VK', designation:'Team Lead', joiningDate:'15 Mar 2021', manager:'Nisha Agarwal',
+    ownTaskCounts:{ islReviews:{due:0,total:0}, docsConditionalAdmit:{due:0,total:3}, verifyProbableConditions:{due:0,total:2}, depositPaymentVerification:{due:0,total:2}, applicantFeedback:{due:0,total:3}, usaSecondMockInterview:{due:0,total:1}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:6} } },
 ];
 
 const OPS_USERS = [
@@ -39,8 +41,10 @@ const OPS_USERS = [
 ];
 
 const POD_LEADERS = [
-  { id:20, name:'Arjun Mehta',  pod:'Alpha POD', role:'pod_leader', email:'arjun.m@edu.in', avatar:'AM', designation:'POD Leader',      joiningDate:'01 Jun 2020', manager:'Nisha Agarwal' },
-  { id:21, name:'Preethi Nair', pod:'Beta POD',  role:'pod_leader', email:'preethi@edu.in',  avatar:'PN', designation:'POD Leader',      joiningDate:'15 Aug 2020', manager:'Nisha Agarwal' },
+  { id:20, name:'Arjun Mehta',  pod:'Alpha POD', role:'pod_leader', email:'arjun.m@edu.in', avatar:'AM', designation:'POD Leader',      joiningDate:'01 Jun 2020', manager:'Nisha Agarwal',
+    ownTaskCounts:{ islReviews:{due:0,total:1}, docsConditionalAdmit:{due:0,total:120}, verifyProbableConditions:{due:0,total:25}, depositPaymentVerification:{due:0,total:18}, applicantFeedback:{due:0,total:3}, usaSecondMockInterview:{due:0,total:1}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:5} } },
+  { id:21, name:'Preethi Nair', pod:'Beta POD',  role:'pod_leader', email:'preethi@edu.in',  avatar:'PN', designation:'POD Leader',      joiningDate:'15 Aug 2020', manager:'Nisha Agarwal',
+    ownTaskCounts:{ islReviews:{due:0,total:0}, docsConditionalAdmit:{due:0,total:95}, verifyProbableConditions:{due:0,total:20}, depositPaymentVerification:{due:0,total:16}, applicantFeedback:{due:0,total:2}, usaSecondMockInterview:{due:0,total:0}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:4} } },
 ];
 const SENIOR_MANAGERS = [
   { id:30, name:'Nisha Agarwal', role:'senior_manager', email:'nisha.sm@edu.in', avatar:'NA', designation:'Senior Manager', joiningDate:'01 Mar 2019', manager:'Rajesh Sharma' },
@@ -8573,6 +8577,32 @@ function getFilteredTLPool() {
   return pool;
 }
 
+/* ── Important Own Tasks (TL/POD personal task queues, rolled up for SM/Director) ── */
+
+const OWN_TASK_TYPES = [
+  { key:'islReviews',                 icon:'📝', label:'ISL Reviews Pending' },
+  { key:'docsConditionalAdmit',       icon:'📄', label:'Review Docs For Conditional Admit' },
+  { key:'verifyProbableConditions',   icon:'✅', label:'Verify the Probable Conditions marked in the Expected Outcome' },
+  { key:'depositPaymentVerification', icon:'💳', label:'Deposit Payment Verification' },
+  { key:'applicantFeedback',          icon:'💬', label:'Applicant Feedback' },
+  { key:'usaSecondMockInterview',     icon:'🎤', label:'USA Second Mock Interview' },
+  { key:'visaDropRequest',            icon:'🛂', label:'Visa Drop Request' },
+  { key:'dropOffApproval',            icon:'📤', label:'Drop Off Approval' },
+];
+
+/* Which TL/POD entities' own-task counts should roll up into the current user's view */
+function getOwnTaskScopeEntities() {
+  const role = state.role; const u = state.currentUser;
+  if (role === 'team_lead')  return TEAM_LEADS.filter(t => t.id === u.id);
+  if (role === 'pod_leader') return POD_LEADERS.filter(p => p.id === u.id);
+  // senior_manager & director: roll up every TL and POD leader within their managed scope
+  const tlIds = getMyTLIds(); const podIds = getMyPodIds();
+  return [
+    ...TEAM_LEADS.filter(t => tlIds.includes(t.id)),
+    ...POD_LEADERS.filter(p => podIds.includes(p.id)),
+  ];
+}
+
 function getReporteeList() {
   const role = state.role; const u = state.currentUser;
   const counselors = getFilteredCounselorPool();
@@ -8714,8 +8744,172 @@ document.addEventListener('click', () => {
 function renderMgrTab1() {
   renderMgrBoostCards();
   renderMgrBoostInput();
+  renderMgrOwnTasks();
   renderMgrLeaderToggle();
   renderMgrLeaderboard();
+}
+
+/* Urgency is keyed off the pending COUNT (not "due today", which real Boost cards use but
+   which stays 0 for most own-task mock data) — red/amber/green tiers by volume, same visual
+   language (gradient + border + text color) as the Boost Output cards. */
+function _ownTaskUrgency(n) {
+  if (n > 20) return { bg:'linear-gradient(135deg,#fef2f2,#fee2e2)', border:'#fca5a5', textClr:'#b91c1c', badgeBg:'#fee2e2', label:'High' };
+  if (n >= 1) return { bg:'linear-gradient(135deg,#fffbeb,#fef3c7)', border:'#fcd34d', textClr:'#92400e', badgeBg:'#fef3c7', label:'Moderate' };
+  return             { bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', border:'#86efac', textClr:'#15803d', badgeBg:'#dcfce7', label:'Clear' };
+}
+
+function _ownTaskCounts(tt, entities) {
+  let due = 0, total = 0;
+  entities.forEach(e => {
+    const c = e.ownTaskCounts?.[tt.key];
+    if (c) { due += c.due; total += c.total; }
+  });
+  return { due, total };
+}
+
+function renderMgrOwnTasks() {
+  const wrap = document.getElementById('mgrOwnTasksGrid');
+  if (!wrap) return;
+
+  const entities = getOwnTaskScopeEntities();
+  const heading = document.getElementById('mgrOwnTasksHeading');
+  if (heading) {
+    heading.textContent = state.role === 'team_lead' || state.role === 'pod_leader'
+      ? '📋 Important Own Tasks'
+      : '📋 Important Own Tasks — TL & POD Rollup';
+  }
+
+  const rows = OWN_TASK_TYPES.map(tt => ({ ...tt, ..._ownTaskCounts(tt, entities) }));
+  const total = rows.reduce((s, r) => s + r.total, 0);
+  const due   = rows.reduce((s, r) => s + r.due, 0);
+  const flagged = rows.filter(r => r.total > 0).length;
+  const overall = _ownTaskUrgency(total);
+
+  const tiles = rows.map(r => {
+    const u = _ownTaskUrgency(r.total);
+    return `
+      <button type="button" onclick="event.stopPropagation(); openMgrOwnTasksDrawer('${r.key}')"
+        class="text-left rounded-lg border px-3 py-2.5 transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+        style="background:${u.bg};border-color:${u.border}">
+        <div class="flex items-start justify-between gap-1.5 mb-1.5">
+          <span class="text-base leading-none flex-shrink-0">${r.icon}</span>
+          <span class="text-lg font-black leading-none" style="color:${u.textClr}">${r.total}</span>
+        </div>
+        <p class="text-[10.5px] font-semibold leading-tight" style="color:${u.textClr}">${r.label}</p>
+        <p class="text-[9.5px] font-medium mt-1 uppercase tracking-wide" style="color:${u.textClr};opacity:0.75">${r.total === 0 ? 'Clear' : (r.due > 0 ? `${r.due} due today` : u.label)}</p>
+      </button>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="rounded-xl border p-4 sm:p-5 cursor-pointer transition-shadow hover:shadow-md"
+      style="background:${overall.bg};border-color:${overall.border};box-shadow:0 2px 8px ${overall.border}55;"
+      onclick="openMgrOwnTasksDrawer()">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="text-xl leading-none flex-shrink-0">📋</span>
+          <div class="min-w-0">
+            <p class="text-sm font-bold truncate" style="color:${overall.textClr}">${total} pending${due ? ` · ${due} due today` : ''} across ${flagged}/${OWN_TASK_TYPES.length} categories</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style="background:${overall.badgeBg};color:${overall.textClr}">${total === 0 ? '✓ All clear' : overall.label + ' load'}</span>
+          <button class="p-1 rounded-full hover:bg-black/10 transition-colors" onclick="event.stopPropagation(); renderMgrOwnTasks()" title="Refresh" aria-label="Refresh">
+            <svg class="w-3.5 h-3.5" style="color:${overall.textClr}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        ${tiles}
+      </div>
+      <div class="mt-3.5 flex items-center gap-1 text-[11px] font-bold" style="color:${overall.textClr}">
+        View all tasks
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>`;
+}
+
+/* ── Important Own Tasks Drawer — accordion of the 8 task types, same pattern as Boost Referrals ── */
+function openMgrOwnTasksDrawer(focusKey) {
+  const entities = getOwnTaskScopeEntities();
+  const rows = OWN_TASK_TYPES.map(tt => ({ ...tt, ..._ownTaskCounts(tt, entities) }));
+  const totalPending = rows.reduce((s, r) => s + r.total, 0);
+  const totalDue      = rows.reduce((s, r) => s + r.due, 0);
+
+  let content = `
+    <div class="mb-4 p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-lg">📋</span>
+        <p class="font-bold text-sm text-indigo-800">Important Own Tasks</p>
+      </div>
+      <p class="text-xs text-indigo-600">${totalPending} task${totalPending !== 1 ? 's' : ''} pending across ${OWN_TASK_TYPES.length} categories${totalDue ? ` · ${totalDue} due today` : ''}</p>
+    </div>
+    <div class="space-y-2.5">
+  `;
+
+  rows.forEach(r => {
+    const u = _ownTaskUrgency(r.total);
+    content += `
+      <div class="border border-border rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleMgrOwnTaskRow('${r.key}')" class="w-full flex items-center justify-between p-3.5 bg-white hover:bg-surface transition-colors text-left">
+          <div class="flex items-center gap-3">
+            <span class="text-xl leading-none">${r.icon}</span>
+            <div>
+              <p class="font-semibold text-sm text-text-main">${r.label}</p>
+              <p class="text-xs text-text-muted">${r.total} pending${r.due ? ` · ${r.due} due today` : ''}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border" style="background:${u.badgeBg};color:${u.textClr};border-color:${u.border}">${r.total}</span>
+            <svg id="mot-chev-${r.key}" class="w-4 h-4 text-text-muted transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </button>
+        <div id="mot-body-${r.key}" class="hidden border-t border-border">
+          ${_renderMgrOwnTaskItems(r, entities)}
+        </div>
+      </div>`;
+  });
+
+  content += `</div>`;
+  openDrawer('📋 Important Own Tasks', content, false);
+
+  if (focusKey) {
+    toggleMgrOwnTaskRow(focusKey);
+    document.getElementById(`mot-body-${focusKey}`)?.scrollIntoView({ block:'nearest' });
+  }
+}
+
+function _renderMgrOwnTaskItems(tt, entities) {
+  let rows = '';
+  entities.forEach(e => {
+    const c = e.ownTaskCounts?.[tt.key];
+    if (!c || c.total === 0) return;
+    const roleLabel = e.role === 'team_lead' ? 'Team Lead' : 'POD Leader';
+    for (let i = 1; i <= c.total; i++) {
+      const isDue = i <= c.due;
+      rows += `
+        <div class="flex items-center justify-between px-3.5 py-2.5 border-b border-border/40 last:border-0 hover:bg-surface/40">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-text-main truncate">${escHtml(tt.label)} — Item #${i}</p>
+            <p class="text-[11px] text-text-muted">${escHtml(e.name)} · ${roleLabel}</p>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${isDue ? 'bg-red-100 text-red-700' : 'bg-surface text-text-muted'}">${isDue ? '⚡ Due today' : 'Pending'}</span>
+        </div>`;
+    }
+  });
+  return rows || '<p class="text-xs text-text-muted text-center py-5">No pending items in this category</p>';
+}
+
+function toggleMgrOwnTaskRow(key) {
+  const body    = document.getElementById(`mot-body-${key}`);
+  const chevron = document.getElementById(`mot-chev-${key}`);
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function renderMgrBoostCards() {

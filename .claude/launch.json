@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "edtech-crm",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "3090"],
-      "port": 3090
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "python3 -m http.server \"$PORT\""],
+      "port": 3090,
+      "autoPort": true
     }
   ]
 }
