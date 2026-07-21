@@ -7509,6 +7509,7 @@ function resetStandupFilters() {
 
 /* ── Standup Achv drill-down ── */
 function showStandupDrillDown(key, name, period, achv, target, isPct, isCurrency) {
+  setActiveDrawerRefresh(() => showStandupDrillDown(key, name, period, achv, target, isPct, isCurrency));
   function fv(v) { if (isCurrency) return '₹' + Number(v).toLocaleString('en-IN'); if (isPct) return v + '%'; return v; }
   const numA = parseFloat(String(achv).replace(/[^0-9.]/g,''));
   const numT = parseFloat(String(target).replace(/[^0-9.]/g,''));
@@ -7538,7 +7539,7 @@ function showStandupDrillDown(key, name, period, achv, target, isPct, isCurrency
   }).join('') || '<p class="text-sm text-text-muted text-center py-6 italic">No counsellors match the current filters.</p>';
 
   const content = `
-    ${isMgrRole ? mgrFilterPillsBar() : ''}
+    ${isMgrRole ? mgrDrawerFilterBar() : ''}
     <div class="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
       <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">${name} — ${period}</p>
       <p class="font-mono text-3xl font-extrabold ${cls}">${fv(achv)}</p>
@@ -8747,7 +8748,7 @@ function updateMgrFilterLabels() {
 
 // Close dropdowns on outside click
 document.addEventListener('click', () => {
-  ['smFilterDropdown','podFilterDropdown','tlFilterDropdown','clFilterDropdown'].forEach(id => {
+  ['smFilterDropdown','podFilterDropdown','tlFilterDropdown','clFilterDropdown','drawerPodFilterDropdown','drawerTlFilterDropdown'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
 });
@@ -8847,13 +8848,14 @@ function renderMgrOwnTasks() {
 
 /* ── Important Business Tasks Drawer — accordion of the 8 task types, same pattern as Boost Referrals ── */
 function openMgrOwnTasksDrawer(focusKey) {
+  setActiveDrawerRefresh(() => openMgrOwnTasksDrawer());
   const entities = getOwnTaskScopeEntities();
   const rows = OWN_TASK_TYPES.map(tt => ({ ...tt, ..._ownTaskCounts(tt, entities) }));
   const totalPending = rows.reduce((s, r) => s + r.total, 0);
   const totalDue      = rows.reduce((s, r) => s + r.due, 0);
 
   let content = `
-    ${_ownTaskFilterPanel()}
+    ${mgrDrawerFilterBar()}
     <div class="mb-4 p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl">
       <div class="flex items-center gap-2 mb-1">
         <span class="text-lg">📋</span>
@@ -8898,88 +8900,82 @@ function openMgrOwnTasksDrawer(focusKey) {
   }
 }
 
-/* In-drawer filter panel — lets TL/PL be picked without leaving the drawer.
-   Reads/writes the same state.managerFilters the header filter bar uses, so both
-   stay in sync. Default scope: POD leader = own tasks only (TLs are opt-in);
-   SM/Director = everything in scope (PL/TL narrow it down). */
-function _ownTaskFilterPanel() {
+/* ── Generic in-drawer filter bar (PL/TL multi-select dropdowns) ──
+   Reusable across every manager drawer ("task box") that opens a side panel:
+   Important Business Tasks, Boost pipeline drawers, Standup drill-downs, etc.
+   Reads/writes the same state.managerFilters the header filter bar uses, so
+   the header dropdowns and this widget always stay in sync with each other.
+   Call setActiveDrawerRefresh() when opening a drawer so Apply/Clear here
+   know how to re-render that specific drawer's content in place. */
+function setActiveDrawerRefresh(fn) {
+  state.activeDrawerRefresh = fn;
+}
+
+function mgrDrawerFilterBar() {
   const role = state.role;
   if (role === 'team_lead') return '';
   const f = state.managerFilters;
   const u = state.currentUser;
 
-  if (role === 'pod_leader') {
-    const reportingTLs = TEAM_LEADS.filter(t => (HIERARCHY.podToTLs[u.id]||[]).includes(t.id));
+  function dropdown(type, label, options, selectedIds) {
+    const dropdownId = `drawer${type === 'pod' ? 'Pod' : 'Tl'}FilterDropdown`;
+    const btnLabel = selectedIds.length ? `${label}: ${selectedIds.length} selected` : `${label}: All`;
     return `
-      <div class="mb-4 p-3.5 border border-border rounded-xl bg-surface/40">
-        <p class="text-xs font-bold text-text-main mb-2">Filter</p>
-        <label class="flex items-center gap-2 text-sm font-semibold text-text-main mb-2">
-          <input type="checkbox" checked disabled class="w-3.5 h-3.5 accent-accent" /> My Own Tasks
-        </label>
-        ${reportingTLs.length ? `
-          <p class="text-[11px] font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">+ Include Team Lead</p>
-          <div class="space-y-1">
-            ${reportingTLs.map(t => `
-              <label class="flex items-center gap-2 text-sm text-text-main cursor-pointer">
-                <input type="checkbox" ${f.tls.includes(t.id) ? 'checked' : ''} onchange="toggleOwnTaskFilterTL(${t.id}, this.checked)" class="w-3.5 h-3.5 accent-accent cursor-pointer" />
-                ${escHtml(t.name)} (${escHtml(t.team)})
-              </label>`).join('')}
-          </div>` : ''}
-        ${f.tls.length ? `<button onclick="clearOwnTaskFilters()" class="mt-2.5 text-[11px] font-semibold text-accent hover:underline">Reset to my own tasks</button>` : ''}
+      <div class="relative inline-block" onclick="event.stopPropagation()">
+        <button type="button" onclick="toggleDrawerFilterDropdown('${type}', event)"
+          class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border border-border rounded-lg bg-white hover:bg-surface transition-colors">
+          ${escHtml(btnLabel)}
+          <svg class="w-3 h-3 text-text-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="${dropdownId}" class="hidden absolute z-20 mt-1.5 w-60 bg-white border border-border rounded-xl shadow-lg p-2">
+          <div class="max-h-48 overflow-y-auto space-y-0.5">
+            ${options.map(o => `
+              <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface cursor-pointer">
+                <input type="checkbox" ${selectedIds.includes(o.id) ? 'checked' : ''} onchange="onMgrCheckChange('${type}',${o.id},this.checked)"
+                  class="w-3.5 h-3.5 accent-accent cursor-pointer flex-shrink-0" />
+                <span class="text-xs text-text-main leading-tight">${escHtml(o.label)}</span>
+              </label>`).join('') || '<p class="text-xs text-text-muted px-2 py-1.5">None available</p>'}
+          </div>
+          <div class="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border">
+            <button onclick="clearDrawerFilter('${type}')" class="text-[11px] font-semibold text-text-muted hover:text-text-main">Clear</button>
+            <button onclick="applyDrawerFilter('${type}')" class="text-[11px] font-bold text-white bg-accent px-3 py-1 rounded-lg hover:opacity-90">Apply</button>
+          </div>
+        </div>
       </div>`;
   }
 
-  // senior_manager & director
-  const pods = POD_LEADERS.filter(p => getMyPodIds().includes(p.id));
-  const tls  = TEAM_LEADS.filter(t => getMyTLIds().includes(t.id));
-  const activeCount = f.pods.length + f.tls.length;
-  return `
-    <div class="mb-4 p-3.5 border border-border rounded-xl bg-surface/40">
-      <p class="text-xs font-bold text-text-main mb-2">Filter <span class="font-normal text-text-muted normal-case">(viewing all by default)</span></p>
-      <p class="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-1.5">POD Leader</p>
-      <div class="space-y-1 mb-3">
-        ${pods.map(p => `
-          <label class="flex items-center gap-2 text-sm text-text-main cursor-pointer">
-            <input type="checkbox" ${f.pods.includes(p.id) ? 'checked' : ''} onchange="toggleOwnTaskFilterPod(${p.id}, this.checked)" class="w-3.5 h-3.5 accent-accent cursor-pointer" />
-            ${escHtml(p.name)} (${escHtml(p.pod)})
-          </label>`).join('') || '<p class="text-xs text-text-muted">None</p>'}
-      </div>
-      <p class="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-1.5">Team Lead</p>
-      <div class="space-y-1">
-        ${tls.map(t => `
-          <label class="flex items-center gap-2 text-sm text-text-main cursor-pointer">
-            <input type="checkbox" ${f.tls.includes(t.id) ? 'checked' : ''} onchange="toggleOwnTaskFilterTL(${t.id}, this.checked)" class="w-3.5 h-3.5 accent-accent cursor-pointer" />
-            ${escHtml(t.name)} (${escHtml(t.team)})
-          </label>`).join('') || '<p class="text-xs text-text-muted">None</p>'}
-      </div>
-      ${activeCount ? `<button onclick="clearOwnTaskFilters()" class="mt-2.5 text-[11px] font-semibold text-accent hover:underline">Clear filters — view all</button>` : ''}
-    </div>`;
+  let widgets = '';
+  if (['senior_manager','director','ops_admin'].includes(role)) {
+    const pods = POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).map(p => ({ id:p.id, label:`${p.name} (${p.pod})` }));
+    widgets += dropdown('pod', 'PL', pods, f.pods);
+  }
+  const reportingTlIds = role === 'pod_leader' ? (HIERARCHY.podToTLs[u.id]||[]) : getMyTLIds();
+  const tlOpts = TEAM_LEADS.filter(t => reportingTlIds.includes(t.id)).map(t => ({ id:t.id, label:`${t.name} (${t.team})` }));
+  widgets += dropdown('tl', 'TL', tlOpts, f.tls);
+
+  return widgets ? `<div class="flex flex-wrap items-center gap-2 mb-4">${widgets}</div>` : '';
 }
 
-function toggleOwnTaskFilterTL(id, checked) {
-  const f = state.managerFilters;
-  if (checked && !f.tls.includes(id)) f.tls.push(id);
-  else if (!checked) { const i = f.tls.indexOf(id); if (i > -1) f.tls.splice(i,1); }
-  _refreshOwnTaskFilterViews();
+function toggleDrawerFilterDropdown(type, e) {
+  if (e) e.stopPropagation();
+  const ids = ['drawerPodFilterDropdown','drawerTlFilterDropdown'];
+  const target = type === 'pod' ? 'drawerPodFilterDropdown' : 'drawerTlFilterDropdown';
+  ids.forEach(id => { const el = document.getElementById(id); if (el && id !== target) el.classList.add('hidden'); });
+  document.getElementById(target)?.classList.toggle('hidden');
 }
 
-function toggleOwnTaskFilterPod(id, checked) {
-  const f = state.managerFilters;
-  if (checked && !f.pods.includes(id)) f.pods.push(id);
-  else if (!checked) { const i = f.pods.indexOf(id); if (i > -1) f.pods.splice(i,1); }
-  _refreshOwnTaskFilterViews();
+function applyDrawerFilter(type) {
+  const target = type === 'pod' ? 'drawerPodFilterDropdown' : 'drawerTlFilterDropdown';
+  document.getElementById(target)?.classList.add('hidden');
+  buildMgrFilterBar();                 // keep the header dropdowns/labels in sync
+  renderMgrTab1();                     // refresh the dashboard cards behind the drawer
+  state.activeDrawerRefresh?.();       // re-render whichever drawer is currently open
 }
 
-function clearOwnTaskFilters() {
-  state.managerFilters.tls = [];
-  if (state.role !== 'pod_leader') state.managerFilters.pods = [];
-  _refreshOwnTaskFilterViews();
-}
-
-function _refreshOwnTaskFilterViews() {
-  buildMgrFilterBar();     // keep the header dropdown checkboxes/labels in sync
-  renderMgrTab1();         // refresh the dashboard card behind the drawer
-  openMgrOwnTasksDrawer(); // re-render the drawer content in place
+function clearDrawerFilter(type) {
+  if (type === 'pod') state.managerFilters.pods = [];
+  else state.managerFilters.tls = [];
+  applyDrawerFilter(type);
 }
 
 function _renderMgrOwnTaskItems(tt, entities) {
@@ -9079,6 +9075,7 @@ function mgrFilterPillsBar() {
 }
 
 function openMgrBoostPipeline(type) {
+  setActiveDrawerRefresh(() => openMgrBoostPipeline(type));
   const pool = getFilteredCounselorPool();
   const poolIds = new Set(pool.map(c => c.id));
   const poolStudents = STUDENTS.filter(s => poolIds.has(s.counselorId));
@@ -9109,7 +9106,7 @@ function openMgrBoostPipeline(type) {
   }).join('') || '<p class="text-sm text-text-muted text-center py-8">No students in this pipeline.</p>';
 
   openDrawer(`${def.emoji} ${def.label} — ${students.length} students · ${pool.length} counsellors`, `
-    ${mgrFilterPillsBar()}
+    ${mgrDrawerFilterBar()}
     <div class="divide-y divide-border">${rows}</div>`);
 }
 
