@@ -8577,7 +8577,7 @@ function getFilteredTLPool() {
   return pool;
 }
 
-/* ── Important Own Tasks (TL/POD personal task queues, rolled up for SM/Director) ── */
+/* ── Important Business Tasks (TL/POD personal task queues, rolled up for SM/Director) ── */
 
 const OWN_TASK_TYPES = [
   { key:'islReviews',                 icon:'📝', label:'ISL Reviews Pending' },
@@ -8775,8 +8775,8 @@ function renderMgrOwnTasks() {
   const heading = document.getElementById('mgrOwnTasksHeading');
   if (heading) {
     heading.textContent = state.role === 'team_lead' || state.role === 'pod_leader'
-      ? '📋 Important Own Tasks'
-      : '📋 Important Own Tasks — TL & POD Rollup';
+      ? '📋 Important Business Tasks'
+      : '📋 Important Business Tasks — TL & POD Rollup';
   }
 
   const rows = OWN_TASK_TYPES.map(tt => ({ ...tt, ..._ownTaskCounts(tt, entities) }));
@@ -8830,7 +8830,7 @@ function renderMgrOwnTasks() {
     </div>`;
 }
 
-/* ── Important Own Tasks Drawer — accordion of the 8 task types, same pattern as Boost Referrals ── */
+/* ── Important Business Tasks Drawer — accordion of the 8 task types, same pattern as Boost Referrals ── */
 function openMgrOwnTasksDrawer(focusKey) {
   const entities = getOwnTaskScopeEntities();
   const rows = OWN_TASK_TYPES.map(tt => ({ ...tt, ..._ownTaskCounts(tt, entities) }));
@@ -8841,7 +8841,7 @@ function openMgrOwnTasksDrawer(focusKey) {
     <div class="mb-4 p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl">
       <div class="flex items-center gap-2 mb-1">
         <span class="text-lg">📋</span>
-        <p class="font-bold text-sm text-indigo-800">Important Own Tasks</p>
+        <p class="font-bold text-sm text-indigo-800">Important Business Tasks</p>
       </div>
       <p class="text-xs text-indigo-600">${totalPending} task${totalPending !== 1 ? 's' : ''} pending across ${OWN_TASK_TYPES.length} categories${totalDue ? ` · ${totalDue} due today` : ''}</p>
     </div>
@@ -8874,7 +8874,7 @@ function openMgrOwnTasksDrawer(focusKey) {
   });
 
   content += `</div>`;
-  openDrawer('📋 Important Own Tasks', content, false);
+  openDrawer('📋 Important Business Tasks', content, false);
 
   if (focusKey) {
     toggleMgrOwnTaskRow(focusKey);
