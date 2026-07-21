@@ -1089,7 +1089,7 @@ function bootApp(role, email) {
       const showSM = ['director','ops_admin'].includes(role);
       smSel.classList.toggle('hidden', !showSM);
       if (showSM) {
-        smSel.innerHTML = '<option value="">All Senior Managers</option>';
+        smSel.innerHTML = '<option value="">All SM</option>';
         const mySMIds = role === 'ops_admin' ? SENIOR_MANAGERS.map(s => s.id) : (HIERARCHY.dirToSMs[state.currentUser.id] || []);
         SENIOR_MANAGERS.filter(s => mySMIds.includes(s.id)).forEach(s => {
           const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; smSel.appendChild(o);
@@ -1101,7 +1101,7 @@ function bootApp(role, email) {
       const showPOD = ['senior_manager','director','ops_admin'].includes(role);
       podSel.classList.toggle('hidden', !showPOD);
       if (showPOD) {
-        podSel.innerHTML = '<option value="">All PODs</option>';
+        podSel.innerHTML = '<option value="">All PL</option>';
         POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).forEach(p => {
           const o = document.createElement('option'); o.value = p.id; o.textContent = p.name + ' (' + p.pod + ')'; podSel.appendChild(o);
         });
@@ -1112,7 +1112,7 @@ function bootApp(role, email) {
       const showTL = role !== 'team_lead';
       tlSel.classList.toggle('hidden', !showTL);
       if (showTL) {
-        tlSel.innerHTML = '<option value="">All TLs</option>';
+        tlSel.innerHTML = '<option value="">All TL</option>';
         TEAM_LEADS.filter(t => getMyTLIds().includes(t.id)).forEach(t => {
           const o = document.createElement('option'); o.value = t.id; o.textContent = t.name + ' (' + t.team + ')'; tlSel.appendChild(o);
         });
@@ -1121,7 +1121,7 @@ function bootApp(role, email) {
 
     if (cfSel) {
       cfSel.classList.remove('hidden');
-      cfSel.innerHTML = '<option value="">All Counsellors</option>';
+      cfSel.innerHTML = '<option value="">All CL</option>';
       const cList = (role === 'team_lead')
         ? COUNSELORS.filter(c => c.team === state.currentUser.team)
         : COUNSELORS.filter(c => getMyTLIds().some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
@@ -5786,23 +5786,93 @@ function handleClarifyStep(userText) {
   }
 }
 
-/* ── Helper: post-help quick replies (all 13 options) ── */
+/* ── Chat option buckets — groups the 13 flat quick-reply options into 5 topic buckets.
+   All original option labels/intents/flows are unchanged; they just sit one level deeper
+   behind a bucket menu now. ── */
+const CHAT_OPTION_BUCKETS = [
+  { key:'day_tasks',   label:'📋 My Day & Tasks',
+    options: ['How to Start my Day', 'Target for Today', 'Who Should I Call Today', 'Agreement Reminders'] },
+  { key:'performance',  label:'🏆 Performance & Leaderboard',
+    options: ['Top Performer in Org', 'Top Performer in Cluster'] },
+  { key:'incentives',   label:'💰 Incentives & Earnings',
+    options: ['Live Offers Running?', 'Incentive Details', 'How Can I Earn More'] },
+  { key:'learning',     label:'🎓 Learning & Growth',
+    options: ['Training / I want to Learn'] },
+  { key:'support',      label:'🛠️ Support & Help',
+    options: ['My Raised Tickets', 'Raise Support Ticket', 'Do You Want to Connect with Manager/HR/DS'] },
+];
+
+/* ── Helper: post-help quick replies — now surfaces the 5 bucket buttons instead of all 13 options ── */
 function showPostHelpQuickReplies() {
-  setTimeout(() => appendQuickReplies([
-    'How to Start my Day',
-    'Training / I want to Learn',
-    'Top Performer in Org',
-    'Top Performer in Cluster',
-    'Target for Today',
-    'Who Should I Call Today',
-    'Live Offers Running?',
-    'Incentive Details',
-    'How Can I Earn More',
-    'My Raised Tickets',
-    'Agreement Reminders',
-    'Do You Want to Connect with Manager/HR/DS',
-    'Raise Support Ticket',
-  ]), 400);
+  setTimeout(() => appendBucketMenu(), 400);
+}
+
+function appendBucketMenu() {
+  const container = document.getElementById('botMessages');
+  const row = document.createElement('div');
+  row.className = 'quick-reply-row';
+  CHAT_OPTION_BUCKETS.forEach(bucket => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-reply-btn';
+    btn.textContent = bucket.label;
+    btn.addEventListener('click', () => {
+      // Selecting a bucket is always a fresh choice — clear any lingering flow (e.g. a prior
+      // option's own follow-up quick-replies that never got clicked) so it can't hijack this click.
+      endFlow();
+      row.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      row.remove();
+      appendUserMessage(bucket.label);
+      addToHistory('user', bucket.label);
+      appendTypingIndicator();
+      setTimeout(() => {
+        removeTypingIndicator();
+        const msg = `Sure! Here's what I can help with under ${bucket.label} 👇`;
+        appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+        addToHistory('bot', msg);
+        setTimeout(() => appendBucketSubOptions(bucket.key), 400);
+      }, 400);
+    }, { once: true });
+    row.appendChild(btn);
+  });
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendBucketSubOptions(bucketKey) {
+  const bucket = CHAT_OPTION_BUCKETS.find(b => b.key === bucketKey);
+  if (!bucket) return;
+  const container = document.getElementById('botMessages');
+  const row = document.createElement('div');
+  row.className = 'quick-reply-row';
+  [...bucket.options, '⬅ Back to Main Menu'].forEach(label => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-reply-btn';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      // Same as above — a sub-option click is always a fresh intent, never a continuation
+      // of whatever flow happened to still be open, so clear it before routing.
+      endFlow();
+      row.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      row.remove();
+      appendUserMessage(label);
+      addToHistory('user', label);
+      appendTypingIndicator();
+      setTimeout(() => {
+        removeTypingIndicator();
+        if (label === '⬅ Back to Main Menu') {
+          const msg = `No problem! How can I help you today?`;
+          appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+          addToHistory('bot', msg);
+          setTimeout(() => appendBucketMenu(), 400);
+          return;
+        }
+        processBotInput(label);
+      }, 400);
+    }, { once: true });
+    row.appendChild(btn);
+  });
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
 }
 
 /* ── Flow 0: greeting ── */
@@ -8625,9 +8695,9 @@ function updateMgrFilterLabels() {
   const tlLbl  = document.getElementById('tlFilterLabel');
   const clLbl  = document.getElementById('clFilterLabel');
   if (smLbl)  smLbl.textContent  = f.sms.length  ? `SM: ${f.sms.length} selected`   : 'SM: All';
-  if (podLbl) podLbl.textContent = f.pods.length ? `POD: ${f.pods.length} selected` : 'POD: All';
+  if (podLbl) podLbl.textContent = f.pods.length ? `PL: ${f.pods.length} selected`  : 'PL: All';
   if (tlLbl)  tlLbl.textContent  = f.tls.length  ? `TL: ${f.tls.length} selected`   : 'TL: All';
-  if (clLbl)  clLbl.textContent  = f.counselors.length ? `Counsellor: ${f.counselors.length} selected` : 'Counsellor: All';
+  if (clLbl)  clLbl.textContent  = f.counselors.length ? `CL: ${f.counselors.length} selected` : 'CL: All';
   const badge = document.getElementById('mgrViewAllBadge');
   if (badge) badge.classList.toggle('hidden', f.sms.length + f.pods.length + f.tls.length + f.counselors.length > 0);
 }
@@ -8706,9 +8776,9 @@ function mgrFilterPillsBar() {
   const f = state.managerFilters;
   const filterPills = [];
   if (f.sms.length) filterPills.push(`SM: ${f.sms.map(id => SENIOR_MANAGERS.find(s=>s.id===id)?.name||id).join(', ')}`);
-  if (f.pods.length) filterPills.push(`POD: ${f.pods.map(id => POD_LEADERS.find(p=>p.id===id)?.name||id).join(', ')}`);
+  if (f.pods.length) filterPills.push(`PL: ${f.pods.map(id => POD_LEADERS.find(p=>p.id===id)?.name||id).join(', ')}`);
   if (f.tls.length) filterPills.push(`TL: ${f.tls.map(id => TEAM_LEADS.find(t=>t.id===id)?.name||id).join(', ')}`);
-  if (f.counselors.length) filterPills.push(`Counsellor: ${f.counselors.map(id => COUNSELORS.find(c=>c.id===id)?.name||id).join(', ')}`);
+  if (f.counselors.length) filterPills.push(`CL: ${f.counselors.map(id => COUNSELORS.find(c=>c.id===id)?.name||id).join(', ')}`);
   return filterPills.length
     ? `<div class="flex flex-wrap gap-1.5 px-4 py-2 bg-surface border-b border-border">${filterPills.map(p => `<span class="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium border border-accent/20">${escHtml(p)}</span>`).join('')}</div>`
     : `<div class="px-4 py-2 bg-surface border-b border-border"><span class="text-[10px] text-text-muted italic">Viewing all counsellors</span></div>`;
