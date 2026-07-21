@@ -8593,23 +8593,24 @@ const OWN_TASK_TYPES = [
 /* Which TL/POD entities' own-task counts should roll up into the current user's view */
 function getOwnTaskScopeEntities() {
   const role = state.role; const u = state.currentUser;
+  const f = state.managerFilters;
 
   if (role === 'team_lead') return TEAM_LEADS.filter(t => t.id === u.id);
 
-  // getFilteredTLPool() already applies the header's "PL"/"TL" filters with the same
-  // POD -> TL cascading used by the rest of the dashboard (a POD filter narrows which
-  // TLs are included, further narrowed by an explicit TL filter).
-  const tls = getFilteredTLPool();
-
   if (role === 'pod_leader') {
-    // POD leader always sees their own tasks, plus their reporting TLs' tasks.
+    // POD leader defaults to their own tasks only — TL tasks are opt-in via the
+    // "TL" filter (header bar or the in-drawer filter panel), not shown by default.
     const own = POD_LEADERS.filter(p => p.id === u.id);
-    return [...own, ...tls];
+    if (!f.tls.length) return own;
+    const reportingTlIds = HIERARCHY.podToTLs[u.id] || [];
+    const selectedTlIds = reportingTlIds.filter(id => f.tls.includes(id));
+    return [...own, ...TEAM_LEADS.filter(t => selectedTlIds.includes(t.id))];
   }
 
-  // senior_manager & director: roll up every TL and POD leader within their managed
-  // scope, narrowed by the existing "PL" filter in the header bar.
-  const f = state.managerFilters;
+  // senior_manager & director: view all TLs/POD leaders in scope by default, narrowed
+  // by the existing "PL"/"TL" filters (header bar or the in-drawer filter panel).
+  // getFilteredTLPool() applies the same POD -> TL cascading used elsewhere.
+  const tls = getFilteredTLPool();
   const myPodIds = getMyPodIds();
   const podIds = f.pods.length ? myPodIds.filter(id => f.pods.includes(id)) : myPodIds;
   return [...tls, ...POD_LEADERS.filter(p => podIds.includes(p.id))];
@@ -8786,9 +8787,10 @@ function renderMgrOwnTasks() {
   const entities = getOwnTaskScopeEntities();
   const heading = document.getElementById('mgrOwnTasksHeading');
   if (heading) {
-    const suffix = state.role === 'team_lead' ? ''
-      : state.role === 'pod_leader' ? ' — TL Rollup'
-      : ' — TL & POD Rollup';
+    const f = state.managerFilters;
+    let suffix = '';
+    if (state.role === 'pod_leader') suffix = f.tls.length ? ' — TL Rollup' : ' — My Own Tasks';
+    else if (state.role === 'senior_manager' || state.role === 'director') suffix = ' — TL & POD Rollup';
     heading.textContent = `📋 Important Business Tasks${suffix}`;
   }
 
@@ -8851,8 +8853,8 @@ function openMgrOwnTasksDrawer(focusKey) {
   const totalDue      = rows.reduce((s, r) => s + r.due, 0);
 
   let content = `
-    ${state.role !== 'team_lead' ? mgrFilterPillsBar() : ''}
-    <div class="mb-4 mt-4 p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+    ${_ownTaskFilterPanel()}
+    <div class="mb-4 p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl">
       <div class="flex items-center gap-2 mb-1">
         <span class="text-lg">📋</span>
         <p class="font-bold text-sm text-indigo-800">Important Business Tasks</p>
@@ -8894,6 +8896,90 @@ function openMgrOwnTasksDrawer(focusKey) {
     toggleMgrOwnTaskRow(focusKey);
     document.getElementById(`mot-body-${focusKey}`)?.scrollIntoView({ block:'nearest' });
   }
+}
+
+/* In-drawer filter panel — lets TL/PL be picked without leaving the drawer.
+   Reads/writes the same state.managerFilters the header filter bar uses, so both
+   stay in sync. Default scope: POD leader = own tasks only (TLs are opt-in);
+   SM/Director = everything in scope (PL/TL narrow it down). */
+function _ownTaskFilterPanel() {
+  const role = state.role;
+  if (role === 'team_lead') return '';
+  const f = state.managerFilters;
+  const u = state.currentUser;
+
+  if (role === 'pod_leader') {
+    const reportingTLs = TEAM_LEADS.filter(t => (HIERARCHY.podToTLs[u.id]||[]).includes(t.id));
+    return `
+      <div class="mb-4 p-3.5 border border-border rounded-xl bg-surface/40">
+        <p class="text-xs font-bold text-text-main mb-2">Filter</p>
+        <label class="flex items-center gap-2 text-sm font-semibold text-text-main mb-2">
+          <input type="checkbox" checked disabled class="w-3.5 h-3.5 accent-accent" /> My Own Tasks
+        </label>
+        ${reportingTLs.length ? `
+          <p class="text-[11px] font-semibold text-text-muted uppercase tracking-wide mt-3 mb-1.5">+ Include Team Lead</p>
+          <div class="space-y-1">
+            ${reportingTLs.map(t => `
+              <label class="flex items-center gap-2 text-sm text-text-main cursor-pointer">
+                <input type="checkbox" ${f.tls.includes(t.id) ? 'checked' : ''} onchange="toggleOwnTaskFilterTL(${t.id}, this.checked)" class="w-3.5 h-3.5 accent-accent cursor-pointer" />
+                ${escHtml(t.name)} (${escHtml(t.team)})
+              </label>`).join('')}
+          </div>` : ''}
+        ${f.tls.length ? `<button onclick="clearOwnTaskFilters()" class="mt-2.5 text-[11px] font-semibold text-accent hover:underline">Reset to my own tasks</button>` : ''}
+      </div>`;
+  }
+
+  // senior_manager & director
+  const pods = POD_LEADERS.filter(p => getMyPodIds().includes(p.id));
+  const tls  = TEAM_LEADS.filter(t => getMyTLIds().includes(t.id));
+  const activeCount = f.pods.length + f.tls.length;
+  return `
+    <div class="mb-4 p-3.5 border border-border rounded-xl bg-surface/40">
+      <p class="text-xs font-bold text-text-main mb-2">Filter <span class="font-normal text-text-muted normal-case">(viewing all by default)</span></p>
+      <p class="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-1.5">POD Leader</p>
+      <div class="space-y-1 mb-3">
+        ${pods.map(p => `
+          <label class="flex items-center gap-2 text-sm text-text-main cursor-pointer">
+            <input type="checkbox" ${f.pods.includes(p.id) ? 'checked' : ''} onchange="toggleOwnTaskFilterPod(${p.id}, this.checked)" class="w-3.5 h-3.5 accent-accent cursor-pointer" />
+            ${escHtml(p.name)} (${escHtml(p.pod)})
+          </label>`).join('') || '<p class="text-xs text-text-muted">None</p>'}
+      </div>
+      <p class="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-1.5">Team Lead</p>
+      <div class="space-y-1">
+        ${tls.map(t => `
+          <label class="flex items-center gap-2 text-sm text-text-main cursor-pointer">
+            <input type="checkbox" ${f.tls.includes(t.id) ? 'checked' : ''} onchange="toggleOwnTaskFilterTL(${t.id}, this.checked)" class="w-3.5 h-3.5 accent-accent cursor-pointer" />
+            ${escHtml(t.name)} (${escHtml(t.team)})
+          </label>`).join('') || '<p class="text-xs text-text-muted">None</p>'}
+      </div>
+      ${activeCount ? `<button onclick="clearOwnTaskFilters()" class="mt-2.5 text-[11px] font-semibold text-accent hover:underline">Clear filters — view all</button>` : ''}
+    </div>`;
+}
+
+function toggleOwnTaskFilterTL(id, checked) {
+  const f = state.managerFilters;
+  if (checked && !f.tls.includes(id)) f.tls.push(id);
+  else if (!checked) { const i = f.tls.indexOf(id); if (i > -1) f.tls.splice(i,1); }
+  _refreshOwnTaskFilterViews();
+}
+
+function toggleOwnTaskFilterPod(id, checked) {
+  const f = state.managerFilters;
+  if (checked && !f.pods.includes(id)) f.pods.push(id);
+  else if (!checked) { const i = f.pods.indexOf(id); if (i > -1) f.pods.splice(i,1); }
+  _refreshOwnTaskFilterViews();
+}
+
+function clearOwnTaskFilters() {
+  state.managerFilters.tls = [];
+  if (state.role !== 'pod_leader') state.managerFilters.pods = [];
+  _refreshOwnTaskFilterViews();
+}
+
+function _refreshOwnTaskFilterViews() {
+  buildMgrFilterBar();     // keep the header dropdown checkboxes/labels in sync
+  renderMgrTab1();         // refresh the dashboard card behind the drawer
+  openMgrOwnTasksDrawer(); // re-render the drawer content in place
 }
 
 function _renderMgrOwnTaskItems(tt, entities) {
