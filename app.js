@@ -31,9 +31,9 @@ const COUNSELORS = [
 
 const TEAM_LEADS = [
   { id:9,  name:'Sneha Kapoor', team:'Alpha', role:'team_lead', email:'sneha@edu.in',  avatar:'SK', designation:'Team Lead', joiningDate:'01 Jan 2021', manager:'Nisha Agarwal',
-    ownTaskCounts:{ islReviews:{due:0,total:1}, docsConditionalAdmit:{due:0,total:2}, verifyProbableConditions:{due:0,total:1}, depositPaymentVerification:{due:0,total:1}, applicantFeedback:{due:0,total:5}, usaSecondMockInterview:{due:0,total:0}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:9} } },
+    ownTaskCounts:{ islReviews:{due:0,total:1}, docsConditionalAdmit:{due:0,total:2}, verifyProbableConditions:{due:0,total:1}, depositPaymentVerification:{due:0,total:1}, applicantFeedback:{due:0,total:5}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:9} } },
   { id:10, name:'Vijay Kumar',  team:'Beta',  role:'team_lead', email:'vijay@edu.in',  avatar:'VK', designation:'Team Lead', joiningDate:'15 Mar 2021', manager:'Nisha Agarwal',
-    ownTaskCounts:{ islReviews:{due:0,total:0}, docsConditionalAdmit:{due:0,total:3}, verifyProbableConditions:{due:0,total:2}, depositPaymentVerification:{due:0,total:2}, applicantFeedback:{due:0,total:3}, usaSecondMockInterview:{due:0,total:1}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:6} } },
+    ownTaskCounts:{ islReviews:{due:0,total:0}, docsConditionalAdmit:{due:0,total:3}, verifyProbableConditions:{due:0,total:2}, depositPaymentVerification:{due:0,total:2}, applicantFeedback:{due:0,total:3}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:6} } },
 ];
 
 const OPS_USERS = [
@@ -42,9 +42,9 @@ const OPS_USERS = [
 
 const POD_LEADERS = [
   { id:20, name:'Arjun Mehta',  pod:'Alpha POD', role:'pod_leader', email:'arjun.m@edu.in', avatar:'AM', designation:'POD Leader',      joiningDate:'01 Jun 2020', manager:'Nisha Agarwal',
-    ownTaskCounts:{ islReviews:{due:0,total:1}, docsConditionalAdmit:{due:0,total:120}, verifyProbableConditions:{due:0,total:25}, depositPaymentVerification:{due:0,total:18}, applicantFeedback:{due:0,total:3}, usaSecondMockInterview:{due:0,total:1}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:5} } },
+    ownTaskCounts:{ islReviews:{due:0,total:1}, docsConditionalAdmit:{due:0,total:120}, verifyProbableConditions:{due:0,total:25}, depositPaymentVerification:{due:0,total:18}, applicantFeedback:{due:0,total:3}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:5} } },
   { id:21, name:'Preethi Nair', pod:'Beta POD',  role:'pod_leader', email:'preethi@edu.in',  avatar:'PN', designation:'POD Leader',      joiningDate:'15 Aug 2020', manager:'Nisha Agarwal',
-    ownTaskCounts:{ islReviews:{due:0,total:0}, docsConditionalAdmit:{due:0,total:95}, verifyProbableConditions:{due:0,total:20}, depositPaymentVerification:{due:0,total:16}, applicantFeedback:{due:0,total:2}, usaSecondMockInterview:{due:0,total:0}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:4} } },
+    ownTaskCounts:{ islReviews:{due:0,total:0}, docsConditionalAdmit:{due:0,total:95}, verifyProbableConditions:{due:0,total:20}, depositPaymentVerification:{due:0,total:16}, applicantFeedback:{due:0,total:2}, visaDropRequest:{due:0,total:0}, dropOffApproval:{due:0,total:4} } },
 ];
 const SENIOR_MANAGERS = [
   { id:30, name:'Nisha Agarwal', role:'senior_manager', email:'nisha.sm@edu.in', avatar:'NA', designation:'Senior Manager', joiningDate:'01 Mar 2019', manager:'Rajesh Sharma' },
@@ -8594,16 +8594,13 @@ const OWN_TASK_TYPES = [
     definition:"These students have made their deposit payment and it's awaiting your verification.",
     closure:'Confirm the payment against the receipt/transaction ID to close the task.' },
   { key:'applicantFeedback',          icon:'💬', label:'Applicant Feedback',
-    definition:'These students have shared feedback that is pending your review.',
-    closure:'Read through the feedback and acknowledge or act on it to close the task.' },
-  { key:'usaSecondMockInterview',     icon:'🎤', label:'USA Second Mock Interview',
-    definition:'These students are due for their second mock interview for their USA applications.',
-    closure:'Conduct the mock interview and log the outcome to close the task.' },
+    definition:'The TL/POD needs to call the student after their STI is done to ask about the application process and share feedback with them.',
+    closure:'Based on the call, create a task for the Counsellor or RM if further action is needed, or mark it as No Action Needed if not — either way, the task will be closed for you.' },
   { key:'visaDropRequest',            icon:'🛂', label:'Visa Drop Request',
-    definition:'These students have raised a request to drop their visa process.',
+    definition:"Visa Counsellors have raised a request to drop the student's visa process.",
     closure:'Review the reason for drop and process/approve the request to close the task.' },
   { key:'dropOffApproval',            icon:'📤', label:'Drop Off Approval',
-    definition:'These students have been marked as a drop-off and are pending your approval.',
+    definition:'These students have been marked as drop-off by the counsellor and are pending your approval.',
     closure:'Validate the drop-off reason and approve to close the task.' },
 ];
 
@@ -8821,7 +8818,7 @@ function renderMgrOwnTasks() {
     const u = _ownTaskUrgency(r.total);
     return `
       <button type="button" onclick="event.stopPropagation(); openMgrOwnTasksDrawer('${r.key}')"
-        class="text-left rounded-lg border px-3 py-2.5 transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+        class="text-left rounded-lg border px-3 py-2.5 transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 flex-1 basis-[140px]"
         style="background:${u.bg};border-color:${u.border}">
         <div class="flex items-start justify-between gap-1.5 mb-1.5">
           <span class="text-base leading-none flex-shrink-0">${r.icon}</span>
@@ -8852,7 +8849,7 @@ function renderMgrOwnTasks() {
           </button>
         </div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div class="flex flex-wrap gap-2.5">
         ${tiles}
       </div>
       <div class="mt-3.5 flex items-center gap-1 text-[11px] font-bold" style="color:${overall.textClr}">
