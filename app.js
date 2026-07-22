@@ -8901,11 +8901,8 @@ function openMgrOwnTasksDrawer(focusKey) {
             </svg>
           </div>
         </button>
-        <div id="mot-body-${r.key}" class="hidden border-t border-border">
-          <div class="px-3.5 py-3 bg-surface/50 border-b border-border/70 space-y-1.5">
-            <p class="text-[11px] text-text-main"><span class="font-bold uppercase tracking-wide text-text-muted">Definition — </span>${escHtml(r.definition)}</p>
-            <p class="text-[11px] text-text-main"><span class="font-bold uppercase tracking-wide text-text-muted">Task Closure — </span>${escHtml(r.closure)}</p>
-          </div>
+        <div id="mot-body-${r.key}" class="hidden border-t border-border p-3">
+          ${_metricDefBanner(escHtml(r.definition), escHtml(r.closure))}
           ${_renderMgrOwnTaskItems(r, entities)}
         </div>
       </div>`;
