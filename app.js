@@ -656,16 +656,16 @@ const BOT_INTENT_MAP = {
   },
   view_leaderboard: {
     keywords: ['show me the leaderboard', 'show leaderboard', 'view leaderboard', 'open leaderboard', 'leaderboard dekhna', 'top performers table', 'top performers list', 'leaderboard'],
-    answer: `🏆 **Taking you to the Top Performers leaderboard!**\n\nYou can switch between **Today**, **This Month**, and **This Year** to compare across the team.`,
+    answer: `🏆 **Taking you to the Top Performers leaderboard!**\n\nYou can switch between **Yesterday**, **This Month**, and **Last 3 Months** to compare across the team.`,
     navLabel: '→ View Top Performers',
     navAction: () => {
       switchTab('tab1');
       setTimeout(() => {
-        const body = document.getElementById('body-topPerformers');
+        const body = document.getElementById('body-mgrTopPerf');
         if (body && body.classList.contains('hidden')) {
-          toggleSection('topPerformers');
+          toggleSection('mgrTopPerf');
         }
-        const el = document.getElementById('leaderboardGrid');
+        const el = document.getElementById('mgrLeaderboardGrid');
         const mc = document.getElementById('mainContent');
         if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
       }, 400);
@@ -825,7 +825,7 @@ let state = {
   chatPanel: { unreadCount: 0, lastOpenedAt: null },
   managerFilters: { sms:[], pods:[], tls:[], counselors:[] },
   mgrLeaderView: 'counsellor',
-  mgrLeaderPeriod: 'today',
+  mgrLeaderPeriod: 'yesterday',
   mgrEarnerView: 'counsellor',
   botConversation: {
     flow: null,
@@ -970,7 +970,7 @@ function bootApp(role, email) {
   // Reset all role-gated elements before applying role-specific visibility
   ['counselorSelectorWrapper', 'globalFilterBar', 'mgrCrmBar', 'mgrCallMergeWrap',
    'tlCounsellorFilterBar', 'adminTabBtn',
-   'leaderViewToggleWrap', 'earnerViewToggleWrap',
+   'earnerViewToggleWrap',
    'mgrTab1Panel', 'mgrTab2Panel', 'mgrTab3Panel'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
@@ -1060,7 +1060,6 @@ function bootApp(role, email) {
   const boostOutputSection = document.getElementById('boostCardsGrid')?.closest('section');
   const boostInputSection  = document.getElementById('volumeMetrics')?.closest('section');
   const standupSection     = document.getElementById('body-standup')?.closest('section');
-  const topPerfSection     = document.getElementById('body-topPerformers')?.closest('section');
   if (isMgr) {
     if (reportCardSection) reportCardSection.classList.add('hidden');
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
@@ -1069,14 +1068,12 @@ function bootApp(role, email) {
     // Performance Summary scorecard (Target/Achieved/Status, incl. CA->STI/LockIn 14D rows)
     // stays visible for manager roles too — see index.html:480 "TL: standup only"
     if (standupSection)     standupSection.classList.remove('hidden');
-    if (topPerfSection)     topPerfSection.classList.add('hidden');
   } else if (role === 'counselor') {
     if (reportCardSection) reportCardSection.classList.add('hidden');
     if (standupScoreStrip) standupScoreStrip.classList.remove('hidden');
     if (boostOutputSection) boostOutputSection.classList.remove('hidden');
     if (boostInputSection)  boostInputSection.classList.remove('hidden');
     if (standupSection)     standupSection.classList.remove('hidden');
-    if (topPerfSection)     topPerfSection.classList.remove('hidden');
   } else {
     if (reportCardSection) reportCardSection.classList.add('hidden');
     if (standupScoreStrip) standupScoreStrip.classList.add('hidden');
@@ -1278,11 +1275,13 @@ function renderAll() {
   if (state.role === 'ops_admin') {
     renderMgrManagerOffers();
   }
+  // Top Performers (org-wide leaderboard) — shown to every role, not gated by hierarchy
+  renderMgrLeaderToggle();
+  renderMgrLeaderboard();
   renderTeamChat();
   renderWhatsappCoverage();
   renderMetricCards();
   renderHistoryTable();
-  renderLeaderboard();
   renderSlabTable();
   renderOffersRow();
   renderCounsellorOffersRow();
@@ -3123,24 +3122,6 @@ function renderHistoryTable() {
   }).join('');
 }
 
-/* ═══════════════ LEADERBOARD (Tab 1) ═══════════════ */
-
-let leaderViewMode = 'counsellor'; // 'counsellor' | 'teamlead'
-
-function switchLeader(period, btn) {
-  state.leaderPeriod = period;
-  document.querySelectorAll('#tab1 .period-btn').forEach((b,i) => { if(i>=3) b.classList.remove('active'); });
-  btn.classList.add('active');
-  renderLeaderboard();
-}
-
-function switchLeaderView(mode, btn) {
-  leaderViewMode = mode;
-  document.querySelectorAll('.leader-view-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderLeaderboard();
-}
-
 function onTLCounsellorChange() {
   const sel = document.getElementById('tlCounsellorSelect');
   if (!sel) return;
@@ -3150,47 +3131,6 @@ function onTLCounsellorChange() {
   if (hdrSel) hdrSel.value = state.viewingCounselorId;
   renderBoostCards();
   renderMetricCards();
-  renderLeaderboard();
-}
-
-function renderLeaderboard() {
-  const metrics = [
-    { key:'stis',         label:'STIs Submitted' },
-    { key:'applications', label:'Applications' },
-    { key:'deposits',     label:'Deposits' },
-    { key:'lockins',      label:'Lock-ins' },
-    { key:'revenue',      label:'Revenue',      isCurrency:true },
-  ];
-  const pMult = { today:1, month:22, year:264 }[state.leaderPeriod] || 1;
-  const grid  = document.getElementById('leaderboardGrid');
-
-  // Choose pool based on toggle
-  const pool = (leaderViewMode === 'teamlead')
-    ? TEAM_LEADS.map((c, i) => ({ ...c, today: { stis: 18+i*4, applications: 14+i*3, deposits: 10+i*2, lockins: 7+i*2, revenueCollected: 520000+i*80000, calls: 60+i*10 } }))
-    : COUNSELORS;
-
-  grid.innerHTML = metrics.map(m => {
-    const ranked = pool.map((c, i) => ({
-      name: c.name,
-      val: Math.round((m.key === 'revenue' ? c.today.revenueCollected : c.today[m.key] || c.today.calls) * (leaderViewMode === 'teamlead' ? 1 : offsets[i]) * pMult),
-    })).sort((a,b) => b.val - a.val).slice(0, 3);
-
-    const rows = ranked.map((r,i) => {
-      const cls = ['r1','r2','r3'][i];
-      const badge = ['🥇','🥈','🥉'][i];
-      const disp = m.isCurrency ? fmt(r.val) : r.val;
-      return `<div class="flex items-center gap-2 py-1 text-sm">
-        <span class="rank-badge ${cls}">${badge}</span>
-        <span class="flex-1 font-medium text-text-main truncate">${r.name}</span>
-        <span class="font-mono font-bold text-text-main">${disp}</span>
-      </div>`;
-    }).join('');
-
-    return `<div class="leader-card">
-      <p class="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">${m.label}</p>
-      ${rows}
-    </div>`;
-  }).join('');
 }
 
 /* ═══════════════ SLAB TABLE ═══════════════ */
@@ -8772,8 +8712,6 @@ function renderMgrTab1() {
   renderMgrBoostCards();
   renderMgrBoostInput();
   renderMgrOwnTasks();
-  renderMgrLeaderToggle();
-  renderMgrLeaderboard();
 }
 
 /* Urgency is keyed off the pending COUNT (not "due today", which real Boost cards use but
@@ -9234,15 +9172,18 @@ function renderMgrBoostInput() {
   `;
 }
 
+/* Top Performers is shown to every role with all 4 tiers always available —
+   not gated by the viewer's own role/hierarchy (rankings are org-wide). */
 function renderMgrLeaderToggle() {
-  const role = state.role;
   const toggleWrap = document.getElementById('mgrLeaderToggle');
   if (!toggleWrap) return;
 
-  const tiers = [{ id:'counsellor', label:'Counsellor' }];
-  if (['pod_leader','senior_manager','director'].includes(role)) tiers.push({ id:'teamlead', label:'Team Lead' });
-  if (['senior_manager','director'].includes(role)) tiers.push({ id:'pod', label:'POD' });
-  if (role === 'director') tiers.push({ id:'sm', label:'Sr. Manager' });
+  const tiers = [
+    { id:'counsellor', label:'CL' },
+    { id:'teamlead',   label:'TL' },
+    { id:'pod',        label:'PL' },
+    { id:'sm',         label:'SM' },
+  ];
 
   toggleWrap.innerHTML = tiers.map(t => `
     <button class="mgr-leader-btn ${state.mgrLeaderView === t.id ? 'active bg-white shadow-sm text-primary' : 'text-text-muted hover:text-text-main'} text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
@@ -9259,23 +9200,14 @@ function updateMgrLeaderDrillDown() {
   sel.innerHTML = '<option value="">View All</option>';
 
   const view = state.mgrLeaderView;
-  const role = state.role;
   let items = [];
 
   if (view === 'counsellor') {
-    // Show TLs as drill-down (to filter by team)
-    if (['pod_leader','senior_manager','director'].includes(role)) {
-      items = TEAM_LEADS.filter(t => getMyTLIds().includes(t.id)).map(t => ({ id:'tl:'+t.id, label:t.name + ' team' }));
-    } else {
-      sel.disabled = true; return;
-    }
+    // Show all TLs as drill-down (to filter by team) — org-wide, not scoped to viewer
+    items = TEAM_LEADS.map(t => ({ id:'tl:'+t.id, label:t.name + ' team' }));
   } else if (view === 'teamlead') {
-    // Show PODs as drill-down
-    if (['senior_manager','director'].includes(role)) {
-      items = POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).map(p => ({ id:'pod:'+p.id, label:p.pod }));
-    } else {
-      sel.disabled = true; return;
-    }
+    // Show all PODs as drill-down — org-wide, not scoped to viewer
+    items = POD_LEADERS.map(p => ({ id:'pod:'+p.id, label:p.pod }));
   } else {
     sel.disabled = true; return;
   }
@@ -9306,61 +9238,112 @@ function switchMgrLeaderPeriod(period, btn) {
   renderMgrLeaderboard();
 }
 
-function renderMgrLeaderboard() {
-  const grid = document.getElementById('mgrLeaderboardGrid');
-  if (!grid) return;
-
-  const view = state.mgrLeaderView;
-  let items = [];
-  const drillSel = document.getElementById('mgrLeaderDrillDown');
-  const drillVal = drillSel ? drillSel.value : '';
+/* Builds one row per entity in the selected tier, aggregating up from individual
+   counsellors' `today` figures for TL/PL/SM tiers. `leads` doubles as the "CA"
+   (cases assigned) volume gate used by the percentage-based metric cards. */
+function _buildTierMetricRows(view, drillVal) {
+  const agg = cs => ({
+    stis:     cs.reduce((s,c) => s + (c.today.stis||0), 0),
+    leads:    cs.reduce((s,c) => s + (c.today.leads||0), 0),
+    deposits: cs.reduce((s,c) => s + (c.today.deposits||0), 0),
+    lockins:  cs.reduce((s,c) => s + (c.today.lockins||0), 0),
+    f2f:      cs.reduce((s,c) => s + (c.today.f2f||0), 0),
+    revenue:  cs.reduce((s,c) => s + (c.today.revenue||0), 0),
+  });
 
   if (view === 'counsellor') {
-    let pool = getFilteredCounselorPool();
+    let pool = COUNSELORS;
     if (drillVal.startsWith('tl:')) {
       const tlId = parseInt(drillVal.split(':')[1]);
       pool = pool.filter(c => (HIERARCHY.tlToCounselors[tlId]||[]).includes(c.id));
     }
-    items = pool.sort((a,b) => (b.today.revenue||0) - (a.today.revenue||0))
-      .map((c,i) => ({ name:c.name, avatar:c.avatar, sub:c.designation, metric:`₹${((c.today.revenue||0)/1000).toFixed(0)}K`, score:c.today.isl||0 }));
-  } else if (view === 'teamlead') {
-    let pool = getFilteredTLPool();
+    return pool.map(c => ({
+      name:c.name, stis:c.today.stis||0, leads:c.today.leads||0, deposits:c.today.deposits||0,
+      lockins:c.today.lockins||0, f2f:c.today.f2f||0, revenue:c.today.revenue||0,
+    }));
+  }
+
+  if (view === 'teamlead') {
+    let pool = TEAM_LEADS;
     if (drillVal.startsWith('pod:')) {
       const podId = parseInt(drillVal.split(':')[1]);
       const tlIds = HIERARCHY.podToTLs[podId]||[];
       pool = pool.filter(t => tlIds.includes(t.id));
     }
-    items = pool.map((t,i) => {
-      const tCounselors = COUNSELORS.filter(c => (HIERARCHY.tlToCounselors[t.id]||[]).includes(c.id));
-      const revenue = tCounselors.reduce((s,c) => s + (c.today.revenue||0), 0);
-      return { name:t.name, avatar:t.avatar, sub:'Team Lead · ' + t.team, metric:`₹${(revenue/1000).toFixed(0)}K`, score: Math.round(tCounselors.reduce((s,c)=>s+(c.today.isl||0),0)/Math.max(1,tCounselors.length)*10)/10 };
-    }).sort((a,b) => parseFloat(b.metric) - parseFloat(a.metric));
-  } else if (view === 'pod') {
-    items = POD_LEADERS.filter(p => getMyPodIds().includes(p.id)).map(p => {
-      const tlIds = HIERARCHY.podToTLs[p.id]||[];
-      const cs = COUNSELORS.filter(c => tlIds.some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
-      const rev = cs.reduce((s,c) => s + (c.today.revenue||0), 0);
-      return { name:p.name, avatar:p.avatar, sub:p.pod, metric:`₹${(rev/1000).toFixed(0)}K`, score:Math.round(cs.reduce((s,c)=>s+(c.today.isl||0),0)/Math.max(1,cs.length)*10)/10 };
-    }).sort((a,b) => parseFloat(b.metric) - parseFloat(a.metric));
-  } else if (view === 'sm') {
-    items = SENIOR_MANAGERS.map(s => ({ name:s.name, avatar:s.avatar, sub:'Senior Manager', metric:`₹${(COUNSELORS.reduce((t,c)=>t+(c.today.revenue||0),0)/1000).toFixed(0)}K`, score:4.1 }));
+    return pool.map(t => {
+      const cs = COUNSELORS.filter(c => (HIERARCHY.tlToCounselors[t.id]||[]).includes(c.id));
+      return { name:t.name, ...agg(cs) };
+    });
   }
 
-  const medals = ['🥇','🥈','🥉'];
-  grid.innerHTML = items.length ? items.map((item,i) => `
-    <div class="flex items-center gap-3 p-3 rounded-xl ${i===0?'bg-gold/5 border border-gold/20':'bg-surface/50'} hover:bg-surface transition-colors">
-      <span class="text-lg w-6 text-center">${medals[i] || (i+1)}</span>
-      <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">${escHtml(item.avatar)}</div>
-      <div class="flex-1 min-w-0">
-        <p class="font-semibold text-text-main text-sm truncate">${escHtml(item.name)}</p>
-        <p class="text-xs text-text-muted">${escHtml(item.sub)}</p>
-      </div>
-      <div class="text-right flex-shrink-0">
-        <p class="font-mono font-bold text-success text-sm">${escHtml(item.metric)}</p>
-        <p class="text-[10px] text-text-muted">ISL ${item.score}</p>
-      </div>
-    </div>
-  `).join('') : '<p class="text-center text-text-muted text-sm py-8">No data for selected filters.</p>';
+  if (view === 'pod') {
+    return POD_LEADERS.map(p => {
+      const tlIds = HIERARCHY.podToTLs[p.id]||[];
+      const cs = COUNSELORS.filter(c => tlIds.some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
+      return { name:p.name, ...agg(cs) };
+    });
+  }
+
+  if (view === 'sm') {
+    return SENIOR_MANAGERS.map(s => {
+      const podIds = HIERARCHY.smToPods[s.id]||[];
+      const tlIds  = podIds.flatMap(pid => HIERARCHY.podToTLs[pid]||[]);
+      const cs = COUNSELORS.filter(c => tlIds.some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
+      return { name:s.name, ...agg(cs) };
+    });
+  }
+
+  return [];
+}
+
+function renderMgrLeaderboard() {
+  const grid = document.getElementById('mgrLeaderboardGrid');
+  if (!grid) return;
+
+  // Yesterday = single-day figures as-is; This Month / Last 3 Months scale the daily
+  // mock count/revenue figures up to approximate a multi-day total (~22 working
+  // days/month) — percentage metrics aren't scaled, only counted/summed ones are.
+  const mult = { yesterday:1, month:22, quarter:66 }[state.mgrLeaderPeriod] || 1;
+  const MIN_CA = 20;
+
+  const view = state.mgrLeaderView;
+  const drillSel = document.getElementById('mgrLeaderDrillDown');
+  const drillVal = drillSel ? drillSel.value : '';
+  const rows = _buildTierMetricRows(view, drillVal);
+
+  const pct  = (num, den) => den > 0 ? Math.round((num/den)*1000)/10 : null;
+  const gate = r => r.leads >= MIN_CA;
+
+  const metrics = [
+    { title:'STIs Submitted',            value: r => r.stis * mult,                          fmt: v => `${Math.round(v)}` },
+    { title:'CA→STI (30D, min CA 20)',   value: r => gate(r) ? pct(r.stis, r.leads) : null,    fmt: v => `${v}%` },
+    { title:'Deposits',                  value: r => r.deposits * mult,                       fmt: v => `${Math.round(v)}` },
+    { title:'Lock-ins (min CA 20)',      value: r => gate(r) ? pct(r.lockins, r.leads) : null, fmt: v => `${v}%` },
+    { title:'Revenue',                   value: r => r.revenue * mult,                        fmt: v => `₹${(v/100000).toFixed(1)}L` },
+    { title:'F2F % (min CA 20)',         value: r => gate(r) ? pct(r.f2f, r.leads) : null,     fmt: v => `${v}%` },
+  ];
+
+  const trophyColors = ['#f59e0b','#94a3b8','#92400e'];
+
+  grid.innerHTML = metrics.map(m => {
+    const ranked = rows
+      .map(r => ({ name:r.name, value:m.value(r) }))
+      .filter(r => r.value !== null && r.value !== undefined)
+      .sort((a,b) => b.value - a.value)
+      .slice(0,3);
+    return `
+      <div class="rounded-xl border border-border p-4">
+        <p class="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-3">${escHtml(m.title)}</p>
+        <div class="space-y-2.5">
+          ${ranked.length ? ranked.map((r,i) => `
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style="background:${trophyColors[i]}22;color:${trophyColors[i]}">🏆</span>
+              <span class="flex-1 text-sm font-semibold text-text-main truncate">${escHtml(r.name)}</span>
+              <span class="text-sm font-bold text-text-main flex-shrink-0">${m.fmt(r.value)}</span>
+            </div>`).join('') : '<p class="text-xs text-text-muted text-center py-3">No data for selected filters.</p>'}
+        </div>
+      </div>`;
+  }).join('');
 }
 
 /* ── Tab 2 — Manager Render ── */
@@ -9446,9 +9429,9 @@ function renderMgrEarnerToggle() {
   const role = state.role;
   const wrap = document.getElementById('mgrEarnerToggle');
   if (!wrap) return;
-  const tiers = [{ id:'counsellor', label:'Counsellor' }];
-  if (['pod_leader','senior_manager','director'].includes(role)) tiers.push({ id:'teamlead', label:'Team Lead' });
-  if (['senior_manager','director'].includes(role)) tiers.push({ id:'pod', label:'POD' });
+  const tiers = [{ id:'counsellor', label:'CL' }];
+  if (['pod_leader','senior_manager','director'].includes(role)) tiers.push({ id:'teamlead', label:'TL' });
+  if (['senior_manager','director'].includes(role)) tiers.push({ id:'pod', label:'PL' });
   wrap.innerHTML = tiers.map(t => `
     <button class="mgr-earner-btn ${state.mgrEarnerView===t.id?'active bg-white shadow-sm text-primary':'text-text-muted hover:text-text-main'} text-xs px-3 py-1 rounded-md transition-colors cursor-pointer"
       onclick="switchMgrEarnerView('${t.id}',this)">${t.label}</button>
