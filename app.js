@@ -690,13 +690,68 @@ const BOT_INTENT_MAP = {
     answer: null, navLabel: null, navAction: null,
   },
   connect_manager_hr_ds: {
-    keywords: ['do you want to connect with manager', 'connect with manager', 'connect with hr', 'connect with ds', 'connect manager hr ds', 'connect manager', 'talk to hr', 'talk to manager', 'talk to ds'],
+    keywords: ['do you want to connect with manager', 'connect with reporting line', 'connect with manager', 'connect with hr', 'connect with ds', 'connect manager hr ds', 'connect manager', 'talk to hr', 'talk to manager', 'talk to ds'],
     answer: null, navLabel: null, navAction: null,
   },
   raise_support_ticket_guide: {
     keywords: ['raise support ticket', 'raise a ticket', 'create ticket', 'new ticket', 'support request'],
     answer: null, navLabel: null, navAction: null,
   },
+
+  /* ── Manager chatbot (TL/PL/SM/Director) — new intents ── */
+  mgr_day_overview: {
+    keywords: ['how to start my day', 'team quality score', 'view today\'s overview'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_focus: {
+    keywords: ['where should i focus today', 'where should i focus', 'priority flags'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_perf_summary: {
+    keywords: ['team performance summary', 'performance summary'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_team_earnings: {
+    keywords: ['my team\'s earnings', 'my teams earnings', 'team earnings'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_opportunity: {
+    keywords: ['total team opportunity size', 'team opportunity size'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_my_earnings: {
+    keywords: ['my earnings'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_top_earners: {
+    keywords: ['top earners'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_earned_as_counsellor: {
+    keywords: ['earned as counsellor', 'earned as counselor'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_set_reminder: {
+    keywords: ['set a reminder for yourself', 'set a reminder', 'remind myself'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_team_training: {
+    keywords: ['my team\'s training completion', 'my teams training completion', 'team training completion'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_imp_sheet: {
+    keywords: ['imp sheet'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_team_tickets: {
+    keywords: ['my team\'s support tickets', 'my teams support tickets', 'team support tickets'],
+    answer: null, navLabel: null, navAction: null,
+  },
+  mgr_director_broadcast: {
+    keywords: ['send broadcast communication', 'send broadcast', 'director broadcast'],
+    answer: null, navLabel: null, navAction: null,
+  },
+
   fallback: {
     keywords: [],
     answer: `🤔 I'm not sure about that one. Here's how you can get help:\n\n• Try rephrasing your question\n• Browse the relevant tab directly\n• Raise a support ticket for ops team help`,
@@ -1213,8 +1268,8 @@ function bootApp(role, email) {
 
   renderAll();
   switchTab('tab1');
-  // Show 10x banner immediately on every page after login
-  show10xBanner();
+  // Show 10x banner immediately on login — counsellors only, and only while 10x is live (10am–8pm IST)
+  if (role === 'counselor' && is10xLiveNow()) show10xBanner();
   // Clear chat and show IST time-based greeting on every fresh login
   setTimeout(initBotWithGreeting, 300);
 }
@@ -3506,6 +3561,12 @@ function openImpLink(type) {
 
 const TEN_X_URL = '#'; // Replace with actual 10x URL
 
+function is10xLiveNow() {
+  const now = new Date();
+  const istHour = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (5.5 * 3600000)).getHours();
+  return istHour >= 10 && istHour < 20;
+}
+
 function joinTenX() {
   if (TEN_X_URL && TEN_X_URL !== '#') {
     window.open(TEN_X_URL, '_blank');
@@ -5105,6 +5166,28 @@ function showToast(msg, type = 'info') {
 
 /* ═══════════════ BOT ═══════════════ */
 
+/* Manager chatbot's default system greeting — the spec's "Good {Morning/Afternoon/Evening}, {Name}!"
+   step, shown once per login session in place of the generic counsellor welcome. Seeds the existing
+   greeting flow at step 1 so the Good/Not okay buttons reuse all of its existing branch logic. */
+function renderMgrBotGreeting() {
+  const firstName = (state.currentUser?.name || 'there').split(' ')[0];
+  const hour = new Date().getHours();
+  const timeOfDay = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
+  const msg = `Good ${timeOfDay}, ${firstName}! 👋 How are you doing today?`;
+  const container = document.getElementById('botMessages');
+  container.innerHTML = `
+    <div class="flex gap-2">
+      <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+        <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div class="bot-msg-bubble"><p>${escHtml(msg)}</p></div>
+    </div>`;
+  addToHistory('bot', msg);
+  state.botConversation.flow = 'greeting';
+  state.botConversation.step = 1;
+  setTimeout(() => appendQuickReplies(['Good', 'Not okay']), 300);
+}
+
 function toggleBot() {
   state.botOpen = !state.botOpen;
   const panel = document.getElementById('botPanel');
@@ -5118,8 +5201,14 @@ function toggleBot() {
     updateUnreadBadge();
     // Restore history on open
     if (state.botActiveTab === 'chat') {
-      if (state.botConversation.history.length > 0) renderChatHistory();
+      const hadHistory = state.botConversation.history.length > 0;
+      if (hadHistory) renderChatHistory();
       document.getElementById('botInput').focus();
+      if (isManagerRole(state.role) && !hadHistory && !state.chatPanel.mgrGreeted) {
+        state.chatPanel.mgrGreeted = true;
+        renderMgrBotGreeting();
+      }
+      checkPendingBroadcasts();
     } else {
       renderActionItems();
     }
@@ -5336,7 +5425,8 @@ function escHtml(str) {
    BOT V3 — CONVERSATION ENGINE
 ═══════════════════════════════════════════════════════ */
 
-const FLOW_INTENTS = ['greeting', 'start_my_day', 'connect_business_team', 'connect_manager_hr_ds', 'clarify_before_answering', 'need_help', 'top_performer', 'incentive_clarify', 'incentive_details_guide', 'training_help', 'live_offers_query', 'earn_more_guide', 'target_today_guide', 'who_to_call_guide', 'my_raised_tickets', 'agreement_reminders', 'raise_support_ticket_guide'];
+const FLOW_INTENTS = ['greeting', 'start_my_day', 'connect_business_team', 'connect_manager_hr_ds', 'clarify_before_answering', 'need_help', 'top_performer', 'incentive_clarify', 'incentive_details_guide', 'training_help', 'live_offers_query', 'earn_more_guide', 'target_today_guide', 'who_to_call_guide', 'my_raised_tickets', 'agreement_reminders', 'raise_support_ticket_guide',
+  'mgr_day_overview', 'mgr_focus', 'mgr_perf_summary', 'mgr_team_earnings', 'mgr_opportunity', 'mgr_my_earnings', 'mgr_top_earners', 'mgr_earned_as_counsellor', 'mgr_set_reminder', 'mgr_team_training', 'mgr_imp_sheet', 'mgr_team_tickets', 'mgr_director_broadcast'];
 const CANCEL_PHRASES = ['cancel', 'stop', 'nevermind', 'never mind'];
 
 const FOLLOW_UP_CONFIG = {
@@ -5519,6 +5609,19 @@ function startFlow(intent, userText) {
   else if (intent === 'my_raised_tickets') handleMyRaisedTicketsStep(null);
   else if (intent === 'agreement_reminders') handleAgreementRemindersStep(null);
   else if (intent === 'raise_support_ticket_guide') handleRaiseSupportTicketStep(null);
+  else if (intent === 'mgr_day_overview')  handleMgrDayOverviewStep(null);
+  else if (intent === 'mgr_focus')         handleMgrFocusStep(null);
+  else if (intent === 'mgr_perf_summary')  handleMgrPerfSummaryStep(null);
+  else if (intent === 'mgr_team_earnings') handleMgrTeamEarningsStep(null);
+  else if (intent === 'mgr_opportunity')   handleMgrOpportunityStep(null);
+  else if (intent === 'mgr_my_earnings')   handleMgrMyEarningsStep(null);
+  else if (intent === 'mgr_top_earners')   handleMgrTopEarnersStep(null);
+  else if (intent === 'mgr_earned_as_counsellor') handleMgrEarnedAsCounsellorStep(null);
+  else if (intent === 'mgr_set_reminder')  handleMgrSetReminderStep(null);
+  else if (intent === 'mgr_team_training') handleMgrTeamTrainingStep(null);
+  else if (intent === 'mgr_imp_sheet')     handleMgrImpSheetStep(null);
+  else if (intent === 'mgr_team_tickets')  handleMgrTeamTicketsStep(null);
+  else if (intent === 'mgr_director_broadcast') handleMgrDirectorBroadcastStep(null);
   else if (intent === 'clarify_before_answering') {
     bc.collected.originalMessage = userText;
     handleClarifyStep(null);
@@ -5544,6 +5647,19 @@ function handleFlowStep(userText) {
   else if (flow === 'my_raised_tickets')    handleMyRaisedTicketsStep(userText);
   else if (flow === 'agreement_reminders')  handleAgreementRemindersStep(userText);
   else if (flow === 'raise_support_ticket_guide') handleRaiseSupportTicketStep(userText);
+  else if (flow === 'mgr_day_overview')  handleMgrDayOverviewStep(userText);
+  else if (flow === 'mgr_focus')         handleMgrFocusStep(userText);
+  else if (flow === 'mgr_perf_summary')  handleMgrPerfSummaryStep(userText);
+  else if (flow === 'mgr_team_earnings') handleMgrTeamEarningsStep(userText);
+  else if (flow === 'mgr_opportunity')   handleMgrOpportunityStep(userText);
+  else if (flow === 'mgr_my_earnings')   handleMgrMyEarningsStep(userText);
+  else if (flow === 'mgr_top_earners')   handleMgrTopEarnersStep(userText);
+  else if (flow === 'mgr_earned_as_counsellor') handleMgrEarnedAsCounsellorStep(userText);
+  else if (flow === 'mgr_set_reminder')  handleMgrSetReminderStep(userText);
+  else if (flow === 'mgr_team_training') handleMgrTeamTrainingStep(userText);
+  else if (flow === 'mgr_imp_sheet')     handleMgrImpSheetStep(userText);
+  else if (flow === 'mgr_team_tickets')  handleMgrTeamTicketsStep(userText);
+  else if (flow === 'mgr_director_broadcast') handleMgrDirectorBroadcastStep(userText);
   else if (flow === 'clarify_before_answering') handleClarifyStep(userText);
 }
 
@@ -5746,7 +5862,37 @@ const CHAT_OPTION_BUCKETS = [
     options: ['My Raised Tickets', 'Raise Support Ticket', 'Do You Want to Connect with Manager/HR/DS'] },
 ];
 
-/* ── Helper: post-help quick replies — now surfaces the 5 bucket buttons instead of all 13 options ── */
+/* Manager (TL/PL/SM/Director) bucket menu — per the Manager Chatbot spec.
+   Built as a function (not a flat const) since a couple of options are
+   role-conditional (TL's "Earned as Counsellor", Director's broadcast bucket). */
+function getMgrChatBuckets() {
+  const role = state.role;
+  const incentiveOptions = ["My Earnings", "My Team's Earnings", 'Total Team Opportunity Size', 'Live Offers Running', 'Top Earners'];
+  if (role === 'team_lead') incentiveOptions.push('Earned as Counsellor');
+
+  const buckets = [
+    { key:'mgr_day_tasks', label:'📋 My Day & Team Tasks',
+      options: ['How to Start my Day', 'Target for Today', 'Where Should I Focus Today', 'Agreement Reminders', 'Set a Reminder for Yourself'] },
+    { key:'mgr_performance', label:'🏆 Performance & Leaderboard',
+      options: ['Top Performer', 'Team Performance Summary'] },
+    { key:'mgr_incentives', label:'💰 Incentives & Earnings',
+      options: incentiveOptions },
+    { key:'mgr_learning', label:'🎓 Learning & Growth',
+      options: ['Training / I Want to Learn', "My Team's Training Completion", 'IMP Sheet'] },
+    { key:'mgr_support', label:'🛠️ Support & Help',
+      options: ['My Raised Tickets', "My Team's Support Tickets", 'Raise Support Ticket', 'Connect with Reporting Line'] },
+  ];
+  if (role === 'director') {
+    buckets.push({ key:'mgr_broadcast', label:'📢 Director Broadcast', options: ['Send Broadcast Communication'] });
+  }
+  return buckets;
+}
+
+function getActiveChatBuckets() {
+  return isManagerRole(state.role) ? getMgrChatBuckets() : CHAT_OPTION_BUCKETS;
+}
+
+/* ── Helper: post-help quick replies — now surfaces the bucket buttons instead of all the options ── */
 function showPostHelpQuickReplies() {
   setTimeout(() => appendBucketMenu(), 400);
 }
@@ -5755,7 +5901,7 @@ function appendBucketMenu() {
   const container = document.getElementById('botMessages');
   const row = document.createElement('div');
   row.className = 'quick-reply-row';
-  CHAT_OPTION_BUCKETS.forEach(bucket => {
+  getActiveChatBuckets().forEach(bucket => {
     const btn = document.createElement('button');
     btn.className = 'quick-reply-btn';
     btn.textContent = bucket.label;
@@ -5783,7 +5929,7 @@ function appendBucketMenu() {
 }
 
 function appendBucketSubOptions(bucketKey) {
-  const bucket = CHAT_OPTION_BUCKETS.find(b => b.key === bucketKey);
+  const bucket = getActiveChatBuckets().find(b => b.key === bucketKey);
   if (!bucket) return;
   const container = document.getElementById('botMessages');
   const row = document.createElement('div');
@@ -5909,30 +6055,38 @@ function handleTrainingStep(userText) {
 /* ── Flow: live_offers_query ── */
 function handleLiveOffersQueryStep(userText) {
   const bc = state.botConversation;
+  const isMgr = isManagerRole(state.role);
 
   if (bc.step === 0) {
     bc.step = 1;
     const msg = '🎁 Here are the active promotional tracks running right now.';
     appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
     addToHistory('bot', msg);
-    appendQuickReplies(['Offers for Students', 'Offers for Me']);
+    appendQuickReplies(isMgr ? ['Offers for Students', 'Offers for Counsellors', 'Offers for Managers'] : ['Offers for Students', 'Offers for Me']);
 
   } else if (bc.step === 1) {
     endFlow();
     const lower = (userText || '').toLowerCase();
-    const forCounsellor = lower.includes('me') || lower.includes('counsellor') || lower.includes('counselor') || lower.includes('for me');
-    const msg = forCounsellor
-      ? '🎁 Taking you to the **Live for Counsellors** section!'
-      : '🎁 Taking you to the **Live Offers for Students** section!';
+    const forManager    = isMgr && lower.includes('manager');
+    const forCounsellor = !forManager && (lower.includes('counsellor') || lower.includes('counselor') || lower.includes('me') || lower.includes('for me'));
+    const msg = forManager
+      ? '🎁 Taking you to the **Leadership Bonus Offers** section!'
+      : forCounsellor
+        ? '🎁 Taking you to the **Live for Counsellors** section!'
+        : '🎁 Taking you to the **Live Offers for Students** section!';
     appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
     addToHistory('bot', msg.replace(/\*\*/g,''));
     setTimeout(() => {
       switchTab('tab2');
       setTimeout(() => {
-        const elId = forCounsellor ? 'counsellorOffersRow' : 'offersRow';
-        const el = document.getElementById(elId);
-        const mc = document.getElementById('mainContent');
-        if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+        const body = document.getElementById('body-ongoingOffers');
+        if (body?.classList.contains('hidden')) toggleSection('ongoingOffers');
+        setTimeout(() => {
+          const elId = forManager ? 'mgrManagerOffersRow' : forCounsellor ? 'counsellorOffersRow' : 'offersRow';
+          const el = document.getElementById(elId);
+          const mc = document.getElementById('mainContent');
+          if (el && mc) mc.scrollTo({ top: el.getBoundingClientRect().top + mc.scrollTop - 80, behavior: 'smooth' });
+        }, 50);
       }, 400);
     }, 700);
   }
@@ -5968,6 +6122,8 @@ function handleEarnMoreStep(userText) {
 
 /* ── Flow: target_today_guide ── */
 function handleTargetTodayGuideStep(userText) {
+  // Managers get the scoped Overall Team / Drill-Down version instead of the personal one below.
+  if (isManagerRole(state.role)) { handleMgrTargetsStep(userText); return; }
   const bc = state.botConversation;
 
   if (bc.step === 0) {
@@ -6091,6 +6247,8 @@ function handleNeedHelpStep(userText) {
 /* ── Flow 5: top_performer ── */
 
 function handleTopPerformerStep(userText) {
+  // Managers get the metric -> role-tier -> period picker instead of the counsellor-only version below.
+  if (isManagerRole(state.role)) { handleMgrTopPerformerStep(userText); return; }
   const bc = state.botConversation;
 
   if (bc.step === 0) {
@@ -8282,6 +8440,8 @@ function handleMyRaisedTicketsStep(userText) {
 
 /* ── Flow: agreement_reminders (Option 11) ── */
 function handleAgreementRemindersStep(userText) {
+  // Managers get the scoped Overall Team / Drill-Down version instead of the personal one below.
+  if (isManagerRole(state.role)) { handleMgrScopedStep('agreements', 'How would you like to check pending agreements?', userText); return; }
   const bc = state.botConversation;
 
   if (bc.step === 0) {
@@ -8310,6 +8470,31 @@ function handleAgreementRemindersStep(userText) {
 }
 
 /* ── Flow: connect_manager_hr_ds (Option 12) ── */
+/* Resolves the actual assigned SM's email for the current TL/POD leader via the
+   hierarchy (podToTLs / smToPods reversed), falling back to a generic address
+   if no SM is mapped (shouldn't happen for real TL/PL accounts). */
+function _mgrAssignedSmEmail() {
+  const role = state.role; const u = state.currentUser;
+  let podId = null;
+  if (role === 'pod_leader') podId = u.id;
+  else if (role === 'team_lead') {
+    podId = Object.keys(HIERARCHY.podToTLs).find(pid => (HIERARCHY.podToTLs[pid]||[]).includes(u.id));
+    podId = podId ? parseInt(podId) : null;
+  }
+  if (podId == null) return null;
+  const smId = Object.keys(HIERARCHY.smToPods).find(sid => (HIERARCHY.smToPods[sid]||[]).includes(podId));
+  return smId ? SENIOR_MANAGERS.find(s => s.id === parseInt(smId))?.email : null;
+}
+
+/* Recipient options per the spec's routing matrix: TL/PL -> SM|HR|DS, SM -> HR|DS, Director -> HR only. */
+function _mgrConnectRecipientOptions() {
+  const role = state.role;
+  if (role === 'director')       return ['HR'];
+  if (role === 'senior_manager') return ['HR', 'DS'];
+  if (role === 'team_lead' || role === 'pod_leader') return ['SM', 'HR', 'DS'];
+  return ['SM (Sales Manager)', 'HR', 'DS']; // counsellor — unchanged
+}
+
 function handleConnectManagerHrDsStep(userText) {
   const bc = state.botConversation;
 
@@ -8318,7 +8503,7 @@ function handleConnectManagerHrDsStep(userText) {
     const msg = 'Please let me know with whom you want to connect.';
     appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
     addToHistory('bot', msg);
-    appendQuickReplies(['SM (Sales Manager)', 'HR', 'DS']);
+    appendQuickReplies(_mgrConnectRecipientOptions());
 
   } else if (bc.step === 1) {
     const lower = (userText || '').toLowerCase();
@@ -8328,6 +8513,8 @@ function handleConnectManagerHrDsStep(userText) {
       recipient = 'HR'; recipientEmail = 'rakshitha.mohan@leapfinance.com';
     } else if (lower.includes('ds') || lower.includes('data')) {
       recipient = 'DS'; recipientEmail = 'debasish.sahoo@leapfinance.com';
+    } else if (isManagerRole(state.role)) {
+      recipient = 'SM'; recipientEmail = _mgrAssignedSmEmail() || 'sm@leapfinance.com';
     } else {
       recipient = 'SM (Sales Manager)'; recipientEmail = 'sm@leapfinance.com';
     }
@@ -8372,6 +8559,8 @@ function submitConnectForm() {
   const recipient = state.botConversation.collected?.recipient || 'team';
   const recipientEmail = state.botConversation.collected?.recipientEmail || 'sm@leapfinance.com';
   const name = state.currentUser?.name || 'Counsellor';
+  const roleLabels = { team_lead:'Team Lead', pod_leader:'POD Leader', senior_manager:'Senior Manager', director:'Director' };
+  const roleLabel = roleLabels[state.role] || 'Counsellor';
 
   if (!msg) { showToast('Please enter a message before submitting.', 'warning'); return; }
   if (!time) { showToast('Please select a preferred time slot.', 'warning'); return; }
@@ -8384,10 +8573,687 @@ function submitConnectForm() {
   showToast('Connection request sent!', 'success');
 
   // Open email client
-  const subject = encodeURIComponent('Counsellor wants to connect');
-  const body = encodeURIComponent(`Hi,\n\nCounsellor ${name} wants to connect with ${recipient}.\n\nMessage: ${msg}\nPreferred Time: ${time}\n\nPlease reach out to them at your earliest.\n\nThank you,\nLeap CRM`);
+  const subject = encodeURIComponent(`${roleLabel} wants to connect`);
+  const body = encodeURIComponent(`Hi,\n\n${roleLabel} ${name} wants to connect with ${recipient}.\n\nMessage: ${msg}\nPreferred Time: ${time}\n\nPlease reach out to them at your earliest.\n\nThank you,\nLeap CRM`);
   setTimeout(() => { window.open(`mailto:${recipientEmail}?subject=${subject}&body=${body}`, '_blank'); }, 500);
   setTimeout(showPostHelpQuickReplies, 900);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MANAGER CHATBOT — shared "Overall Team / Specific Drill-Down" flow
+   Used by 9 bucket options (day overview, targets, focus, agreements,
+   perf summary, earnings, opportunity, team training, team tickets).
+   Each option has a thin wrapper below that just supplies its own
+   actionKey + opening prompt, then delegates every step to this engine.
+══════════════════════════════════════════════════════════════════ */
+
+const MGR_TIER_NOUN = { sm:'a Senior Manager', pod:'a POD', tl:'a Team Lead', counsellor:'a Counsellor' };
+
+function handleMgrScopedStep(actionKey, promptText, userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.collected.actionKey = actionKey;
+    bc.step = 1;
+    appendBotMessageLive(`<p>${escHtml(promptText)}</p>`);
+    addToHistory('bot', promptText);
+    appendQuickReplies(['Overall Team', 'Specific Drill-Down']);
+    return;
+  }
+
+  if (bc.step === 1) {
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('overall')) {
+      bc.step = 4;
+      renderMgrScopedResult(actionKey, { type:'overall', label:'Overall Team' });
+      return;
+    }
+    const tiers = _mgrDrillDownTierOptions();
+    if (!tiers.length) {
+      // Team Lead — no sub-tier, straight to their own counsellors
+      bc.step = 3;
+      bc.collected.tier = 'counsellor';
+      const list = _mgrDrillDownEntityList('counsellor');
+      const msg = 'Pick a counsellor:';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      appendQuickReplies(list.map(e => e.name));
+      return;
+    }
+    bc.step = 2;
+    const msg = 'Drill down by:';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(tiers.map(t => t.label));
+    return;
+  }
+
+  if (bc.step === 2) {
+    const lower = (userText || '').toLowerCase();
+    const tiers = _mgrDrillDownTierOptions();
+    const match = tiers.find(t => lower.includes(t.key) || lower.includes(t.label.toLowerCase().replace('by ', '')));
+    const tierKey = match ? match.key : tiers[tiers.length - 1].key;
+    bc.collected.tier = tierKey;
+    bc.step = 3;
+    const list = _mgrDrillDownEntityList(tierKey);
+    const msg = `Select ${MGR_TIER_NOUN[tierKey] || 'an option'}:`;
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(list.length ? list.map(e => e.name) : ['(none available)']);
+    return;
+  }
+
+  if (bc.step === 3) {
+    const tierKey = bc.collected.tier;
+    const list = _mgrDrillDownEntityList(tierKey);
+    const lower = (userText || '').toLowerCase();
+    const picked = list.find(e => lower.includes(e.name.toLowerCase()) || lower.includes(e.name.toLowerCase().split(' ')[0]));
+    bc.step = 4;
+    if (!picked) {
+      const msg = "Hmm, I couldn't match that — showing Overall Team instead.";
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      renderMgrScopedResult(actionKey, { type:'overall', label:'Overall Team' });
+      return;
+    }
+    renderMgrScopedResult(actionKey, { type:tierKey, id:picked.id, label:picked.name });
+    return;
+  }
+
+  if (bc.step === 4) {
+    endFlow();
+    handleMgrScopedResultClick(actionKey, userText || '');
+  }
+}
+
+/* Computes and prints the final message + action buttons for a resolved scope.
+   Stays IN the flow (step 4) so the button click below routes back through
+   handleMgrScopedStep -> handleMgrScopedResultClick, matching the pattern every
+   other flow in this file uses for its own "Yes/No thanks" follow-ups. */
+function renderMgrScopedResult(actionKey, scope) {
+  const pool = _mgrScopeCounsellorPool(scope);
+  const label = scope.label;
+  const poolIds = new Set(pool.map(c => c.id));
+  const students = STUDENTS.filter(s => poolIds.has(s.counselorId));
+
+  if (actionKey === 'day_overview') {
+    const avgQ = pool.length ? Math.round(pool.reduce((s,c) => s + ((c.today.q1score+c.today.q2score)/2 || 0), 0) / pool.length) : 0;
+    const top = pool.reduce((b,c) => ((c.today.q1score+c.today.q2score)/2||0) > ((b?.today.q1score+b?.today.q2score)/2||0) ? c : b, pool[0]);
+    const esc = students.filter(s => s.hasEscalation).length;
+    const msg = `Here is the overview for ${label} 📋\n\n• Team Quality Score: ${avgQ}% · Top Performer: ${top?.name || '—'}\n• Potential Escalations: ${esc} issues need attention\n\nWhat would you like to check?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['View Escalations', 'Open Tasks']);
+
+  } else if (actionKey === 'targets' || actionKey === 'perf_summary') {
+    const { funnelRows } = buildPerfRows(pool, 1);
+    const sti = funnelRows.find(r => r.name === '03.CA->STI (14D)');
+    const lock = funnelRows.find(r => r.name === '05.CA->LockIn (14D)');
+    const msg = `🎯 ${actionKey === 'targets' ? "Today's Targets" : 'Summary'} for ${label}:\n\n• CA → STI: ${sti?.aYTD ?? 0}%/${sti?.tYTD ?? 20}%\n• CA → Lock-in: ${lock?.aYTD ?? 0}%/${lock?.tYTD ?? 35}%\n\nWant to open the full Performance tab?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Yes, take me there!', 'No thanks']);
+
+  } else if (actionKey === 'focus') {
+    const esc = students.filter(s => s.hasEscalation).length;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const overdueDeposits = students.filter(s => s.stage === 'deposit' && s.followup && s.followup <= todayStr).length;
+    const msg = `🚩 Priority items needing attention for ${label}:\n\n• ${esc} escalations pending review\n• ${overdueDeposits} students overdue for deposits in pipeline\n\nTake you to Boost Tasks?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Yes, take me there!', 'No thanks']);
+
+  } else if (actionKey === 'agreements') {
+    const paidStudents = students.filter(s => ['deposit','lockin'].includes(s.stage)).slice(0,3);
+    const lines = paidStudents.length
+      ? paidStudents.map(s => `• ${s.name} — Paid recently`).join('\n')
+      : '• No students currently pending an agreement signature.';
+    const msg = `📋 You have ${paidStudents.length} students in ${label} who paid but haven't signed agreements:\n\n${lines}\n\nWhat would you like to do?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(paidStudents.length ? [`WhatsApp ${paidStudents[0].name.split(' ')[0]}`, 'Go to Agreement Tracker'] : ['Go to Agreement Tracker']);
+
+  } else if (actionKey === 'earnings') {
+    const monthTotal = pool.reduce((s,c) => s + ((MGR_INCENTIVE[c.id]?.monthly) || 38000), 0);
+    const yearTotal  = pool.reduce((s,c) => s + ((MGR_INCENTIVE[c.id]?.alltime) || 480000), 0);
+    const fmt = v => `₹${v>=100000?(v/100000).toFixed(1)+'L':(v/1000).toFixed(0)+'K'}`;
+    const msg = `💰 Earnings for ${label}:\n\n• This Month: ${fmt(monthTotal)}\n• This Financial Year: ${fmt(yearTotal)}\n\nWant a breakdown table?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Yes, show breakdown', 'No thanks']);
+
+  } else if (actionKey === 'opportunity') {
+    const stiPipe = pool.reduce((s,c) => s + (c.today.stis||0) * 45000, 0);
+    const depPipe = pool.reduce((s,c) => s + (c.today.deposits||0) * 80000, 0);
+    const refPipe = pool.reduce((s,c) => s + (c.today.referralPct||0) * 500, 0);
+    const revPipe = pool.reduce((s,c) => s + (c.today.revenue||0) * 0.01, 0);
+    const total = stiPipe + depPipe + revPipe;
+    const fmt = v => `₹${v>=100000?(v/100000).toFixed(1)+'L':(v/1000).toFixed(0)+'K'}`;
+    const msg = `📈 Total pending incentive opportunity for ${label}: ${fmt(total)}\n\n• Revenue Pipeline: ${fmt(revPipe)}\n• Deposit Pipeline: ${fmt(depPipe)}\n• Referral Pipeline: ${fmt(refPipe)}\n• STI Pipeline: ${fmt(stiPipe)}\n\nWhich pipeline breakdown do you want to view?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Revenue Pipeline', 'Deposit Pipeline', 'Referral Pipeline', 'STI Pipeline']);
+
+  } else if (actionKey === 'training_scope') {
+    const modules = ['Soft Training','Domain Training','System Training','New Features'];
+    const completions = { 1:[1,1,1,0], 2:[1,1,0,0], 3:[1,0,0,0], 4:[1,1,1,1], 5:[1,1,0,0], 6:[1,1,1,0], 7:[1,0,0,0], 8:[1,1,0,0] };
+    let done = 0;
+    pool.forEach(c => { done += (completions[c.id]||[1,0,0,0]).filter(Boolean).length; });
+    const total = pool.length * modules.length;
+    const msg = `🎓 Training status for ${label}: ${done}/${total} modules completed.\n\nWhat would you like to do?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['See Who is Behind', 'Send Reminder']);
+
+  } else if (actionKey === 'tickets_scope') {
+    const allTickets = typeof COUNSELLOR_TICKETS !== 'undefined' ? COUNSELLOR_TICKETS : [];
+    const total = allTickets.length + pool.length * 2;
+    const resolved = allTickets.filter(t => t.status === 'Resolved').length + pool.length;
+    const open = total - resolved;
+    const resolvedWithTat = allTickets.filter(t => t.status === 'Resolved' && t.tat);
+    const avgTat = resolvedWithTat.length ? Math.round(resolvedWithTat.reduce((s,t) => s+t.tat, 0) / resolvedWithTat.length) : 6;
+    const msg = `🛠️ Ticket Status for ${label}:\n\n• Total Raised: ${total} | Resolved: ${resolved} (Avg TAT: ${avgTat} days) | Pending: ${open}\n\nWant to see the full ticket log?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Yes, show ticket log', 'No thanks']);
+  }
+}
+
+function handleMgrScopedResultClick(actionKey, userText) {
+  const lower = userText.toLowerCase();
+  const wantsYes = lower.includes('yes') || lower.includes('view') || lower.includes('open') || lower.includes('show');
+  const dismiss = (msg) => {
+    const m = msg || 'No problem! What else can I help with?';
+    appendBotMessageLive(`<p>${escHtml(m)}</p>`);
+    addToHistory('bot', m);
+    showPostHelpQuickReplies();
+  };
+  const nav = (msg, fn) => {
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    setTimeout(fn, 500);
+    setTimeout(showPostHelpQuickReplies, 900);
+  };
+
+  if (actionKey === 'day_overview') {
+    if (lower.includes('escalation')) return nav('Opening flagged escalations…', () => { switchTab('tab1'); setTimeout(openWAGroupDetailsDrawer, 300); });
+    if (lower.includes('task')) return nav('Taking you to Tasks & Performance…', () => switchTab('tab1'));
+    return dismiss();
+  }
+  if (actionKey === 'targets' || actionKey === 'perf_summary') {
+    if (wantsYes) return nav('Opening the full Performance Summary…', () => {
+      switchTab('tab1');
+      setTimeout(() => {
+        const body = document.getElementById('body-standup');
+        if (body?.classList.contains('hidden')) toggleSection('standup');
+        document.getElementById('standupScoreStrip')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 300);
+    });
+    return dismiss();
+  }
+  if (actionKey === 'focus') {
+    if (wantsYes) return nav('Opening Boost Tasks…', () => { switchTab('tab1'); setTimeout(() => openMgrBoostPipeline('deposit'), 300); });
+    return dismiss();
+  }
+  if (actionKey === 'agreements') {
+    if (lower.includes('whatsapp')) {
+      showToast('WhatsApp agreement template sent!', 'success');
+      return dismiss('📲 Agreement template sent!');
+    }
+    return nav('Taking you to the Agreement Tracker…', () => switchTab('tab2'));
+  }
+  if (actionKey === 'earnings') {
+    if (wantsYes) return nav('Opening the earnings breakdown…', () => {
+      switchTab('tab2');
+      setTimeout(() => {
+        const body = document.getElementById('body-mgrTeamEarnings');
+        if (body?.classList.contains('hidden')) toggleSection('mgrTeamEarnings');
+        document.getElementById('mgrTeamEarningsBreakdown')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 300);
+    });
+    return dismiss();
+  }
+  if (actionKey === 'opportunity') {
+    const pipelineCardId = lower.includes('revenue') ? 'mgrRevenuePipeline'
+      : lower.includes('deposit') ? 'mgrDepositPipeline'
+      : lower.includes('sti') ? 'mgrStiPipeline'
+      : 'mgrTotalOpportunity';
+    return nav('Opening the pipeline breakdown…', () => {
+      switchTab('tab2');
+      setTimeout(() => {
+        const card = document.getElementById(pipelineCardId)?.closest('div');
+        card?.scrollIntoView({ behavior:'smooth', block:'center' });
+        if (card) {
+          card.classList.add('ring-2', 'ring-accent');
+          setTimeout(() => card.classList.remove('ring-2', 'ring-accent'), 1500);
+        }
+      }, 300);
+    });
+  }
+  if (actionKey === 'training_scope') {
+    if (lower.includes('behind')) return nav('Opening Training Modules…', () => {
+      switchTab('tab3');
+      setTimeout(() => {
+        const body = document.getElementById('body-mgrTraining');
+        if (body?.classList.contains('hidden')) toggleSection('mgrTraining');
+        document.getElementById('mgrTrainingList')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 300);
+    });
+    if (lower.includes('remind')) { showToast('Reminders sent to your team\'s pending members!', 'success'); return dismiss('🔔 Reminders sent!'); }
+    return dismiss();
+  }
+  if (actionKey === 'tickets_scope') {
+    if (wantsYes) return nav('Opening the ticket log…', () => { switchTab('tab3'); setTimeout(() => openMgrTicketList('all'), 300); });
+    return dismiss();
+  }
+  return dismiss();
+}
+
+/* ── Thin per-option wrappers around the shared scope engine ── */
+function handleMgrDayOverviewStep(userText)   { handleMgrScopedStep('day_overview',   "How would you like to view today's overview?", userText); }
+function handleMgrTargetsStep(userText)       { handleMgrScopedStep('targets',        'How would you like to view targets?', userText); }
+function handleMgrFocusStep(userText)         { handleMgrScopedStep('focus',          'How would you like to view priority flags?', userText); }
+function handleMgrPerfSummaryStep(userText)   { handleMgrScopedStep('perf_summary',   'How would you like to view performance summary?', userText); }
+function handleMgrTeamEarningsStep(userText)  { handleMgrScopedStep('earnings',       'How would you like to view earnings?', userText); }
+function handleMgrOpportunityStep(userText)   { handleMgrScopedStep('opportunity',    'How would you like to view opportunity size?', userText); }
+function handleMgrTeamTrainingStep(userText)  { handleMgrScopedStep('training_scope', 'How would you like to check training completion?', userText); }
+function handleMgrTeamTicketsStep(userText)   { handleMgrScopedStep('tickets_scope',  'How would you like to view team tickets?', userText); }
+
+/* ══════════════════════════════════════════════════════════════════
+   MANAGER CHATBOT — remaining standalone options (6, 8, 12, 13, 5, 16, 21)
+══════════════════════════════════════════════════════════════════ */
+
+/* ── Flow: mgr_top_performer (Option 6) ── */
+const MGR_TOP_PERF_METRICS = {
+  revenue:  { label:'Revenue',           value: r => r.revenue,                                   fmt: v => `₹${(v/100000).toFixed(1)}L` },
+  sti:      { label:'STI',               value: r => r.stis,                                      fmt: v => `${Math.round(v)}` },
+  deposit:  { label:'Deposit',           value: r => r.deposits,                                  fmt: v => `${Math.round(v)}` },
+  calockin: { label:'CA > Lock-ins',     value: r => r.leads >= 20 ? Math.round((r.lockins/r.leads)*1000)/10 : null, fmt: v => `${v}%` },
+  casti30d: { label:'CA > STI(30d)',     value: r => r.leads >= 20 ? Math.round((r.stis/r.leads)*1000)/10   : null, fmt: v => `${v}%` },
+  caf2f:    { label:'CA > F2F',          value: r => r.leads >= 20 ? Math.round((r.f2f/r.leads)*1000)/10    : null, fmt: v => `${v}%` },
+};
+const MGR_TOP_PERF_TIER_LABEL = { counsellor:'CL', teamlead:'TL', pod:'PL', sm:'SM' };
+const MGR_TOP_PERF_TIER_ORDER = ['counsellor', 'teamlead', 'pod', 'sm'];
+
+function _renderMgrTopPerformerResult() {
+  const bc = state.botConversation;
+  const { metricKey, tier, period } = bc.collected;
+  const mult = { yesterday:1, month:22, quarter:66 }[period] || 1;
+  const metric = MGR_TOP_PERF_METRICS[metricKey];
+  const isPct = metricKey === 'calockin' || metricKey === 'casti30d' || metricKey === 'caf2f';
+  const rows = _buildTierMetricRows(tier, '');
+  const ranked = rows
+    .map(r => ({ name:r.name, value: isPct ? metric.value(r) : metric.value(r) * mult }))
+    .filter(r => r.value !== null && r.value !== undefined)
+    .sort((a,b) => b.value - a.value)
+    .slice(0, 3);
+  const medals = ['🥇','🥈','🥉'];
+  const lines = ranked.length ? ranked.map((r,i) => `${medals[i]} ${r.name} — ${metric.fmt(r.value)}`).join('\n') : 'No data available for this selection.';
+  const msg = `📊 Top Performers for ${metric.label} (${MGR_TOP_PERF_TIER_LABEL[tier]}):\n\n${lines}`;
+  appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+  addToHistory('bot', msg.replace(/\n/g,' '));
+  appendQuickReplies(['Switch Filter', 'Open Full Leaderboard']);
+}
+
+function handleMgrTopPerformerStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = 'Which metric do you want to check?';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(['Revenue', 'STI', 'Deposit', 'CA > Lock-ins', 'CA > STI(30d)', 'CA > F2F']);
+
+  } else if (bc.step === 1) {
+    const lower = userText.toLowerCase();
+    let key = 'revenue';
+    if (lower.includes('lock')) key = 'calockin';
+    else if (lower.includes('sti') && lower.includes('30')) key = 'casti30d';
+    else if (lower.includes('f2f')) key = 'caf2f';
+    else if (lower.includes('sti')) key = 'sti';
+    else if (lower.includes('deposit')) key = 'deposit';
+    bc.collected.metricKey = key;
+    bc.step = 2;
+    const msg = 'Which role level do you want to see rankings for?';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(['CL', 'TL', 'PL', 'SM']);
+
+  } else if (bc.step === 2) {
+    const lower = userText.toLowerCase().trim();
+    const tierMap = { cl:'counsellor', tl:'teamlead', pl:'pod', sm:'sm' };
+    bc.collected.tier = tierMap[lower] || 'counsellor';
+    bc.step = 3;
+    const msg = 'For which time period?';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(['Yesterday', 'This Month', 'Last 3 Months']);
+
+  } else if (bc.step === 3) {
+    const lower = userText.toLowerCase();
+    bc.collected.period = lower.includes('3') ? 'quarter' : lower.includes('month') ? 'month' : 'yesterday';
+    bc.step = 4;
+    _renderMgrTopPerformerResult();
+
+  } else if (bc.step === 4) {
+    const lower = userText.toLowerCase();
+    if (lower.includes('switch')) {
+      const idx = MGR_TOP_PERF_TIER_ORDER.indexOf(bc.collected.tier);
+      bc.collected.tier = MGR_TOP_PERF_TIER_ORDER[(idx + 1) % MGR_TOP_PERF_TIER_ORDER.length];
+      _renderMgrTopPerformerResult();
+    } else {
+      const { tier, period } = bc.collected;
+      endFlow();
+      const msg = 'Opening the full Top Performers leaderboard…';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => {
+        switchTab('tab1');
+        setTimeout(() => {
+          const body = document.getElementById('body-mgrTopPerf');
+          if (body?.classList.contains('hidden')) toggleSection('mgrTopPerf');
+          state.mgrLeaderView = tier;
+          state.mgrLeaderPeriod = period;
+          renderMgrLeaderToggle();
+          renderMgrLeaderboard();
+          document.getElementById('mgrLeaderboardGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
+        }, 300);
+        setTimeout(showPostHelpQuickReplies, 700);
+      }, 400);
+    }
+  }
+}
+
+/* ── Flow: mgr_my_earnings (Option 8, personal) ── */
+function handleMgrMyEarningsStep(userText) {
+  const bc = state.botConversation;
+  const roleLabels = { team_lead:'Team Lead', pod_leader:'POD Leader', senior_manager:'Senior Manager', director:'Director' };
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const u = state.currentUser;
+    const inc = MGR_INCENTIVE[u.id] || { monthly:0 };
+    const msg = `💰 Your personal earnings as ${roleLabels[state.role] || 'Manager'} this month: ₹${(inc.monthly/1000).toFixed(0)}K\n\nWant to see the full breakdown?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Yes, show breakdown', 'No thanks']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower.includes('show')) {
+      const msg = 'Opening your earnings breakdown…';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => {
+        switchTab('tab2');
+        setTimeout(() => {
+          const body = document.getElementById('body-mgrMyEarnings');
+          if (body?.classList.contains('hidden')) toggleSection('mgrMyEarnings');
+          document.getElementById('mgrMyEarningsBreakdown')?.scrollIntoView({ behavior:'smooth', block:'start' });
+        }, 300);
+      }, 400);
+      setTimeout(showPostHelpQuickReplies, 800);
+    } else {
+      const msg = '👍 No problem! Your earnings are always visible on the Incentives & Earnings tab.';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showPostHelpQuickReplies();
+    }
+  }
+}
+
+/* ── Flow: mgr_top_earners (Option 12) ── */
+function handleMgrTopEarnersStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const pool = getFilteredCounselorPool().map(c => ({
+      name:c.name, avatar:c.avatar, pct: Math.round(((MGR_INCENTIVE[c.id]?.monthly||38000)/72000)*100),
+    })).sort((a,b) => b.pct - a.pct).slice(0, 5);
+
+    const rows = pool.map((item,i) => `
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="text-[10px] text-text-muted w-3 flex-shrink-0">${i+1}</span>
+        <span class="text-xs font-semibold text-text-main flex-1 truncate">${escHtml(item.name.split(' ')[0])}</span>
+        <div class="flex-1 max-w-[80px] h-1.5 bg-surface rounded-full overflow-hidden">
+          <div class="${item.pct>=80?'bg-success':item.pct>=50?'bg-accent':'bg-danger'} h-full rounded-full" style="width:${item.pct}%"></div>
+        </div>
+        <span class="text-[10px] text-text-muted w-8 flex-shrink-0">${item.pct}%</span>
+      </div>`).join('');
+
+    const intro = '🏆 Here is how top earners are performing (amounts hidden for privacy):';
+    appendBotMessageLive(`<p>${escHtml(intro)}</p><div class="mt-2">${rows}</div>`);
+    addToHistory('bot', intro);
+    setTimeout(() => appendQuickReplies(['Open Top Earners', 'No thanks']), 400);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('open') || lower.includes('yes')) {
+      const msg = 'Opening the Top Earners section…';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => {
+        switchTab('tab2');
+        setTimeout(() => {
+          const body = document.getElementById('body-mgrTopEarners');
+          if (body?.classList.contains('hidden')) toggleSection('mgrTopEarners');
+          document.getElementById('mgrEarnerToggle')?.scrollIntoView({ behavior:'smooth', block:'start' });
+        }, 300);
+      }, 400);
+      setTimeout(showPostHelpQuickReplies, 800);
+    } else {
+      showPostHelpQuickReplies();
+    }
+  }
+}
+
+/* ── Flow: mgr_earned_as_counsellor (Option 13, TL only) ── */
+function handleMgrEarnedAsCounsellorStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const u = state.currentUser;
+    const inc = MGR_INCENTIVE[u.id] || { monthly:0 };
+    const msg = `💰 Your incentive status as a Counsellor:\n\n• Earned So Far: ₹${(inc.monthly/1000).toFixed(0)}K\n\nWant to check your personal opportunity pipeline?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Yes, show me', 'No thanks']);
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = (userText || '').toLowerCase();
+    if (lower.includes('yes') || lower.includes('show')) {
+      const msg = 'Opening your Opportunity Size…';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      setTimeout(() => { switchTab('tab2'); setTimeout(() => document.getElementById('mgrTotalOpportunity')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300); }, 400);
+      setTimeout(showPostHelpQuickReplies, 800);
+    } else {
+      showPostHelpQuickReplies();
+    }
+  }
+}
+
+/* ── Flow: mgr_set_reminder (Option 5, personal) ── */
+function handleMgrSetReminderStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = 'Sure! What do you want me to remind you about, and when?';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    const formHtml = `
+      <div class="mt-3 p-3 bg-surface rounded-xl border border-border space-y-3">
+        <textarea id="mgrBotReminderNote" placeholder="What should I remind you about?"
+          class="w-full text-sm border border-border rounded-lg p-2 resize-none h-16 focus:outline-none focus:border-primary"></textarea>
+        <input id="mgrBotReminderDate" type="datetime-local"
+          class="w-full text-sm border border-border rounded-lg p-2 focus:outline-none focus:border-primary" />
+        <button onclick="submitMgrBotReminder()" class="w-full py-2 bg-accent hover:bg-accent-dark text-white text-sm font-semibold rounded-lg cursor-pointer transition-colors">Set Reminder</button>
+      </div>`;
+    appendBotMessageLive(formHtml);
+  }
+  // step 1+ is handled by submitMgrBotReminder() directly, not by typed text
+}
+
+function submitMgrBotReminder() {
+  const note = document.getElementById('mgrBotReminderNote')?.value?.trim();
+  const date = document.getElementById('mgrBotReminderDate')?.value;
+  if (!note) { showToast('Please enter what to remind you about.', 'warning'); return; }
+  if (!date) { showToast('Please pick a date & time.', 'warning'); return; }
+
+  endFlow();
+  state.ownTasks.push({ id: Date.now(), type:'personal', title: note, userId: state.currentUser?.id, notes:'', date, done:false, createdAt: new Date().toISOString() });
+
+  const msg = '✅ Got it — I\'ll remind you then!';
+  appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+  addToHistory('bot', msg);
+  showToast('Reminder saved!', 'success');
+  showPostHelpQuickReplies();
+}
+
+/* ── Flow: mgr_imp_sheet (Option 16) — reuses the real IMP Sheet quick links, no fake URLs ── */
+const MGR_IMP_SHEET_ITEMS = [
+  { key:'sop',         label:'Raise SOP Request' },
+  { key:'offerfollowup', label:'Offer Follow up' },
+  { key:'leadtransfer',  label:'Raise Lead Transfer Request' },
+  { key:'infohub',       label:'Info-Hub' },
+  { key:'leappay',       label:'LeapPay Payment Link' },
+  { key:'premiumpay',    label:'Premium Payment Links' },
+];
+
+function handleMgrImpSheetStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    const msg = '📄 Which utility do you need?';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendQuickReplies(MGR_IMP_SHEET_ITEMS.map(i => i.label));
+
+  } else if (bc.step === 1) {
+    endFlow();
+    const lower = userText.toLowerCase();
+    const match = MGR_IMP_SHEET_ITEMS.find(i => lower.includes(i.label.toLowerCase()) || lower.includes(i.key));
+    if (match) {
+      openImpLink(match.key);
+      const msg = `Checking on "${match.label}" for you…`;
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+    }
+    setTimeout(showPostHelpQuickReplies, 700);
+  }
+}
+
+/* ── Flow: mgr_director_broadcast (Option 21, Director only) ──
+   No backend/multi-user delivery exists in this static demo. Broadcasts are
+   queued in a session-local, in-memory list (MGR_BROADCAST_QUEUE) and surfaced
+   the next time a targeted role opens the bot in THIS SAME browser session —
+   not a real cross-user send. */
+const MGR_BROADCAST_QUEUE = [];
+const MGR_BROADCAST_TARGETS = ['Entire Org', 'SMs', 'PLs', 'TLs', 'CLs'];
+const MGR_BROADCAST_ROLE_MAP = { SMs:'senior_manager', PLs:'pod_leader', TLs:'team_lead', CLs:'counselor' };
+
+function handleMgrDirectorBroadcastStep(userText) {
+  const bc = state.botConversation;
+
+  if (bc.step === 0) {
+    bc.step = 1;
+    bc.collected.targets = [];
+    const msg = 'Who would you like to send this communication to?';
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    appendBroadcastTargetPicker();
+
+  } else if (bc.step === 2) {
+    bc.collected.message = userText;
+    bc.step = 3;
+    const targets = bc.collected.targets.join(', ');
+    const msg = `Preview your broadcast message:\n\n"📢 Message from Director (${state.currentUser?.name || 'Director'}): ${userText}"\n\nSend to ${targets}?`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg.replace(/\n/g,' '));
+    appendQuickReplies(['Send Broadcast', 'Edit Message', 'Cancel']);
+
+  } else if (bc.step === 3) {
+    const lower = userText.toLowerCase();
+    if (lower.includes('send')) {
+      const targets = bc.collected.targets || [];
+      const message = bc.collected.message;
+      endFlow();
+      MGR_BROADCAST_QUEUE.push({ id: Date.now(), from: state.currentUser?.name, message, targets, seenBy: [] });
+      const msg = '✅ Your broadcast message has been sent successfully. It will now appear in the chatbot for all selected stakeholders.';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showToast('Broadcast queued for selected roles!', 'success');
+      showPostHelpQuickReplies();
+    } else if (lower.includes('edit')) {
+      bc.step = 2;
+      const msg = 'Please type the message you want to broadcast:';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+    } else {
+      endFlow();
+      const msg = 'Broadcast cancelled.';
+      appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+      addToHistory('bot', msg);
+      showPostHelpQuickReplies();
+    }
+  }
+}
+
+function appendBroadcastTargetPicker() {
+  const container = document.getElementById('botMessages');
+  const wrap = document.createElement('div');
+  wrap.className = 'mt-2 p-3 bg-surface rounded-xl border border-border space-y-2';
+  wrap.innerHTML = `
+    <div class="flex flex-wrap gap-2">
+      ${MGR_BROADCAST_TARGETS.map(t => `
+        <button type="button" onclick="toggleBroadcastTarget(this,'${t}')" class="broadcast-target-btn text-xs px-2.5 py-1 rounded-full border border-border hover:border-primary hover:text-primary transition-colors cursor-pointer">${t}</button>
+      `).join('')}
+    </div>
+    <button onclick="confirmBroadcastTargets()" class="w-full py-2 bg-accent hover:bg-accent-dark text-white text-sm font-semibold rounded-lg cursor-pointer transition-colors">Continue</button>
+  `;
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+
+function toggleBroadcastTarget(btn, target) {
+  const bc = state.botConversation;
+  const arr = bc.collected.targets || (bc.collected.targets = []);
+  const i = arr.indexOf(target);
+  if (i > -1) { arr.splice(i, 1); btn.classList.remove('border-primary', 'text-primary', 'bg-primary/10'); }
+  else { arr.push(target); btn.classList.add('border-primary', 'text-primary', 'bg-primary/10'); }
+}
+
+function confirmBroadcastTargets() {
+  const bc = state.botConversation;
+  if (!bc.collected.targets || !bc.collected.targets.length) { showToast('Select at least one target group.', 'warning'); return; }
+  bc.step = 2;
+  const msg = 'Please type the message you want to broadcast:';
+  appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+  addToHistory('bot', msg);
+}
+
+/* Surfaces any pending broadcasts targeted at the current role — called on bot open. */
+function checkPendingBroadcasts() {
+  const role = state.role;
+  const pending = MGR_BROADCAST_QUEUE.filter(b =>
+    b.from !== state.currentUser?.name &&
+    !b.seenBy.includes(state.currentUser?.id) &&
+    b.targets.some(t => t === 'Entire Org' || MGR_BROADCAST_ROLE_MAP[t] === role)
+  );
+  pending.forEach(b => {
+    b.seenBy.push(state.currentUser?.id);
+    const msg = `📢 Message from Director (${b.from}): ${b.message}`;
+    appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
+    addToHistory('bot', msg);
+  });
 }
 
 /* ── Flow: raise_support_ticket_guide (Option 13) ── */
@@ -8460,6 +9326,50 @@ function handleIncentiveDetailsStep(userText) {
 
 function isManagerRole(r) {
   return ['team_lead','pod_leader','senior_manager','director'].includes(r || state.role);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MANAGER CHATBOT — Two-Step Scope Drill-Down engine
+   Shared by every "Overall Team / Specific Drill-Down" bot option.
+   Scope is always resolved to a pool of COUNSELORS within the current
+   manager's OWN hierarchy (unlike the org-wide Top Performers widget).
+══════════════════════════════════════════════════════════════════ */
+
+/* Which sub-tier buttons a role can drill down through, per the spec's
+   role -> drill-down matrix. TL has no sub-tier (goes straight to their
+   own counsellors). */
+function _mgrDrillDownTierOptions() {
+  const role = state.role;
+  if (role === 'pod_leader')     return [{ key:'tl',  label:'By TL' }, { key:'counsellor', label:'By Counsellor' }];
+  if (role === 'senior_manager') return [{ key:'pod', label:'By Pod' }, { key:'tl', label:'By TL' }, { key:'counsellor', label:'By Counsellor' }];
+  if (role === 'director')       return [{ key:'sm',  label:'By SM' }, { key:'pod', label:'By Pod' }, { key:'tl', label:'By TL' }, { key:'counsellor', label:'By Counsellor' }];
+  return [];
+}
+
+/* Entities selectable at a given tier — scoped to the current manager's own hierarchy. */
+function _mgrDrillDownEntityList(tierKey) {
+  if (tierKey === 'sm')         return SENIOR_MANAGERS.filter(s => (HIERARCHY.dirToSMs[state.currentUser.id]||[]).includes(s.id));
+  if (tierKey === 'pod')        return POD_LEADERS.filter(p => getMyPodIds().includes(p.id));
+  if (tierKey === 'tl')         return TEAM_LEADS.filter(t => getMyTLIds().includes(t.id));
+  if (tierKey === 'counsellor') return getFilteredCounselorPool();
+  return [];
+}
+
+/* Resolves a { type, id } scope selection down to the actual counsellor pool it represents. */
+function _mgrScopeCounsellorPool(scope) {
+  if (!scope || scope.type === 'overall') return getFilteredCounselorPool();
+  if (scope.type === 'counsellor') return COUNSELORS.filter(c => c.id === scope.id);
+  if (scope.type === 'tl')  return COUNSELORS.filter(c => (HIERARCHY.tlToCounselors[scope.id]||[]).includes(c.id));
+  if (scope.type === 'pod') {
+    const tlIds = HIERARCHY.podToTLs[scope.id]||[];
+    return COUNSELORS.filter(c => tlIds.some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
+  }
+  if (scope.type === 'sm') {
+    const podIds = HIERARCHY.smToPods[scope.id]||[];
+    const tlIds  = podIds.flatMap(p => HIERARCHY.podToTLs[p]||[]);
+    return COUNSELORS.filter(c => tlIds.some(tl => (HIERARCHY.tlToCounselors[tl]||[]).includes(c.id)));
+  }
+  return [];
 }
 
 /* ── Hierarchy helpers ── */
