@@ -1288,7 +1288,7 @@ function initBotWithGreeting() {
               : 'Good Night';
 
   const firstName = (state.currentUser?.name || 'there').split(' ')[0];
-  const msg = `${greet}, ${firstName}! 👋 How are you doing today?`;
+  const msg = `${greet}, ${firstName}! 👋`;
 
   const container = document.getElementById('botMessages');
   if (!container) return;
@@ -5173,7 +5173,7 @@ function renderMgrBotGreeting() {
   const firstName = (state.currentUser?.name || 'there').split(' ')[0];
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
-  const msg = `Good ${timeOfDay}, ${firstName}! 👋 How are you doing today?`;
+  const msg = `Good ${timeOfDay}, ${firstName}! 👋`;
   const container = document.getElementById('botMessages');
   container.innerHTML = `
     <div class="flex gap-2">
@@ -5183,9 +5183,9 @@ function renderMgrBotGreeting() {
       <div class="bot-msg-bubble"><p>${escHtml(msg)}</p></div>
     </div>`;
   addToHistory('bot', msg);
-  state.botConversation.flow = 'greeting';
-  state.botConversation.step = 1;
-  setTimeout(() => appendQuickReplies(['Good', 'Not okay']), 300);
+  // Wait for the user's own "Hi"/"Hello" to trigger the mood-check step, same as counsellors.
+  const inp = document.getElementById('botInput');
+  if (inp) inp.placeholder = 'Type "Hi" or "Hello" to Start the Chat';
 }
 
 function toggleBot() {
@@ -5972,7 +5972,7 @@ function handleGreetingStep(userText) {
 
   if (bc.step === 0) {
     bc.step = 1;
-    const msg = `Got it, ${firstName}! 😊 How is your day going?`;
+    const msg = `Hi ${firstName}! 😊 How is your day going?`;
     appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
     addToHistory('bot', msg);
     setTimeout(() => appendQuickReplies(['Good', 'Not okay']), 400);
