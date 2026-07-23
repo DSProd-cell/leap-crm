@@ -5984,7 +5984,8 @@ function handleGreetingStep(userText) {
     if (isNotOkay) {
       bc.step = 2;
       bc.collected.sentimentPath = 'not_okay';
-      const msg = `Oh no, ${firstName} — sorry to hear this 😔\n\nWant me to connect you with SM, HR, or DS? Let's get this sorted and make sure you feel better before you start working again.`;
+      const recipients = _mgrConnectRecipientOptions().join(', ').replace(/, ([^,]*)$/, ' or $1');
+      const msg = `Oh no, ${firstName} — sorry to hear this 😔\n\nWant me to connect you with ${recipients}? Let's get this sorted and make sure you feel better before you start working again.`;
       appendBotMessageLive(`<p>${formatBotText(msg)}</p>`);
       addToHistory('bot', msg.replace(/\n\n/g, ' '));
       setTimeout(() => appendQuickReplies(['Yes', 'No']), 400);
