@@ -418,9 +418,9 @@
           <!-- Time + Role Toggle Row -->
           <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div class="flex gap-1 bg-surface rounded-lg p-1">
-              <button class="period-btn active text-xs px-3 py-1 rounded-md" onclick="switchMgrLeaderPeriod('yesterday',this)">Yesterday</button>
-              <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchMgrLeaderPeriod('month',this)">This Month</button>
-              <button class="period-btn text-xs px-3 py-1 rounded-md" onclick="switchMgrLeaderPeriod('quarter',this)">Last 3 Months</button>
+              <button class="period-btn active text-xs px-3 py-1 rounded-md" data-period="yesterday" onclick="switchMgrLeaderPeriod('yesterday',this)">Yesterday</button>
+              <button class="period-btn text-xs px-3 py-1 rounded-md" data-period="month" onclick="switchMgrLeaderPeriod('month',this)">This Month</button>
+              <button class="period-btn text-xs px-3 py-1 rounded-md" data-period="quarter" onclick="switchMgrLeaderPeriod('quarter',this)">Last 3 Months</button>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-xs text-text-muted font-medium">Show rankings for:</span>
@@ -2091,6 +2091,6 @@
 <!-- Toast Container -->
 <div id="toastContainer" aria-live="polite" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
 
-<script src="app.js?v=1062"></script>
+<script src="app.js?v=1063"></script>
 </body>
 </html>

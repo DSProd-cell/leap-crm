@@ -8956,6 +8956,9 @@ function handleMgrTopPerformerStep(userText) {
           if (body?.classList.contains('hidden')) toggleSection('mgrTopPerf');
           state.mgrLeaderView = tier;
           state.mgrLeaderPeriod = period;
+          document.querySelectorAll('#body-mgrTopPerf .period-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.period === period);
+          });
           renderMgrLeaderToggle();
           renderMgrLeaderboard();
           document.getElementById('mgrLeaderboardGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
