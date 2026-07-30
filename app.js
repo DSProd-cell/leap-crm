@@ -1301,8 +1301,18 @@ function bootApp(role, email) {
   switchTab('tab1');
   // Show 10x banner immediately on login — counsellors only, and only while 10x is live (10am–8pm IST)
   if (role === 'counselor' && is10xLiveNow()) show10xBanner();
-  // Clear chat and show IST time-based greeting on every fresh login
-  setTimeout(initBotWithGreeting, 300);
+  // Clear chat and show IST time-based greeting on every fresh login — counsellors only. Managers
+  // get their own greeting lazily on first bot-panel open (renderMgrBotGreeting(), in toggleBot()) —
+  // calling initBotWithGreeting() here for managers too used to pre-seed botConversation.history
+  // with the greeting message before the panel was ever opened, which made toggleBot() think the
+  // chat already "hadHistory" on first open and skip renderMgrBotGreeting() entirely, leaving
+  // managers stuck on a bare greeting bubble with no mood-check/main-menu ever appearing.
+  if (role === 'counselor') {
+    setTimeout(initBotWithGreeting, 300);
+  } else {
+    state.botConversation = { flow: null, step: 0, collected: {}, history: [], lastIntent: null, shownFollowUps: [] };
+    state.chatPanel.mgrGreeted = false;
+  }
 }
 
 function initBotWithGreeting() {
@@ -5215,9 +5225,15 @@ function renderMgrBotGreeting() {
       <div class="bot-msg-bubble"><p>${escHtml(msg)}</p></div>
     </div>`;
   addToHistory('bot', msg);
-  // Wait for the user's own "Hi"/"Hello" to trigger the mood-check step, same as counsellors.
-  const inp = document.getElementById('botInput');
-  if (inp) inp.placeholder = 'Type "Hi" or "Hello" to Start the Chat';
+  // Managers don't need to type "Hi" to proceed — auto-advance into the mood-check step so the
+  // bot never sits idle waiting on typed input (this was previously wait-for-"Hi", same as the
+  // counsellor bot, but that left the manager bot looking stuck with no visible next step).
+  hideBotInputRow();
+  const bc = state.botConversation;
+  bc.flow = 'greeting';
+  bc.step = 0;
+  bc.collected = {};
+  setTimeout(() => handleGreetingStep(null), 600);
 }
 
 /* Counsellor bot goes "button-only" once the mood-check resolves (Good, or Not okay -> No) — the free-text
@@ -5264,6 +5280,8 @@ function toggleBot() {
         document.getElementById('botInput').focus();
         checkPendingTlPlReplies();
       }
+      // Connect-with-SM/DS replies can land for any role (counsellor/TL/PL/SM can all be senders).
+      checkPendingConnectReplies();
       checkPendingBroadcasts();
       updateUnreadBadge();
     } else {
@@ -5277,14 +5295,23 @@ function toggleBot() {
 }
 
 /* Combines the generic chat unread count with role-specific pending items (TL/PL's unanswered
-   counsellor questions, or a counsellor's unseen TL/PL replies) so the floating bot bubble shows
-   a notification dot/count even before the chat panel is opened. */
+   counsellor questions, SM/Director's unanswered Connect requests, or unseen replies to a
+   Connect-with-SM/DS message the current user sent) so the floating bot bubble shows a
+   notification dot/count even before the chat panel is opened. */
 function updateUnreadBadge() {
   const badge = document.getElementById('botUnreadBadge');
   if (!badge) return;
   let pending = 0;
-  if (state.role === 'team_lead' || state.role === 'pod_leader') pending = getPendingTlPlQuestions().length;
-  else if (state.role === 'counselor') pending = getUnseenTlPlRepliesForCounsellor().length;
+  const role = state.role;
+  if (role === 'team_lead' || role === 'pod_leader') {
+    pending = getPendingTlPlQuestions().length + getUnseenConnectRepliesForSender().length;
+  } else if (role === 'senior_manager') {
+    pending = getPendingConnectRequests().length + getUnseenConnectRepliesForSender().length;
+  } else if (role === 'director') {
+    pending = getPendingConnectRequests().length;
+  } else if (role === 'counselor') {
+    pending = getUnseenTlPlRepliesForCounsellor().length + getUnseenConnectRepliesForSender().length;
+  }
   const count = (state.chatPanel.unreadCount || 0) + pending;
   if (count > 0) {
     badge.textContent = count > 9 ? '9+' : String(count);
@@ -5954,7 +5981,8 @@ function getActiveChatBuckets() {
    reply to pending questions from counsellors. Rendered as flat quick-replies (no bucket-menu
    nesting) since there are only 2 top-level actions. */
 function renderMgrMainMenu() {
-  const pendingCount = getPendingTlPlQuestions().length;
+  const isTlPl = state.role === 'team_lead' || state.role === 'pod_leader';
+  const pendingCount = isTlPl ? getPendingTlPlQuestions().length : getPendingConnectRequests().length;
   const questionsLabel = pendingCount ? `❓ Questions from Counsellors (${pendingCount})` : '❓ Questions from Counsellors';
   appendQuickReplies(['📢 Send Broadcast Communication', questionsLabel]);
 }
@@ -9014,20 +9042,32 @@ function openMissingAdmitInfoDrawer() {
 }
 
 /* ── Flow: connect_manager_hr_ds (Option 12) ── */
-/* Resolves the actual assigned SM's email for the current TL/POD leader via the
-   hierarchy (podToTLs / smToPods reversed), falling back to a generic address
-   if no SM is mapped (shouldn't happen for real TL/PL accounts). */
-function _mgrAssignedSmEmail() {
+/* Resolves the current user's assigned SM id by walking the hierarchy up from
+   wherever they sit (counsellor -> TL -> POD -> SM, or POD/TL directly). Works
+   for any non-SM role; returns null if no SM is mapped. */
+function _resolveMySmId() {
   const role = state.role; const u = state.currentUser;
   let podId = null;
-  if (role === 'pod_leader') podId = u.id;
-  else if (role === 'team_lead') {
+  if (role === 'pod_leader') {
+    podId = u.id;
+  } else if (role === 'team_lead') {
     podId = Object.keys(HIERARCHY.podToTLs).find(pid => (HIERARCHY.podToTLs[pid]||[]).includes(u.id));
-    podId = podId ? parseInt(podId) : null;
+  } else if (role === 'counselor') {
+    const tlId = Object.keys(HIERARCHY.tlToCounselors).find(tid => (HIERARCHY.tlToCounselors[tid]||[]).includes(u.id));
+    if (tlId != null) podId = Object.keys(HIERARCHY.podToTLs).find(pid => (HIERARCHY.podToTLs[pid]||[]).includes(parseInt(tlId)));
   }
   if (podId == null) return null;
-  const smId = Object.keys(HIERARCHY.smToPods).find(sid => (HIERARCHY.smToPods[sid]||[]).includes(podId));
-  return smId ? SENIOR_MANAGERS.find(s => s.id === parseInt(smId))?.email : null;
+  const smId = Object.keys(HIERARCHY.smToPods).find(sid => (HIERARCHY.smToPods[sid]||[]).includes(parseInt(podId)));
+  return smId ? parseInt(smId) : null;
+}
+
+/* Resolves the Director that sits above the current user's SM (or above the current user,
+   if they already are the SM). Used to route "Connect with DS" to the right Director. */
+function _resolveMyDirectorId() {
+  const smId = state.role === 'senior_manager' ? state.currentUser?.id : _resolveMySmId();
+  if (smId == null) return null;
+  const dirId = Object.keys(HIERARCHY.dirToSMs).find(did => (HIERARCHY.dirToSMs[did]||[]).includes(smId));
+  return dirId ? parseInt(dirId) : null;
 }
 
 /* Recipient options per the spec's routing matrix: TL/PL -> SM|HR|DS, SM -> HR|DS, Director -> HR only. */
@@ -9051,20 +9091,24 @@ function handleConnectManagerHrDsStep(userText) {
 
   } else if (bc.step === 1) {
     const lower = (userText || '').toLowerCase();
-    let recipient = 'SM';
-    let recipientEmail = 'sm@leapfinance.com';
+    let recipient, recipientKind, targetId = null, targetName = null;
     if (lower.includes('hr')) {
-      recipient = 'HR'; recipientEmail = 'rakshitha.mohan@leapfinance.com';
+      recipient = 'HR'; recipientKind = 'hr';
     } else if (lower.includes('ds') || lower.includes('data')) {
-      recipient = 'DS'; recipientEmail = 'debasish.sahoo@leapfinance.com';
-    } else if (isManagerRole(state.role)) {
-      recipient = 'SM'; recipientEmail = _mgrAssignedSmEmail() || 'sm@leapfinance.com';
+      recipient = 'DS'; recipientKind = 'ds';
+      targetId = _resolveMyDirectorId();
+      targetName = DIRECTORS.find(d => d.id === targetId)?.name || 'the Director';
     } else {
-      recipient = 'SM (Senior Manager)'; recipientEmail = 'sm@leapfinance.com';
+      recipient = isManagerRole(state.role) ? 'SM' : 'SM (Senior Manager)';
+      recipientKind = 'sm';
+      targetId = _resolveMySmId();
+      targetName = SENIOR_MANAGERS.find(s => s.id === targetId)?.name || 'your SM';
     }
 
     bc.collected.recipient = recipient;
-    bc.collected.recipientEmail = recipientEmail;
+    bc.collected.recipientKind = recipientKind;
+    bc.collected.targetId = targetId;
+    bc.collected.targetName = targetName;
     bc.step = 2;
 
     const formHtml = `
@@ -9104,13 +9148,19 @@ function selectConnectTime(btn, time) {
   }
 }
 
+/* No real backend/cross-user delivery exists in this static demo — Connect-with-SM and
+   Connect-with-DS requests are queued in a session-local, in-memory list (same pattern as
+   MGR_BROADCAST_QUEUE / TL_PL_QUESTION_QUEUE) and surface directly inside the recipient's own
+   chatbot (with an inline Reply), not via email or the notification bell. HR has no in-app
+   login in this demo, so "Connect with HR" still opens an email client. */
+const MGR_CONNECT_QUEUE = [];
+
 function submitConnectForm() {
   const msg = document.getElementById('connectMsgInput')?.value?.trim();
   const times = state.botConversation.collected?.preferredTimes || [];
-  const recipient = state.botConversation.collected?.recipient || 'team';
-  const recipientEmail = state.botConversation.collected?.recipientEmail || 'sm@leapfinance.com';
+  const { recipient, recipientKind, targetId, targetName } = state.botConversation.collected || {};
   const name = state.currentUser?.name || 'Counsellor';
-  const roleLabels = { team_lead:'Team Lead', pod_leader:'POD Leader', senior_manager:'Senior Manager', director:'Director' };
+  const roleLabels = { counselor:'Counsellor', team_lead:'Team Lead', pod_leader:'POD Leader', senior_manager:'Senior Manager', director:'Director' };
   const roleLabel = roleLabels[state.role] || 'Counsellor';
 
   if (!msg) { showToast('Please enter a message before submitting.', 'warning'); return; }
@@ -9118,15 +9168,39 @@ function submitConnectForm() {
 
   endFlow();
 
+  if (recipientKind === 'sm' || recipientKind === 'ds') {
+    if (!targetId) {
+      const errMsg = "Couldn't find your reporting line right now — please try again later.";
+      appendBotMessageLive(`<p>${escHtml(errMsg)}</p>`);
+      addToHistory('bot', errMsg);
+      showToast('Could not resolve recipient.', 'warning');
+      showPostHelpQuickReplies();
+      return;
+    }
+    MGR_CONNECT_QUEUE.push({
+      id: Date.now(), fromId: state.currentUser?.id, fromName: name, fromRoleLabel: roleLabel,
+      toRole: recipientKind === 'sm' ? 'senior_manager' : 'director', toId: targetId,
+      message: msg, preferredTimes: times,
+      timestamp: new Date().toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }),
+      replied: false, reply: null, seenBySender: false,
+    });
+    const confirmation = `✅ Your message has been sent to ${escHtml(targetName)}. They'll see it in their chatbot and respond soon.`;
+    appendBotMessageLive(`<p>${confirmation}</p>`);
+    addToHistory('bot', confirmation.replace(/<[^>]+>/g,''));
+    showToast(`Message sent to ${targetName}!`, 'success');
+    showPostHelpQuickReplies();
+    return;
+  }
+
+  // HR — no in-app login exists for HR in this demo, so this still goes out over email.
   const confirmation = `✅ I have notified the Team. They will get in touch with you shortly.`;
   appendBotMessageLive(`<p>${escHtml(confirmation)}</p>`);
   addToHistory('bot', confirmation);
   showToast('Connection request sent!', 'success');
 
-  // Open email client
   const subject = encodeURIComponent(`${roleLabel} wants to connect`);
   const body = encodeURIComponent(`Hi,\n\n${roleLabel} ${name} wants to connect with ${recipient}.\n\nMessage: ${msg}\nPreferred Times: ${times.join(', ')}\n\nPlease reach out to them at your earliest.\n\nThank you,\nLeap CRM`);
-  setTimeout(() => { window.open(`mailto:${recipientEmail}?subject=${subject}&body=${body}`, '_blank'); }, 500);
+  setTimeout(() => { window.open(`mailto:rakshitha.mohan@leapfinance.com?subject=${subject}&body=${body}`, '_blank'); }, 500);
   setTimeout(showPostHelpQuickReplies, 900);
 }
 
@@ -9306,22 +9380,51 @@ function renderPendingQuestionCards(questions) {
   });
 }
 
-/* Proactively shows pending questions the moment a TL/PL opens the bot — they don't need to
-   click into "Questions from Counsellors" first. Called from toggleBot(), like checkPendingBroadcasts(). */
+/* Same card pattern as renderPendingQuestionCards(), for SM/Director's incoming
+   "Connect with SM/DS" requests (MGR_CONNECT_QUEUE) instead of TL/PL's counsellor questions. */
+function renderPendingConnectCards(requests) {
+  const intro = `📞 You have ${requests.length} request${requests.length===1?'':'s'} to connect:`;
+  appendBotMessageLive(`<p>${escHtml(intro)}</p>`);
+  addToHistory('bot', intro);
+  requests.forEach(r => {
+    const times = (r.preferredTimes||[]).join(' / ');
+    const card = `
+      <div class="mt-2 p-3 bg-surface rounded-xl border border-border space-y-2">
+        <p class="text-sm font-semibold text-text-main">${escHtml(r.fromName)} <span class="text-[10px] font-normal text-text-muted">(${escHtml(r.fromRoleLabel)})</span></p>
+        <p class="text-xs text-text-main">${escHtml(r.message)}</p>
+        <p class="text-[10px] text-text-muted">Preferred: ${escHtml(times)} · ${escHtml(r.timestamp)}</p>
+        <button id="connectReplyBtn-${r.id}" onclick="toggleConnectReplyBox(${r.id})" class="text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-lg transition-colors">Reply</button>
+        <div id="connectReplyBox-${r.id}" class="hidden space-y-2">
+          <textarea id="connectReplyInput-${r.id}" placeholder="Type your reply…" class="w-full text-xs border border-border rounded-lg p-2 resize-none h-16 focus:outline-none focus:border-primary"></textarea>
+          <button onclick="sendConnectReply(${r.id})" class="w-full py-1.5 bg-accent hover:bg-accent-dark text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors">Send</button>
+        </div>
+      </div>`;
+    appendBotMessageLive(card);
+  });
+}
+
+/* Proactively shows pending questions/connect-requests the moment a manager opens the bot —
+   they don't need to click into "Questions from Counsellors" first. Called from toggleBot(),
+   like checkPendingBroadcasts(). TL/PL get counsellor questions; SM/Director get Connect requests. */
 function checkPendingMgrQuestions() {
   if (!isManagerRole(state.role)) return;
-  const questions = getPendingTlPlQuestions();
-  if (!questions.length) return;
-  renderPendingQuestionCards(questions);
+  if (state.role === 'team_lead' || state.role === 'pod_leader') {
+    const questions = getPendingTlPlQuestions();
+    if (questions.length) renderPendingQuestionCards(questions);
+  } else {
+    const requests = getPendingConnectRequests();
+    if (requests.length) renderPendingConnectCards(requests);
+  }
 }
 
 function handleMgrReplyQuestionsStep(userText) {
   const bc = state.botConversation;
   if (bc.step !== 0) return;
 
-  const questions = getPendingTlPlQuestions();
-  if (!questions.length) {
-    const msg = 'You have no pending questions from your counsellors right now.';
+  const isTlPl = state.role === 'team_lead' || state.role === 'pod_leader';
+  const items = isTlPl ? getPendingTlPlQuestions() : getPendingConnectRequests();
+  if (!items.length) {
+    const msg = isTlPl ? 'You have no pending questions from your counsellors right now.' : 'You have no pending connect requests right now.';
     appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
     addToHistory('bot', msg);
     endFlow();
@@ -9329,7 +9432,7 @@ function handleMgrReplyQuestionsStep(userText) {
     return;
   }
 
-  renderPendingQuestionCards(questions);
+  if (isTlPl) renderPendingQuestionCards(items); else renderPendingConnectCards(items);
   endFlow();
   showPostHelpQuickReplies();
 }
@@ -9455,6 +9558,67 @@ function sendTlPlReply(id) {
 function getUnseenTlPlRepliesForCounsellor() {
   const myId = state.currentUser?.id;
   return TL_PL_QUESTION_QUEUE.filter(q => q.fromCounsellorId === myId && q.replied && !q.seenByCounsellor);
+}
+
+/* Connect requests (Connect with SM / Connect with DS) pending for the current SM/Director,
+   surfaced inside their own chatbot (mgr_reply_questions) — mirrors getPendingTlPlQuestions(). */
+function getPendingConnectRequests() {
+  const myId = state.currentUser?.id;
+  return MGR_CONNECT_QUEUE.filter(r => r.toId === myId && !r.replied);
+}
+
+function toggleConnectReplyBox(id) {
+  const box = document.getElementById(`connectReplyBox-${id}`);
+  if (!box) return;
+  box.classList.toggle('hidden');
+  if (!box.classList.contains('hidden')) document.getElementById(`connectReplyInput-${id}`)?.focus();
+}
+
+function sendConnectReply(id) {
+  const r = MGR_CONNECT_QUEUE.find(x => x.id === id);
+  if (!r) return;
+  const input = document.getElementById(`connectReplyInput-${id}`);
+  const reply = input?.value?.trim();
+  if (!reply) { showToast('Please type a reply before sending.', 'warning'); return; }
+  r.replied = true;
+  r.reply = reply;
+  showToast('Reply sent!', 'success');
+  updateUnreadBadge();
+
+  const box = document.getElementById(`connectReplyBox-${id}`);
+  const btn = document.getElementById(`connectReplyBtn-${id}`);
+  if (box) box.innerHTML = '<p class="text-xs text-success font-semibold">✅ Reply sent</p>';
+  if (btn) btn.remove();
+
+  if (!getPendingConnectRequests().length) {
+    const msg = "All caught up — no more pending connect requests right now.";
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+    showPostHelpQuickReplies();
+  }
+}
+
+/* Surfaces any SM/Director replies to this user's own "Connect with SM/DS" messages — called
+   on bot open for every role (counsellor/TL/PL/SM can all be senders). Mirrors checkPendingTlPlReplies(). */
+function checkPendingConnectReplies() {
+  const myId = state.currentUser?.id;
+  const replies = MGR_CONNECT_QUEUE.filter(r => r.fromId === myId && r.replied && !r.seenBySender);
+  replies.forEach(r => {
+    r.seenBySender = true;
+    const recipientName = r.toRole === 'director'
+      ? (DIRECTORS.find(d => d.id === r.toId)?.name || 'The Director')
+      : (SENIOR_MANAGERS.find(s => s.id === r.toId)?.name || 'Your SM');
+    const msg = `💬 ${recipientName} replied to your message ("${r.message}"): ${r.reply}`;
+    appendBotMessageLive(`<p>${escHtml(msg)}</p>`);
+    addToHistory('bot', msg);
+  });
+}
+
+/* Unseen Connect-with-SM/DS replies for the current user as sender — counted for the bot
+   bubble's notification dot by updateUnreadBadge(). */
+function getUnseenConnectRepliesForSender() {
+  const myId = state.currentUser?.id;
+  return MGR_CONNECT_QUEUE.filter(r => r.fromId === myId && r.replied && !r.seenBySender);
 }
 
 /* ── Flow: raise_support_ticket_guide (Option 13) ── */
